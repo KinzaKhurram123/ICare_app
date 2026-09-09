@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/user.dart';
 import 'package:icare/utils/utils.dart' show buildProfileImageProvider;
 import 'package:icare/widgets/back_button.dart';
@@ -59,61 +60,79 @@ class _PatientProfileViewState extends State<PatientProfileView> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 40 : 20),
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isDesktop ? 800 : double.infinity,
-            ),
-            child: Column(
-              children: [
-                // Profile Header Card
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: EdgeInsets.all(isDesktop ? 40 : 20),
+          child: Center(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: isDesktop ? 800 : double.infinity,
+              ),
+              child: Column(
+                children: [
+                  // Profile Header Card
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
-                        child: ClipOval(
-                          child: widget.patient.profilePicture != null &&
-                                  widget.patient.profilePicture!.isNotEmpty
-                              ? Image(
-                                  image: buildProfileImageProvider(
-                                      widget.patient.profilePicture)!,
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Center(
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child:
+                                widget.patient.profilePicture != null &&
+                                    widget.patient.profilePicture!.isNotEmpty
+                                ? Image(
+                                    image: buildProfileImageProvider(
+                                      widget.patient.profilePicture,
+                                    )!,
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Center(
+                                      child: Text(
+                                        widget.patient.name.isNotEmpty
+                                            ? widget.patient.name[0]
+                                                  .toUpperCase()
+                                            : 'P',
+                                        style: const TextStyle(
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF6366F1),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
                                     child: Text(
                                       widget.patient.name.isNotEmpty
                                           ? widget.patient.name[0].toUpperCase()
@@ -125,127 +144,120 @@ class _PatientProfileViewState extends State<PatientProfileView> {
                                       ),
                                     ),
                                   ),
-                                )
-                              : Center(
-                                  child: Text(
-                                    widget.patient.name.isNotEmpty
-                                        ? widget.patient.name[0].toUpperCase()
-                                        : 'P',
-                                    style: const TextStyle(
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF6366F1),
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        widget.patient.name,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          fontFamily: "Gilroy-Bold",
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          widget.patient.role.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 1,
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        Text(
+                          widget.patient.name,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            fontFamily: "Gilroy-Bold",
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            widget.patient.role.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Contact Information Card — hidden from doctors per privacy policy
+                  // Only patient themselves or admin should see contact details.
+                  const SizedBox(height: 16),
+
+                  // Account Information Card
+                  _buildInfoCard(
+                    'Account Information',
+                    Icons.info_outline_rounded,
+                    const Color(0xFF8B5CF6),
+                    [
+                      _buildInfoRow(
+                        Icons.badge_outlined,
+                        'Patient ID',
+                        widget.patient.id.substring(
+                          widget.patient.id.length - 8,
+                        ),
+                      ),
+                      _buildInfoRow(
+                        Icons.calendar_today_rounded,
+                        'Member Since',
+                        widget.patient.createdAt != null
+                            ? DateFormat(
+                                'MMM dd, yyyy',
+                              ).format(widget.patient.createdAt!)
+                            : 'N/A',
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                // Contact Information Card — hidden from doctors per privacy policy
-                // Only patient themselves or admin should see contact details.
-                const SizedBox(height: 16),
-
-                // Account Information Card
-                _buildInfoCard(
-                  'Account Information',
-                  Icons.info_outline_rounded,
-                  const Color(0xFF8B5CF6),
-                  [
-                    _buildInfoRow(
-                      Icons.badge_outlined,
-                      'Patient ID',
-                      widget.patient.id.substring(widget.patient.id.length - 8),
-                    ),
-                    _buildInfoRow(
-                      Icons.calendar_today_rounded,
-                      'Member Since',
-                      widget.patient.createdAt != null
-                          ? DateFormat(
-                              'MMM dd, yyyy',
-                            ).format(widget.patient.createdAt!)
-                          : 'N/A',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Health Program Progress (Requirement 14.11)
-                _buildInfoCard(
-                  'Care Plan Progress',
-                  Icons.auto_graph_rounded,
-                  const Color(0xFF10B981),
-                  [
-                    const Text(
-                      'Monitoring active health program adherence and module completion.',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_loadingCourses)
-                      const Center(child: CircularProgressIndicator())
-                    else if (_enrolledCourses.isEmpty)
+                  // Health Program Progress (Requirement 14.11)
+                  _buildInfoCard(
+                    'Care Plan Progress',
+                    Icons.auto_graph_rounded,
+                    const Color(0xFF10B981),
+                    [
                       const Text(
-                        'No active health programs',
+                        'Monitoring active health program adherence and module completion.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF94A3B8),
+                          color: Color(0xFF64748B),
                         ),
-                      )
-                    else
-                      ..._enrolledCourses.take(3).map((course) {
-                        final title = course['course']?['title'] ?? 'Program';
-                        final totalModules =
-                            course['course']?['modules']?.length ?? 0;
-                        final completedModules =
-                            course['completedModules']?.length ?? 0;
-                        final progress = totalModules > 0
-                            ? completedModules / totalModules
-                            : 0.0;
+                      ),
+                      const SizedBox(height: 16),
+                      if (_loadingCourses)
+                        const Center(child: CircularProgressIndicator())
+                      else if (_enrolledCourses.isEmpty)
+                        const Text(
+                          'No active health programs',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        )
+                      else
+                        ..._enrolledCourses.take(3).map((course) {
+                          final title = course['course']?['title'] ?? 'Program';
+                          final totalModules =
+                              course['course']?['modules']?.length ?? 0;
+                          final completedModules =
+                              course['completedModules']?.length ?? 0;
+                          final progress = totalModules > 0
+                              ? completedModules / totalModules
+                              : 0.0;
 
-                        return Column(
-                          children: [
-                            _buildProgressRow(title, progress),
-                            if (course != _enrolledCourses.take(3).last)
-                              const SizedBox(height: 12),
-                          ],
-                        );
-                      }),
-                  ],
-                ),
-              ],
+                          return Column(
+                            children: [
+                              _buildProgressRow(title, progress),
+                              if (course != _enrolledCourses.take(3).last)
+                                const SizedBox(height: 12),
+                            ],
+                          );
+                        }),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -262,7 +274,10 @@ class _PatientProfileViewState extends State<PatientProfileView> {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

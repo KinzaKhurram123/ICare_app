@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 import 'package:icare/widgets/custom_button.dart';
@@ -112,115 +113,118 @@ class _RecordVitalsScreenState extends State<RecordVitalsScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPatientHeader(),
-              const SizedBox(height: 32),
-              _buildSectionTitle('Circulatory System'),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildVitalField(
-                      'BP Systolic',
-                      _bpSystolicController,
-                      'mmHg',
-                      Icons.speed_rounded,
-                      Colors.red,
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildPatientHeader(),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Circulatory System'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildVitalField(
+                        'BP Systolic',
+                        _bpSystolicController,
+                        'mmHg',
+                        Icons.speed_rounded,
+                        Colors.red,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildVitalField(
-                      'BP Diastolic',
-                      _bpDiastolicController,
-                      'mmHg',
-                      Icons.speed_rounded,
-                      Colors.red,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildVitalField(
+                        'BP Diastolic',
+                        _bpDiastolicController,
+                        'mmHg',
+                        Icons.speed_rounded,
+                        Colors.red,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildVitalField(
-                'Heart Rate',
-                _heartRateController,
-                'bpm',
-                Icons.favorite_rounded,
-                Colors.pink,
-              ),
-              const SizedBox(height: 32),
-              _buildSectionTitle('Respiratory & Temperature'),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildVitalField(
-                      'SpO2',
-                      _spo2Controller,
-                      '%',
-                      Icons.air_rounded,
-                      Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildVitalField(
-                      'Resp. Rate',
-                      _respiratoryRateController,
-                      'br/m',
-                      Icons.air_rounded,
-                      Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildVitalField(
-                'Temperature',
-                _tempController,
-                '°F',
-                Icons.thermostat_rounded,
-                Colors.orange,
-              ),
-              const SizedBox(height: 32),
-              _buildSectionTitle('Body Metrics'),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildVitalField(
-                      'Weight',
-                      _weightController,
-                      'kg',
-                      Icons.monitor_weight_rounded,
-                      Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildVitalField(
-                      'Height',
-                      _heightController,
-                      'cm',
-                      Icons.height_rounded,
-                      Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                child: CustomButton(
-                  label: _isSaving ? 'Recording...' : 'Save Vitals to Record',
-                  onPressed: _isSaving ? null : _saveVitals,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 16),
+                _buildVitalField(
+                  'Heart Rate',
+                  _heartRateController,
+                  'bpm',
+                  Icons.favorite_rounded,
+                  Colors.pink,
+                ),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Respiratory & Temperature'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildVitalField(
+                        'SpO2',
+                        _spo2Controller,
+                        '%',
+                        Icons.air_rounded,
+                        Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildVitalField(
+                        'Resp. Rate',
+                        _respiratoryRateController,
+                        'br/m',
+                        Icons.air_rounded,
+                        Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildVitalField(
+                  'Temperature',
+                  _tempController,
+                  '°F',
+                  Icons.thermostat_rounded,
+                  Colors.orange,
+                ),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Body Metrics'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildVitalField(
+                        'Weight',
+                        _weightController,
+                        'kg',
+                        Icons.monitor_weight_rounded,
+                        Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildVitalField(
+                        'Height',
+                        _heightController,
+                        'cm',
+                        Icons.height_rounded,
+                        Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  child: CustomButton(
+                    label: _isSaving ? 'Recording...' : 'Save Vitals to Record',
+                    onPressed: _isSaving ? null : _saveVitals,
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),

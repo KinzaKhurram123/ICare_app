@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/models/user.dart';
@@ -110,7 +111,11 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(sheetCtx).size.height * 0.8,
           ),
-          child: SingleChildScrollView(
+          // Scrollable already, but with no bar to grab - the same complaint
+          // as everywhere else. DragScroll gives it a draggable one.
+          child: DragScroll(
+            builder: (context, roleScrollCtrl) => SingleChildScrollView(
+            controller: roleScrollCtrl,
             child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
@@ -190,6 +195,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
           ],
         ),
             ),
+          ),
           ),
         ),
       ),
@@ -401,6 +407,22 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
         }),
         _drawerItem('iCare Clinics', Icons.local_hospital_outlined, () {
           context.push('/icare-clinics');
+        }),
+        // Requested alongside iCare Clinics: a student is also a patient, and
+        // had no way into the medical side from the LMS sidebar. There is no
+        // separate "telehealth" screen - booking a consultation is that flow.
+        _drawerItem('Telehealth', Icons.video_call_outlined, () {
+          context.push('/doctors');
+        }),
+        // Students had no way to see who teaches them; the Professional Bio
+        // on the instructor profile existed but was never shown to anyone.
+        // Promotions & Offers had a notification switch in Settings but no
+        // page to land on; this is where those offers now show up.
+        _drawerItem('Promotions & Offers', Icons.local_offer_outlined, () {
+          context.push('/promotions');
+        }),
+        _drawerItem('Instructors', Icons.people_outline, () {
+          context.push('/student/instructors');
         }),
         _drawerItem('My Certificates', Icons.workspace_premium_outlined, () {
           context.go('/student/certificates');

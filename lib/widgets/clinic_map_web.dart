@@ -1,5 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 
@@ -22,7 +21,7 @@ class _ClinicMapEmbedState extends State<ClinicMapEmbed> {
     _viewId = 'clinic-map-${widget.address.hashCode}';
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int id) {
       final query = Uri.encodeComponent(widget.address);
-      return html.IFrameElement()
+      return web.document.createElement('iframe') as web.HTMLIFrameElement
         // www.google.com (not maps.google.com) — matches the app's CSP
         // frame-src allowlist in web/index.html.
         ..src = 'https://www.google.com/maps?q=$query&output=embed'

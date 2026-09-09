@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/services/clinical_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -304,149 +305,157 @@ class _IntakeNotesRedesignState extends State<IntakeNotesRedesign> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isFinalized)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.lock_rounded, color: Colors.orange, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        'This note is finalized and cannot be edited.',
-                        style: TextStyle(
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isFinalized)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.lock_rounded,
                           color: Colors.orange,
-                          fontSize: 12,
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'This note is finalized and cannot be edited.',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                _buildSectionTitle('Chief Complaint'),
+                _buildTextField(
+                  _chiefComplaintController,
+                  'Main reason for visit',
+                  2,
+                ),
+                const SizedBox(height: 20),
+                _buildSectionTitle('History of Present Illness'),
+                _buildTextField(_historyController, 'Detailed history', 4),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Allergies'),
+                _buildTextField(
+                  _allergiesController,
+                  'Known allergies (comma separated)',
+                  2,
+                ),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Current Medications'),
+                _buildTextField(
+                  _medicationsController,
+                  'List of medications (comma separated)',
+                  3,
+                ),
+
+                if (_attachments.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Attachments',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: _attachments
+                        .map(
+                          (a) => Chip(
+                            label: Text(
+                              a,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            onDeleted: _isFinalized
+                                ? null
+                                : () => setState(() => _attachments.remove(a)),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+
+                if (_isFinalized) ...[
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Signed Addendums',
+                        style: TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _addAddendum,
+                        icon: const Icon(Icons.add_comment_rounded, size: 16),
+                        label: const Text(
+                          'Add Addendum',
+                          style: TextStyle(fontSize: 12),
                         ),
                       ),
                     ],
                   ),
-                ),
-              _buildSectionTitle('Chief Complaint'),
-              _buildTextField(
-                _chiefComplaintController,
-                'Main reason for visit',
-                2,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('History of Present Illness'),
-              _buildTextField(_historyController, 'Detailed history', 4),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Allergies'),
-              _buildTextField(
-                _allergiesController,
-                'Known allergies (comma separated)',
-                2,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Current Medications'),
-              _buildTextField(
-                _medicationsController,
-                'List of medications (comma separated)',
-                3,
-              ),
-
-              if (_attachments.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Attachments',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: _attachments
-                      .map(
-                        (a) => Chip(
-                          label: Text(a, style: const TextStyle(fontSize: 10)),
-                          onDeleted: _isFinalized
-                              ? null
-                              : () => setState(() => _attachments.remove(a)),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-
-              if (_isFinalized) ...[
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                  const SizedBox(height: 12),
+                  if (_addendums.isEmpty)
                     const Text(
-                      'Signed Addendums',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                      'No addendums added yet.',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    )
+                  else
+                    ..._addendums.map(
+                      (a) => _buildAddendumTile(
+                        a['text'] ?? '',
+                        a['createdAt']?.toString().substring(0, 16) ?? '',
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: _addAddendum,
-                      icon: const Icon(Icons.add_comment_rounded, size: 16),
-                      label: const Text(
-                        'Add Addendum',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_addendums.isEmpty)
-                  const Text(
-                    'No addendums added yet.',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  )
-                else
-                  ..._addendums
-                      .map(
-                        (a) => _buildAddendumTile(
-                          a['text'] ?? '',
-                          a['createdAt']?.toString().substring(0, 16) ?? '',
-                        ),
-                      )
-                      ,
-              ],
+                ],
 
-              const SizedBox(height: 40),
-              if (!_isFinalized) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _saveNotes(finalize: false),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primaryColor,
-                      side: const BorderSide(color: AppColors.primaryColor),
+                const SizedBox(height: 40),
+                if (!_isFinalized) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _saveNotes(finalize: false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primaryColor,
+                        side: const BorderSide(color: AppColors.primaryColor),
+                      ),
+                      child: const Text('Save Draft'),
                     ),
-                    child: const Text('Save Draft'),
                   ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _saveNotes(finalize: true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _saveNotes(finalize: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                      ),
+                      child: const Text('Finalize Note'),
                     ),
-                    child: const Text('Finalize Note'),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

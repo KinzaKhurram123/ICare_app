@@ -4,7 +4,9 @@ const notificationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { 
     type: String, 
-    enum: ['appointment', 'reminder', 'prescription', 'lab', 'message', 'payment', 'general', 'system'],
+    // 'promotion' added for the Promotions & Offers feature: users already had a
+    // notification preference for it, but there was no way to actually send one.
+    enum: ['appointment', 'reminder', 'prescription', 'lab', 'message', 'payment', 'general', 'system', 'promotion'],
     default: 'general'
   },
   title: { type: String, required: true },

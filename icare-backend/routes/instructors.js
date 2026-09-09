@@ -63,7 +63,10 @@ router.post('/add_instructor_details', authMiddleware, async (req, res) => {
     await connectMongoDB();
     const userId = toId(req.user.id);
     const update = {};
-    const fields = ['bio', 'specialization', 'experience_years', 'profile_image', 'qualification', 'experience', 'gender', 'age', 'address', 'specialties', 'languages', 'availabilityDays', 'availabilityTime'];
+    // 'designation' replaced the specialty list on the instructor profile at
+    // the client's request. The UI was changed but this whitelist wasn't, so
+    // every save silently dropped it and the field always came back empty.
+    const fields = ['bio', 'specialization', 'experience_years', 'profile_image', 'qualification', 'experience', 'gender', 'age', 'address', 'designation', 'specialties', 'languages', 'availabilityDays', 'availabilityTime'];
     fields.forEach(f => { if (req.body[f] !== undefined) update[f] = req.body[f]; });
     const profile = await InstructorProfile.findOneAndUpdate({ user_id: userId }, { $set: update }, { new: true, upsert: true });
     // Save profilePicture and name to User model
@@ -87,7 +90,18 @@ router.get('/get_all_instructors', authMiddleware, async (req, res) => {
     users.forEach(u => { userMap[u._id.toString()] = u; });
     const result = instructors.map(p => {
       const u = userMap[p.user_id.toString()] || {};
-      return { _id: p._id.toString(), user_id: p.user_id.toString(), name: u.name || u.username || '', email: u.email || '', ...p };
+      // profilePicture comes from the User doc (that's where
+      // add_instructor_details saves it), so it has to be pulled across
+      // explicitly - without it the Instructors directory only ever showed
+      // initials even for instructors who had uploaded a photo.
+      return {
+        _id: p._id.toString(),
+        user_id: p.user_id.toString(),
+        name: u.name || u.username || '',
+        email: u.email || '',
+        profilePicture: u.profilePicture || p.profile_image || null,
+        ...p,
+      };
     });
     res.json({ success: true, instructors: result });
   } catch (e) {

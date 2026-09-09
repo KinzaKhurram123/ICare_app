@@ -301,6 +301,14 @@ class AuthService {
         serverClientId: kIsWeb ? null : '564788374793-1eptqsl65ohkvsquqhc4qnhlia592v2f.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
+      // signIn() silently returns whichever account was chosen last time, so
+      // anyone with more than one Google account is stuck with the first one
+      // they picked. Dropping the cached session first brings the account
+      // picker back on every attempt. This only clears the app's Google
+      // session -- the accounts stay on the device.
+      try {
+        await googleSignIn.signOut();
+      } catch (_) {}
       final account = await googleSignIn.signIn();
       if (account == null) return {'success': false, 'message': 'Sign-in cancelled'};
       final auth = await account.authentication;

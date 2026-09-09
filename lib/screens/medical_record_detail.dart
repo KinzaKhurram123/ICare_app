@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/medical_record.dart';
@@ -185,93 +186,96 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Patient Info Card with View Profile Button
-            _buildPatientCard(context),
-            const SizedBox(height: 16),
-
-            // Vital Signs
-            if (record.vitalSigns != null) ...[
-              _buildVitalSignsCard(),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Patient Info Card with View Profile Button
+              _buildPatientCard(context),
               const SizedBox(height: 16),
-            ],
 
-            // Diagnosis
-            if (record.diagnosis != null) ...[
-              _buildSectionCard(
-                'Diagnosis',
-                Icons.medical_information_rounded,
-                const Color(0xFFEF4444),
-                record.diagnosis!,
-              ),
-              const SizedBox(height: 16),
-            ],
+              // Vital Signs
+              if (record.vitalSigns != null) ...[
+                _buildVitalSignsCard(),
+                const SizedBox(height: 16),
+              ],
 
-            // Symptoms
-            if (record.symptoms.isNotEmpty) ...[
-              _buildListCard(
-                'Symptoms',
-                Icons.sick_rounded,
-                const Color(0xFFF59E0B),
-                record.symptoms,
-              ),
-              const SizedBox(height: 16),
-            ],
+              // Diagnosis
+              if (record.diagnosis != null) ...[
+                _buildSectionCard(
+                  'Diagnosis',
+                  Icons.medical_information_rounded,
+                  const Color(0xFFEF4444),
+                  record.diagnosis!,
+                ),
+                const SizedBox(height: 16),
+              ],
 
-            // Prescription
-            if (record.prescription != null &&
-                record.prescription!.medicines.isNotEmpty) ...[
-              _buildPrescriptionCard(),
-              const SizedBox(height: 16),
-            ],
+              // Symptoms
+              if (record.symptoms.isNotEmpty) ...[
+                _buildListCard(
+                  'Symptoms',
+                  Icons.sick_rounded,
+                  const Color(0xFFF59E0B),
+                  record.symptoms,
+                ),
+                const SizedBox(height: 16),
+              ],
 
-            // Lab Tests
-            if (record.labTests.isNotEmpty) ...[
-              _buildListCard(
-                'Lab Tests',
-                Icons.biotech_rounded,
-                const Color(0xFF8B5CF6),
-                record.labTests,
-              ),
-              const SizedBox(height: 16),
-            ],
+              // Prescription
+              if (record.prescription != null &&
+                  record.prescription!.medicines.isNotEmpty) ...[
+                _buildPrescriptionCard(),
+                const SizedBox(height: 16),
+              ],
 
-            // Notes
-            if (record.notes != null) ...[
-              _buildSectionCard(
-                'Additional Notes',
-                Icons.note_rounded,
-                const Color(0xFF64748B),
-                record.notes!,
-              ),
-              const SizedBox(height: 16),
-            ],
+              // Lab Tests
+              if (record.labTests.isNotEmpty) ...[
+                _buildListCard(
+                  'Lab Tests',
+                  Icons.biotech_rounded,
+                  const Color(0xFF8B5CF6),
+                  record.labTests,
+                ),
+                const SizedBox(height: 16),
+              ],
 
-            // Assigned Health Programs (Task 19.3)
-            if (record.assignedCourses.isNotEmpty) ...[
-              _buildHealthProgramsCard(),
-              const SizedBox(height: 16),
-            ],
+              // Notes
+              if (record.notes != null) ...[
+                _buildSectionCard(
+                  'Additional Notes',
+                  Icons.note_rounded,
+                  const Color(0xFF64748B),
+                  record.notes!,
+                ),
+                const SizedBox(height: 16),
+              ],
 
-            // CRITICAL FIX: Display Intake Notes for Patient
-            if (record.intakeNotes != null) ...[
-              _buildIntakeNotesCard(),
-              const SizedBox(height: 16),
-            ],
+              // Assigned Health Programs (Task 19.3)
+              if (record.assignedCourses.isNotEmpty) ...[
+                _buildHealthProgramsCard(),
+                const SizedBox(height: 16),
+              ],
 
-            // SOAP Notes: doctor-facing only, hidden from patients
-            if (record.soapNotes != null && !isPatient) ...[
-              _buildSoapNotesCard(),
-              const SizedBox(height: 16),
-            ],
+              // CRITICAL FIX: Display Intake Notes for Patient
+              if (record.intakeNotes != null) ...[
+                _buildIntakeNotesCard(),
+                const SizedBox(height: 16),
+              ],
 
-            // Follow-up
-            if (record.followUpDate != null) ...[_buildFollowUpCard()],
-          ],
+              // SOAP Notes: doctor-facing only, hidden from patients
+              if (record.soapNotes != null && !isPatient) ...[
+                _buildSoapNotesCard(),
+                const SizedBox(height: 16),
+              ],
+
+              // Follow-up
+              if (record.followUpDate != null) ...[_buildFollowUpCard()],
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +44,9 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
         withData: true,
       );
 
-      if (result == null || result.files.isEmpty || result.files.first.bytes == null) {
+      if (result == null ||
+          result.files.isEmpty ||
+          result.files.first.bytes == null) {
         return;
       }
 
@@ -58,9 +61,9 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick document: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick document: $e')));
       }
     }
   }
@@ -87,8 +90,13 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
         }).toList(),
       });
 
-      final response = await _api.postMultipart('/verification/upload', formData);
-      final body = response.data is String ? jsonDecode(response.data) : response.data;
+      final response = await _api.postMultipart(
+        '/verification/upload',
+        formData,
+      );
+      final body = response.data is String
+          ? jsonDecode(response.data)
+          : response.data;
 
       if (body['success'] != true) {
         throw Exception(body['message'] ?? 'Upload failed');
@@ -148,50 +156,53 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Info Card
-            _buildInfoCard(),
-            const SizedBox(height: 24),
-            
-            // Document Type Selection
-            const Text(
-              'Upload Documents',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildDocumentTypeButtons(),
-            const SizedBox(height: 24),
-            
-            // Uploaded Documents List
-            if (_documents.isNotEmpty) ...[
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Info Card
+              _buildInfoCard(),
+              const SizedBox(height: 24),
+
+              // Document Type Selection
               const Text(
-                'Selected Documents',
+                'Upload Documents',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF0F172A),
                 ),
               ),
               const SizedBox(height: 12),
-              _buildDocumentsList(),
+              _buildDocumentTypeButtons(),
               const SizedBox(height: 24),
+
+              // Uploaded Documents List
+              if (_documents.isNotEmpty) ...[
+                const Text(
+                  'Selected Documents',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildDocumentsList(),
+                const SizedBox(height: 24),
+              ],
+
+              // Upload Button
+              _buildUploadButton(),
+              const SizedBox(height: 16),
+
+              // Skip Button (if allowed)
+              if (_canSkip) _buildSkipButton(),
             ],
-            
-            // Upload Button
-            _buildUploadButton(),
-            const SizedBox(height: 16),
-            
-            // Skip Button (if allowed)
-            if (_canSkip) _buildSkipButton(),
-          ],
+          ),
         ),
       ),
     );
@@ -208,7 +219,9 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +320,7 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
       children: _documents.asMap().entries.map((entry) {
         final index = entry.key;
         final doc = entry.value;
-        
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -332,7 +345,7 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Document Info
               Expanded(
                 child: Column(
@@ -359,7 +372,7 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
                   ],
                 ),
               ),
-              
+
               // Remove Button
               IconButton(
                 onPressed: () => _removeDocument(index),
@@ -398,10 +411,7 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
               )
             : const Text(
                 'Upload & Continue',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
       ),
     );
@@ -414,10 +424,7 @@ class _LmsDocumentUploadState extends State<LmsDocumentUpload> {
         onPressed: _navigateToLimitedDashboard,
         child: const Text(
           'Skip for now (verify later)',
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF64748B),
-          ),
+          style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
         ),
       ),
     );

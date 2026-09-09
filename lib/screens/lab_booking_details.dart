@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lab_result.dart';
@@ -19,14 +20,17 @@ class LabBookingDetails extends ConsumerWidget {
   List<LabResult> _parseResults(dynamic raw) {
     try {
       if (raw == null || raw is! List) return [];
-      return raw.map((r) {
-        try {
-          if (r is! Map) return null;
-          return LabResult.fromJson(Map<String, dynamic>.from(r));
-        } catch (_) {
-          return null;
-        }
-      }).whereType<LabResult>().toList();
+      return raw
+          .map((r) {
+            try {
+              if (r is! Map) return null;
+              return LabResult.fromJson(Map<String, dynamic>.from(r));
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<LabResult>()
+          .toList();
     } catch (_) {
       return [];
     }
@@ -37,20 +41,24 @@ class LabBookingDetails extends ConsumerWidget {
     final rawRole = ref.watch(authProvider).userRole;
     // Normalize: backend stores 'lab' → frontend normalizes to 'Lab', but
     // some paths produce 'Laboratory'. Accept both.
-    final isLab = rawRole.toLowerCase() == 'lab' ||
-        rawRole.toLowerCase() == 'laboratory';
+    final isLab =
+        rawRole.toLowerCase() == 'lab' || rawRole.toLowerCase() == 'laboratory';
 
-    final status =
-        (booking['status'] ?? 'pending').toString().replaceAll('-', '_');
+    final status = (booking['status'] ?? 'pending').toString().replaceAll(
+      '-',
+      '_',
+    );
 
     // Support all field name variants
-    final testName = booking['test_type']?.toString() ??
+    final testName =
+        booking['test_type']?.toString() ??
         booking['testType']?.toString() ??
         booking['testName']?.toString() ??
         booking['name']?.toString() ??
         'Test';
 
-    final dateStr = booking['test_date']?.toString() ??
+    final dateStr =
+        booking['test_date']?.toString() ??
         booking['testDate']?.toString() ??
         booking['date']?.toString() ??
         booking['createdAt']?.toString() ??
@@ -60,11 +68,12 @@ class LabBookingDetails extends ConsumerWidget {
     // Patient name — try all possible fields
     String patientName = 'Unknown Patient';
     try {
-      patientName = booking['patient_name']?.toString() ??
+      patientName =
+          booking['patient_name']?.toString() ??
           booking['patientName']?.toString() ??
           (booking['patient'] is Map
               ? (booking['patient']['name']?.toString() ??
-                  booking['patient']['username']?.toString())
+                    booking['patient']['username']?.toString())
               : null) ??
           'Unknown Patient';
     } catch (_) {}
@@ -88,20 +97,30 @@ class LabBookingDetails extends ConsumerWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasCriticalAlert) _buildCriticalAlert(),
-            _buildInfoCard(testName, status, date, patientName, isLab, context),
-            const SizedBox(height: 24),
-            if (isLab) _buildActionButtons(context, status),
-            if (!isLab && status.toLowerCase() == 'completed')
-              _buildRateLabButton(context),
-            const SizedBox(height: 24),
-            if (results.isNotEmpty) _buildResultsSection(results),
-          ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasCriticalAlert) _buildCriticalAlert(),
+              _buildInfoCard(
+                testName,
+                status,
+                date,
+                patientName,
+                isLab,
+                context,
+              ),
+              const SizedBox(height: 24),
+              if (isLab) _buildActionButtons(context, status),
+              if (!isLab && status.toLowerCase() == 'completed')
+                _buildRateLabButton(context),
+              const SizedBox(height: 24),
+              if (results.isNotEmpty) _buildResultsSection(results),
+            ],
+          ),
         ),
       ),
     );
@@ -126,15 +145,24 @@ class LabBookingDetails extends ConsumerWidget {
               );
             },
           ),
-          icon: const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+          icon: const Icon(
+            Icons.star_rounded,
+            size: 18,
+            color: Color(0xFFF59E0B),
+          ),
           label: const Text(
             'Rate this Lab',
-            style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFF59E0B)),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFF59E0B),
+            ),
           ),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             side: const BorderSide(color: Color(0xFFF59E0B)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ),
@@ -187,7 +215,8 @@ class LabBookingDetails extends ConsumerWidget {
     bool isLab,
     BuildContext context,
   ) {
-    final labName = booking['lab']?['name']?.toString() ??
+    final labName =
+        booking['lab']?['name']?.toString() ??
         booking['labName']?.toString() ??
         booking['laboratory']?['name']?.toString() ??
         '';
@@ -219,109 +248,192 @@ class LabBookingDetails extends ConsumerWidget {
           if (labName.isNotEmpty) ...[
             const SizedBox(height: 4),
             GestureDetector(
-              onTap: isLab ? null : () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (_) => Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0B2D6E).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.local_hospital_rounded, color: Color(0xFF0B2D6E), size: 22),
+              onTap: isLab
+                  ? null
+                  : () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
                           ),
-                          const SizedBox(width: 12),
-                          Text(labName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                        ]),
-                        const SizedBox(height: 12),
-                        const Text('Laboratory', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                        const SizedBox(height: 16),
-                        if ((booking['lab']?['address'] ?? booking['labAddress'] ?? '').toString().isNotEmpty)
-                          Row(children: [
-                            const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF64748B)),
-                            const SizedBox(width: 6),
-                            Text(booking['lab']?['address'] ?? booking['labAddress'] ?? '', style: const TextStyle(fontSize: 13)),
-                          ]),
-                        if ((booking['lab']?['phone'] ?? booking['labPhone'] ?? '').toString().isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Row(children: [
-                              const Icon(Icons.phone_rounded, size: 16, color: Color(0xFF64748B)),
-                              const SizedBox(width: 6),
-                              Text(booking['lab']?['phone'] ?? booking['labPhone'] ?? '', style: const TextStyle(fontSize: 13)),
-                            ]),
+                        ),
+                        builder: (_) => Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF0B2D6E,
+                                      ).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.local_hospital_rounded,
+                                      color: Color(0xFF0B2D6E),
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    labName,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Laboratory',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              if ((booking['lab']?['address'] ??
+                                      booking['labAddress'] ??
+                                      '')
+                                  .toString()
+                                  .isNotEmpty)
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_rounded,
+                                      size: 16,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      booking['lab']?['address'] ??
+                                          booking['labAddress'] ??
+                                          '',
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              if ((booking['lab']?['phone'] ??
+                                      booking['labPhone'] ??
+                                      '')
+                                  .toString()
+                                  .isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.phone_rounded,
+                                        size: 16,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        booking['lab']?['phone'] ??
+                                            booking['labPhone'] ??
+                                            '',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              const SizedBox(height: 20),
+                            ],
                           ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                        ),
+                      );
+                    },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.local_hospital_rounded, size: 14, color: Color(0xFF0B2D6E)),
+                  const Icon(
+                    Icons.local_hospital_rounded,
+                    size: 14,
+                    color: Color(0xFF0B2D6E),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     labName,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isLab ? const Color(0xFF64748B) : const Color(0xFF0B2D6E),
+                      color: isLab
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF0B2D6E),
                       decoration: isLab ? null : TextDecoration.underline,
                     ),
                   ),
                   if (!isLab) ...[
                     const SizedBox(width: 2),
-                    const Icon(Icons.open_in_new_rounded, size: 12, color: Color(0xFF0B2D6E)),
+                    const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 12,
+                      color: Color(0xFF0B2D6E),
+                    ),
                   ],
                 ],
               ),
             ),
           ],
           const Divider(height: 24),
-          if ((booking['doctor']?['name'] ?? booking['orderedBy'] ?? '').toString().isNotEmpty)
+          if ((booking['doctor']?['name'] ?? booking['orderedBy'] ?? '')
+              .toString()
+              .isNotEmpty)
             _buildInfoRow(
               Icons.medical_services_rounded,
               'Ordered By',
-              withDoctorTitle(booking['doctor']?['name'] ?? booking['orderedBy'] ?? 'N/A'),
+              withDoctorTitle(
+                booking['doctor']?['name'] ?? booking['orderedBy'] ?? 'N/A',
+              ),
             ),
-          _buildInfoRow(
-            Icons.person_rounded,
-            'Patient Name',
-            patientName,
-          ),
+          _buildInfoRow(Icons.person_rounded, 'Patient Name', patientName),
           _buildInfoRow(
             Icons.calendar_today_rounded,
             'Test Prescription Date',
             DateFormat('MMM dd, yyyy').format(date),
           ),
-          if ((booking['referredBy'] ?? booking['referred_by'] ?? '').toString().isNotEmpty)
+          if ((booking['referredBy'] ?? booking['referred_by'] ?? '')
+              .toString()
+              .isNotEmpty)
             _buildInfoRow(
               Icons.medical_services_rounded,
               'Referred By',
-              withDoctorTitle(booking['referredBy'] ?? booking['referred_by'] ?? 'N/A'),
+              withDoctorTitle(
+                booking['referredBy'] ?? booking['referred_by'] ?? 'N/A',
+              ),
             ),
           _buildInfoRow(
             Icons.location_on_rounded,
             'Collection Type',
-            (booking['collectionType'] ?? booking['collection_type'] ?? booking['type'] ?? 'In-Lab').toString().replaceAll('in-house', 'In-Lab').replaceAll('in-lab', 'In-Lab').replaceAll('home', 'Home Collection'),
+            (booking['collectionType'] ??
+                    booking['collection_type'] ??
+                    booking['type'] ??
+                    'In-Lab')
+                .toString()
+                .replaceAll('in-house', 'In-Lab')
+                .replaceAll('in-lab', 'In-Lab')
+                .replaceAll('home', 'Home Collection'),
           ),
-          if ((booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '').toString().isNotEmpty)
+          if ((booking['doctorNotes'] ??
+                  booking['doctor_notes'] ??
+                  booking['notes'] ??
+                  '')
+              .toString()
+              .isNotEmpty)
             _buildInfoRow(
               Icons.notes_rounded,
               "Doctor's Notes",
-              booking['doctorNotes'] ?? booking['doctor_notes'] ?? booking['notes'] ?? '',
+              booking['doctorNotes'] ??
+                  booking['doctor_notes'] ??
+                  booking['notes'] ??
+                  '',
             ),
           if ((booking['sampleCollectedBy'] ?? '').toString().isNotEmpty)
             _buildInfoRow(
@@ -334,13 +446,23 @@ class LabBookingDetails extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData? icon, String label, String value, {String? customIconPath}) {
+  Widget _buildInfoRow(
+    IconData? icon,
+    String label,
+    String value, {
+    String? customIconPath,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           if (customIconPath != null)
-            Image.asset(customIconPath, width: 18, height: 18, color: const Color(0xFF64748B))
+            Image.asset(
+              customIconPath,
+              width: 18,
+              height: 18,
+              color: const Color(0xFF64748B),
+            )
           else if (icon != null)
             Icon(icon, size: 18, color: const Color(0xFF64748B)),
           const SizedBox(width: 12),
@@ -386,15 +508,24 @@ class LabBookingDetails extends ConsumerWidget {
 
   String _statusLabel(String status) {
     switch (status.toLowerCase().replaceAll('-', '_')) {
-      case 'pending': return 'PENDING';
-      case 'confirmed': return 'ACCEPTED';
-      case 'sample_collected': return 'SAMPLE COLLECTED';
-      case 'awaiting_reports': return 'AWAITING REPORTS';
-      case 'reporting_done': return 'REPORTING DONE';
-      case 'completed': return 'COMPLETED';
-      case 'cancelled': return 'CANCELLED';
-      case 'declined': return 'DECLINED';
-      default: return status.toUpperCase().replaceAll('_', ' ');
+      case 'pending':
+        return 'PENDING';
+      case 'confirmed':
+        return 'ACCEPTED';
+      case 'sample_collected':
+        return 'SAMPLE COLLECTED';
+      case 'awaiting_reports':
+        return 'AWAITING REPORTS';
+      case 'reporting_done':
+        return 'REPORTING DONE';
+      case 'completed':
+        return 'COMPLETED';
+      case 'cancelled':
+        return 'CANCELLED';
+      case 'declined':
+        return 'DECLINED';
+      default:
+        return status.toUpperCase().replaceAll('_', ' ');
     }
   }
 
@@ -563,7 +694,8 @@ class LabBookingDetails extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        if (currentStatus.toLowerCase() == 'pending' || currentStatus.toLowerCase() == 'new request')
+        if (currentStatus.toLowerCase() == 'pending' ||
+            currentStatus.toLowerCase() == 'new request')
           Row(
             children: [
               Expanded(
@@ -587,7 +719,8 @@ class LabBookingDetails extends ConsumerWidget {
               ),
             ],
           ),
-        if (currentStatus.toLowerCase() == 'accepted' || currentStatus.toLowerCase() == 'confirmed')
+        if (currentStatus.toLowerCase() == 'accepted' ||
+            currentStatus.toLowerCase() == 'confirmed')
           _buildActionButton(
             context,
             'Mark Sample Collected',
@@ -595,7 +728,7 @@ class LabBookingDetails extends ConsumerWidget {
             Colors.orange,
             () => _updateStatus(context, 'sample_collected'),
           ),
-        if (currentStatus.toLowerCase() == 'sample_collected' || 
+        if (currentStatus.toLowerCase() == 'sample_collected' ||
             currentStatus.toLowerCase() == 'sample-collected' ||
             currentStatus.toLowerCase() == 'sample collected')
           _buildActionButton(
@@ -615,7 +748,7 @@ class LabBookingDetails extends ConsumerWidget {
               }
             },
           ),
-        if (currentStatus.toLowerCase() == 'awaiting_reports' || 
+        if (currentStatus.toLowerCase() == 'awaiting_reports' ||
             currentStatus.toLowerCase() == 'awaiting-reports' ||
             currentStatus.toLowerCase() == 'awaiting reports')
           _buildActionButton(
@@ -652,7 +785,12 @@ class LabBookingDetails extends ConsumerWidget {
             },
           ),
         // Cancel button for non-terminal statuses
-        if (!['completed', 'cancelled', 'declined', 'reporting_done'].contains(currentStatus.toLowerCase()))
+        if (![
+          'completed',
+          'cancelled',
+          'declined',
+          'reporting_done',
+        ].contains(currentStatus.toLowerCase()))
           _buildActionButton(
             context,
             'Cancel Booking',
@@ -706,7 +844,9 @@ class LabBookingDetails extends ConsumerWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             newStatus == 'declined' ? 'Decline Booking' : 'Cancel Booking',
             style: const TextStyle(fontWeight: FontWeight.w800),
@@ -726,7 +866,9 @@ class LabBookingDetails extends ConsumerWidget {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'Enter reason...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   contentPadding: const EdgeInsets.all(12),
                 ),
               ),
@@ -741,18 +883,24 @@ class LabBookingDetails extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () {
                 if (reasonController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Reason is required to cancel/decline')),
+                    const SnackBar(
+                      content: Text('Reason is required to cancel/decline'),
+                    ),
                   );
                   return;
                 }
                 Navigator.pop(ctx, true);
               },
-              child: Text(newStatus == 'declined' ? 'Decline' : 'Cancel Booking'),
+              child: Text(
+                newStatus == 'declined' ? 'Decline' : 'Cancel Booking',
+              ),
             ),
           ],
         ),
@@ -764,15 +912,17 @@ class LabBookingDetails extends ConsumerWidget {
       final labService = LaboratoryService();
       await labService.updateBookingStatus(booking['_id'], newStatus);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status updated to $newStatus')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Status updated to $newStatus')));
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Something went wrong. Please try again.')),
+          SnackBar(
+            content: const Text('Something went wrong. Please try again.'),
+          ),
         );
       }
     }

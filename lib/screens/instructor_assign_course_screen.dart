@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/services/instructor_service.dart';
@@ -123,157 +124,164 @@ class _InstructorAssignCourseScreenState
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '1. Select Program',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_isLoadingCourses)
-              const Center(child: CircularProgressIndicator())
-            else if (_myCourses.isEmpty)
-              const Text('No programs found. Create one first.')
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '1. Select Program',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<Course>(
-                    isExpanded: true,
-                    value: _selectedCourse,
-                    items: _myCourses.map((c) {
-                      return DropdownMenuItem(value: c, child: Text(c.title));
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedCourse = val),
+              ),
+              const SizedBox(height: 12),
+              if (_isLoadingCourses)
+                const Center(child: CircularProgressIndicator())
+              else if (_myCourses.isEmpty)
+                const Text('No programs found. Create one first.')
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<Course>(
+                      isExpanded: true,
+                      value: _selectedCourse,
+                      items: _myCourses.map((c) {
+                        return DropdownMenuItem(value: c, child: Text(c.title));
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedCourse = val),
+                    ),
                   ),
                 ),
-              ),
 
-            const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-            const Text(
-              '2. Select Target Role',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildRoleOption('Doctor'),
-                const SizedBox(width: 12),
-                _buildRoleOption('Patient'),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            const Text(
-              '3. Find User',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by name or email',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: () => _searchUsers(_searchController.text),
+              const Text(
+                '2. Select Target Role',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
               ),
-              onSubmitted: _searchUsers,
-            ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildRoleOption('Doctor'),
+                  const SizedBox(width: 12),
+                  _buildRoleOption('Patient'),
+                ],
+              ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 32),
 
-            if (_isSearchingUsers)
-              const Center(child: CircularProgressIndicator())
-            else if (_foundUsers.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _foundUsers.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) {
-                  final user = _foundUsers[i];
-                  final isSelected =
-                      _selectedUser != null &&
-                      _selectedUser['_id'] == user['_id'];
-                  return ListTile(
-                    selected: isSelected,
-                    selectedTileColor: AppColors.primaryColor.withValues(alpha: 0.05),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primaryColor
-                            : const Color(0xFFE2E8F0),
+              const Text(
+                '3. Find User',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or email',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: () => _searchUsers(_searchController.text),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                onSubmitted: _searchUsers,
+              ),
+
+              const SizedBox(height: 16),
+
+              if (_isSearchingUsers)
+                const Center(child: CircularProgressIndicator())
+              else if (_foundUsers.isNotEmpty)
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _foundUsers.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (ctx, i) {
+                    final user = _foundUsers[i];
+                    final isSelected =
+                        _selectedUser != null &&
+                        _selectedUser['_id'] == user['_id'];
+                    return ListTile(
+                      selected: isSelected,
+                      selectedTileColor: AppColors.primaryColor.withValues(
+                        alpha: 0.05,
                       ),
-                    ),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                      child: Text(
-                        user['name']?[0] ?? 'U',
-                        style: const TextStyle(color: AppColors.primaryColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : const Color(0xFFE2E8F0),
+                        ),
                       ),
-                    ),
-                    title: Text(
-                      user['name'] ?? 'User',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(user['email'] ?? ''),
-                    onTap: () => setState(() => _selectedUser = user),
-                    trailing: isSelected
-                        ? const Icon(
-                            Icons.check_circle,
-                            color: AppColors.primaryColor,
-                          )
-                        : null,
-                  );
-                },
-              )
-            else if (_searchController.text.isNotEmpty)
-              const Center(
-                child: Text(
-                  'No users found',
-                  style: TextStyle(color: Color(0xFF64748B)),
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
+                        child: Text(
+                          user['name']?[0] ?? 'U',
+                          style: const TextStyle(color: AppColors.primaryColor),
+                        ),
+                      ),
+                      title: Text(
+                        user['name'] ?? 'User',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(user['email'] ?? ''),
+                      onTap: () => setState(() => _selectedUser = user),
+                      trailing: isSelected
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primaryColor,
+                            )
+                          : null,
+                    );
+                  },
+                )
+              else if (_searchController.text.isNotEmpty)
+                const Center(
+                  child: Text(
+                    'No users found',
+                    style: TextStyle(color: Color(0xFF64748B)),
+                  ),
                 ),
+
+              const SizedBox(height: 40),
+
+              CustomButton(
+                label: 'Assign Program',
+                onPressed: (_selectedCourse != null && _selectedUser != null)
+                    ? _assignCourse
+                    : null,
               ),
-
-            const SizedBox(height: 40),
-
-            CustomButton(
-              label: 'Assign Program',
-              onPressed: (_selectedCourse != null && _selectedUser != null)
-                  ? _assignCourse
-                  : null,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,9 +1,15 @@
 import 'dart:async';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
+import 'package:web/web.dart' as web;
+
+/// Adds [type] listener on [target]. package:web has no `onX` Stream getters
+/// the way dart:html did, so every listener goes through addEventListener.
+void _on(web.EventTarget target, String type, void Function(web.Event) fn) {
+  target.addEventListener(type, fn.toJS);
+}
 
 class VideoPlayerWidget extends StatefulWidget {
   final String videoUrl;
@@ -47,20 +53,23 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   @override
   void initState() {
     super.initState();
-    _viewType = 'video-${widget.videoUrl.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
+    _viewType =
+        'video-${widget.videoUrl.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int id) {
       if (_isDirectVideo(widget.videoUrl)) {
         return _buildDirectPlayer(widget.videoUrl);
       } else {
         // iframe for YouTube/Vimeo embeds
-        return html.IFrameElement()
+        return web.document.createElement('iframe') as web.HTMLIFrameElement
           ..src = _toEmbedUrl(widget.videoUrl)
           ..style.border = '0'
           ..style.width = '100%'
           ..style.height = '100%'
           ..setAttribute('allowfullscreen', 'true')
-          ..setAttribute('allow',
-              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+          ..setAttribute(
+            'allow',
+            'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+          );
       }
     });
   }
@@ -75,17 +84,17 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   // receives pointer events or shows up visually — that's why the previous
   // attempt's seek bar never appeared. The fix is to build the whole control
   // bar (seek bar, play/pause, mute, fullscreen) as sibling DOM nodes inside
-  // the SAME html.DivElement as the <video>, so they live in the same
-  // compositing layer and stack correctly with CSS.
-  html.Element _buildDirectPlayer(String url) {
-    final container = html.DivElement()
+  // the SAME <div> as the <video>, so they live in the same compositing
+  // layer and stack correctly with CSS.
+  web.Element _buildDirectPlayer(String url) {
+    final container = web.document.createElement('div') as web.HTMLDivElement
       ..style.position = 'relative'
       ..style.width = '100%'
       ..style.height = '100%'
       ..style.backgroundColor = '#000'
       ..style.overflow = 'hidden';
 
-    final video = html.VideoElement()
+    final video = web.document.createElement('video') as web.HTMLVideoElement
       ..src = url
       ..controls = false
       ..style.width = '100%'
@@ -99,7 +108,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       // tail is fetched, which 'metadata' alone does not guarantee.
       ..setAttribute('preload', 'auto');
 
-    final seekBar = html.InputElement(type: 'range')
+    final seekBar = web.document.createElement('input') as web.HTMLInputElement
+      ..type = 'range'
       ..min = '0'
       ..max = '1000'
       ..value = '0'
@@ -109,52 +119,58 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       ..style.cursor = 'pointer';
     seekBar.style.setProperty('accent-color', '#0036BC');
 
-    final timeLabel = html.SpanElement()
-      ..text = '0:00 / 0:00'
+    final timeLabel = web.document.createElement('span') as web.HTMLSpanElement
+      ..textContent = '0:00 / 0:00'
       ..style.color = '#fff'
       ..style.fontSize = '12px'
       ..style.fontFamily = 'inherit'
       ..style.marginLeft = '4px';
 
-    final playBtn = html.ButtonElement()
-      ..style.background = 'transparent'
-      ..style.border = 'none'
-      ..style.cursor = 'pointer'
-      ..style.padding = '4px'
-      ..style.display = 'flex'
-      ..style.alignItems = 'center';
+    final playBtn =
+        web.document.createElement('button') as web.HTMLButtonElement
+          ..style.background = 'transparent'
+          ..style.border = 'none'
+          ..style.cursor = 'pointer'
+          ..style.padding = '4px'
+          ..style.display = 'flex'
+          ..style.alignItems = 'center';
     _setIcon(playBtn, 'play');
 
-    final muteBtn = html.ButtonElement()
-      ..style.background = 'transparent'
-      ..style.border = 'none'
-      ..style.cursor = 'pointer'
-      ..style.padding = '4px'
-      ..style.display = 'flex'
-      ..style.alignItems = 'center';
+    final muteBtn =
+        web.document.createElement('button') as web.HTMLButtonElement
+          ..style.background = 'transparent'
+          ..style.border = 'none'
+          ..style.cursor = 'pointer'
+          ..style.padding = '4px'
+          ..style.display = 'flex'
+          ..style.alignItems = 'center';
     _setIcon(muteBtn, 'volume');
 
-    final fullscreenBtn = html.ButtonElement()
-      ..style.background = 'transparent'
-      ..style.border = 'none'
-      ..style.cursor = 'pointer'
-      ..style.padding = '4px'
-      ..style.marginLeft = 'auto'
-      ..style.display = 'flex'
-      ..style.alignItems = 'center';
+    final fullscreenBtn =
+        web.document.createElement('button') as web.HTMLButtonElement
+          ..style.background = 'transparent'
+          ..style.border = 'none'
+          ..style.cursor = 'pointer'
+          ..style.padding = '4px'
+          ..style.marginLeft = 'auto'
+          ..style.display = 'flex'
+          ..style.alignItems = 'center';
     _setIcon(fullscreenBtn, 'fullscreen');
 
-    final buttonRow = html.DivElement()
+    final spacer = web.document.createElement('div') as web.HTMLDivElement
+      ..style.flex = '1';
+
+    final buttonRow = web.document.createElement('div') as web.HTMLDivElement
       ..style.display = 'flex'
       ..style.alignItems = 'center'
-      ..style.padding = '0 10px 8px 6px'
-      ..append(playBtn)
-      ..append(muteBtn)
-      ..append(timeLabel)
-      ..append(html.DivElement()..style.flex = '1')
-      ..append(fullscreenBtn);
+      ..style.padding = '0 10px 8px 6px';
+    buttonRow.appendChild(playBtn);
+    buttonRow.appendChild(muteBtn);
+    buttonRow.appendChild(timeLabel);
+    buttonRow.appendChild(spacer);
+    buttonRow.appendChild(fullscreenBtn);
 
-    final controlsBar = html.DivElement()
+    final controlsBar = web.document.createElement('div') as web.HTMLDivElement
       ..style.position = 'absolute'
       ..style.left = '0'
       ..style.right = '0'
@@ -163,32 +179,35 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.55) 60%, transparent)'
       ..style.paddingTop = '20px'
       ..style.transition = 'opacity 0.2s ease'
-      ..style.opacity = '1'
-      ..append(seekBar)
-      ..append(buttonRow);
+      ..style.opacity = '1';
+    controlsBar.appendChild(seekBar);
+    controlsBar.appendChild(buttonRow);
 
     // Loading spinner — shows while video is buffering, hides on canplay
-    final spinStyle = html.StyleElement()
-      ..text = '@keyframes _vpspin{to{transform:rotate(360deg)}}';
-    html.document.head?.append(spinStyle);
-    final spinner = html.DivElement()
+    final spinStyle =
+        web.document.createElement('style') as web.HTMLStyleElement
+          ..textContent = '@keyframes _vpspin{to{transform:rotate(360deg)}}';
+    web.document.head?.appendChild(spinStyle);
+    final spinner = web.document.createElement('div') as web.HTMLDivElement
       ..style.position = 'absolute'
-      ..style.setProperty('inset', '0')
       ..style.display = 'flex'
       ..style.alignItems = 'center'
       ..style.justifyContent = 'center'
       ..style.background = '#000'
       ..style.pointerEvents = 'none';
-    final spinRing = html.DivElement()
+    spinner.style.setProperty('inset', '0');
+    final spinRing = web.document.createElement('div') as web.HTMLDivElement
       ..style.width = '44px'
       ..style.height = '44px'
       ..style.borderRadius = '50%';
     spinRing.style.setProperty('border', '3px solid rgba(255,255,255,0.2)');
     spinRing.style.setProperty('border-top-color', '#fff');
     spinRing.style.setProperty('animation', '_vpspin 0.7s linear infinite');
-    spinner.append(spinRing);
+    spinner.appendChild(spinRing);
 
-    container..append(video)..append(spinner)..append(controlsBar);
+    container.appendChild(video);
+    container.appendChild(spinner);
+    container.appendChild(controlsBar);
 
     void hideSpinner() => spinner.style.display = 'none';
 
@@ -225,7 +244,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     }
 
     void updateTimeLabel() {
-      timeLabel.text = '${fmt(video.currentTime)} / ${fmt(effectiveDuration())}';
+      timeLabel.textContent =
+          '${fmt(video.currentTime)} / ${fmt(effectiveDuration())}';
     }
 
     // Chrome-recorded WebM (MediaRecorder output — how LMS session
@@ -247,9 +267,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         return;
       }
       fixInFlight = true;
-      late final StreamSubscription sub;
-      sub = video.onSeeked.listen((_) {
-        sub.cancel();
+      // One-shot: addEventListener has no autoCancel, so the handler removes
+      // itself the way the old StreamSubscription.cancel() did.
+      late final web.EventListener seekedListener;
+      seekedListener = ((web.Event _) {
+        video.removeEventListener('seeked', seekedListener);
         fixInFlight = false;
         final resolved = video.duration;
         if (resolved.isFinite && !resolved.isNaN && resolved > 0) {
@@ -257,26 +279,27 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         }
         video.currentTime = 0;
         updateTimeLabel();
-      });
+      }).toJS;
+      video.addEventListener('seeked', seekedListener);
       video.currentTime = 1e101;
     }
 
-    video.onLoadedMetadata.listen((_) {
+    _on(video, 'loadedmetadata', (_) {
       hideSpinner();
       fixDurationIfNeeded();
       updateTimeLabel();
     });
-    video.onDurationChange.listen((_) {
+    _on(video, 'durationchange', (_) {
       fixDurationIfNeeded();
       updateTimeLabel();
     });
-    video.onCanPlay.listen((_) {
+    _on(video, 'canplay', (_) {
       hideSpinner();
       fixDurationIfNeeded();
       updateTimeLabel();
     });
 
-    video.onTimeUpdate.listen((_) {
+    _on(video, 'timeupdate', (_) {
       if (!seeking) {
         final dur = effectiveDuration();
         if (dur > 0) {
@@ -287,23 +310,23 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       updateTimeLabel();
     });
 
-    video.onPlay.listen((_) {
+    _on(video, 'play', (_) {
       _setIcon(playBtn, 'pause');
       scheduleHide();
     });
-    video.onPause.listen((_) {
+    _on(video, 'pause', (_) {
       _setIcon(playBtn, 'play');
       showControls();
       hideTimer?.cancel();
     });
-    video.onEnded.listen((_) {
+    _on(video, 'ended', (_) {
       _setIcon(playBtn, 'play');
       showControls();
       hideTimer?.cancel();
       _fireWatchedOnce();
     });
 
-    playBtn.onClick.listen((_) {
+    _on(playBtn, 'click', (_) {
       if (video.paused) {
         video.play();
       } else {
@@ -311,58 +334,61 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       }
     });
 
-    muteBtn.onClick.listen((_) {
+    _on(muteBtn, 'click', (_) {
       video.muted = !video.muted;
       _setIcon(muteBtn, video.muted ? 'muted' : 'volume');
     });
 
-    seekBar.onInput.listen((_) {
+    _on(seekBar, 'input', (_) {
       seeking = true;
       final dur = effectiveDuration();
       if (dur > 0) {
-        final target = (seekBar.valueAsNumber ?? 0) / 1000 * dur;
-        timeLabel.text = '${fmt(target)} / ${fmt(dur)}';
+        final target = seekBar.valueAsNumber / 1000 * dur;
+        timeLabel.textContent = '${fmt(target)} / ${fmt(dur)}';
       }
       showControls();
       hideTimer?.cancel();
     });
-    seekBar.onChange.listen((_) {
+    _on(seekBar, 'change', (_) {
       final dur = effectiveDuration();
       if (dur > 0) {
-        video.currentTime = (seekBar.valueAsNumber ?? 0) / 1000 * dur;
+        video.currentTime = seekBar.valueAsNumber / 1000 * dur;
       }
       seeking = false;
       if (!video.paused) scheduleHide();
     });
 
-    fullscreenBtn.onClick.listen((_) {
-      if (html.document.fullscreenElement == null) {
+    _on(fullscreenBtn, 'click', (_) {
+      if (web.document.fullscreenElement == null) {
         container.requestFullscreen();
       } else {
-        html.document.exitFullscreen();
+        web.document.exitFullscreen();
       }
     });
 
     // Update icon when the user exits fullscreen via Esc or browser UI
-    html.document.onFullscreenChange.listen((_) {
-      final isFs = html.document.fullscreenElement != null;
+    _on(web.document, 'fullscreenchange', (_) {
+      final isFs = web.document.fullscreenElement != null;
       _setIcon(fullscreenBtn, isFs ? 'exit_fullscreen' : 'fullscreen');
       // Keep controls visible when entering/exiting fullscreen
       showControls();
       if (!video.paused) scheduleHide();
     });
 
-    container.onMouseMove.listen((_) {
+    _on(container, 'mousemove', (_) {
       showControls();
       if (!video.paused) scheduleHide();
     });
-    container.onTouchStart.listen((_) {
+    _on(container, 'touchstart', (_) {
       showControls();
       if (!video.paused) scheduleHide();
     });
-    container.onClick.listen((event) {
+    _on(container, 'click', (event) {
       // Ignore clicks that originated on the controls bar itself.
-      if (controlsBar.contains(event.target as html.Node?)) return;
+      final target = event.target;
+      if (target != null && target.isA<web.Node>()) {
+        if (controlsBar.contains(target as web.Node)) return;
+      }
       if (video.paused) {
         video.play();
       } else {
@@ -376,13 +402,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   // Build an SVG icon node using DOM API instead of innerHTML so Flutter web's
   // TrustedTypes CSP (which strips <svg>/<path> injected via innerHTML) is
   // bypassed — createElementNS is always allowed.
-  static void _setIcon(html.Element btn, String kind) {
-    btn.children.clear();
+  static void _setIcon(web.Element btn, String kind) {
+    while (btn.firstChild != null) {
+      btn.removeChild(btn.firstChild!);
+    }
     final node = _svgNode(kind);
-    if (node != null) btn.append(node);
+    if (node != null) btn.appendChild(node);
   }
 
-  static html.Element? _svgNode(String kind) {
+  static web.Element? _svgNode(String kind) {
     String pathD;
     int size;
     switch (kind) {
@@ -393,30 +421,36 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         pathD = 'M6 5h4v14H6zm8 0h4v14h-4z';
         size = 26;
       case 'volume':
-        pathD = 'M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12z';
+        pathD =
+            'M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12z';
         size = 22;
       case 'muted':
-        pathD = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+        pathD =
+            'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
         size = 22;
       case 'fullscreen':
-        pathD = 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z';
+        pathD =
+            'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z';
         size = 20;
       case 'exit_fullscreen':
-        pathD = 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z';
+        pathD =
+            'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z';
         size = 20;
       default:
         return null;
     }
     const ns = 'http://www.w3.org/2000/svg';
-    final svg = html.document.createElementNS(ns, 'svg');
+    final svg = web.document.createElementNS(ns, 'svg');
     svg.setAttribute('width', '$size');
     svg.setAttribute('height', '$size');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.style.display = 'block';
-    final path = html.document.createElementNS(ns, 'path');
+    // setAttribute rather than .style: createElementNS returns a plain
+    // Element, which package:web does not give an inline style property.
+    svg.setAttribute('style', 'display:block');
+    final path = web.document.createElementNS(ns, 'path');
     path.setAttribute('d', pathD);
     path.setAttribute('fill', 'white');
-    svg.append(path);
+    svg.appendChild(path);
     return svg;
   }
 
@@ -427,9 +461,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     final watch = RegExp(r'[?&]v=([^&\s]+)').firstMatch(url);
     if (watch != null) return 'https://www.youtube.com/embed/${watch.group(1)}';
     final shorts = RegExp(r'shorts/([^?&\s]+)').firstMatch(url);
-    if (shorts != null) return 'https://www.youtube.com/embed/${shorts.group(1)}';
+    if (shorts != null)
+      return 'https://www.youtube.com/embed/${shorts.group(1)}';
     final vimeo = RegExp(r'vimeo\.com/(\d+)').firstMatch(url);
-    if (vimeo != null) return 'https://player.vimeo.com/video/${vimeo.group(1)}';
+    if (vimeo != null)
+      return 'https://player.vimeo.com/video/${vimeo.group(1)}';
     return url;
   }
 

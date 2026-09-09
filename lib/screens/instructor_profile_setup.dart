@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,10 @@ class _InstructorProfileSetupScreenState
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _experienceController = TextEditingController();
+  // The instructor could see their name but never change it - the client's
+  // "naam likhne ki bechare ko ijazat de do". It lives on the user record, not
+  // the instructor profile, so it is loaded and saved separately below.
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _designationController = TextEditingController();
   final TextEditingController _languageController = TextEditingController();
 
@@ -70,6 +75,7 @@ class _InstructorProfileSetupScreenState
     _ageController.dispose();
     _addressController.dispose();
     _experienceController.dispose();
+    _nameController.dispose();
     _designationController.dispose();
     _languageController.dispose();
     super.dispose();
@@ -99,6 +105,9 @@ class _InstructorProfileSetupScreenState
           _experienceController.text = profile['experience'] ?? '';
           _selectedGender = profile['gender'] ?? 'Male';
           _designationController.text = profile['designation'] ?? '';
+          _nameController.text =
+              (profile['name'] ?? ref.read(authProvider).user?.name ?? '')
+                  .toString();
           _languages = List<String>.from(profile['languages'] ?? []);
           _existingProfilePictureUrl =
               (profile['profilePicture'] ?? profile['profile_image'])?.toString();
@@ -124,6 +133,7 @@ class _InstructorProfileSetupScreenState
         'age': int.tryParse(_ageController.text),
         'gender': _selectedGender,
         'address': _addressController.text,
+        'name': _nameController.text.trim(),
         'designation': _designationController.text.trim(),
         'languages': _languages,
         'experience': _experienceController.text,
@@ -231,11 +241,25 @@ class _InstructorProfileSetupScreenState
                             Icons.person_outline_rounded,
                             [
                               _buildTextField(
+                                controller: _nameController,
+                                label: 'Full Name',
+                                icon: Icons.badge_rounded,
+                                hint: 'Your name as students will see it',
+                                maxLength: 60,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r"[A-Za-z .'-]"),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              _buildTextField(
                                 controller: _bioController,
                                 label: 'Professional Bio',
                                 icon: Icons.notes_rounded,
                                 hint: 'Tell students about yourself...',
                                 maxLines: 3,
+                                maxLength: 600,
                               ),
                               const SizedBox(height: 14),
                               _buildTextField(
@@ -243,6 +267,12 @@ class _InstructorProfileSetupScreenState
                                 label: 'Qualification',
                                 icon: Icons.history_edu_rounded,
                                 hint: 'e.g. PhD in Psychology',
+                                maxLength: 80,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r"[A-Za-z ,.()'-]"),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 14),
                               _buildTextField(
@@ -251,6 +281,10 @@ class _InstructorProfileSetupScreenState
                                 icon: Icons.workspace_premium_outlined,
                                 hint: 'e.g. 5',
                                 keyboardType: TextInputType.number,
+                                maxLength: 2,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                               ),
                               const SizedBox(height: 14),
                               Row(
@@ -263,6 +297,10 @@ class _InstructorProfileSetupScreenState
                                       icon: Icons.cake_outlined,
                                       hint: '30',
                                       keyboardType: TextInputType.number,
+                                      maxLength: 3,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(width: 14),
@@ -299,6 +337,7 @@ class _InstructorProfileSetupScreenState
                                 label: 'Address',
                                 icon: Icons.map_outlined,
                                 hint: 'City, Country',
+                                maxLength: 120,
                               ),
                             ],
                           ),
@@ -315,6 +354,7 @@ class _InstructorProfileSetupScreenState
                                 label: 'Designation',
                                 icon: Icons.badge_outlined,
                                 hint: 'e.g. Senior Lecturer',
+                                maxLength: 60,
                               ),
                             ],
                           ),
@@ -331,6 +371,12 @@ class _InstructorProfileSetupScreenState
                                       label: 'Add language',
                                       icon: Icons.translate_outlined,
                                       hint: 'e.g. English',
+                                      maxLength: 30,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r"[A-Za-z ]"),
+                                        ),
+                                      ],
                                       onSubmitted: (_) => _addLanguage(),
                                     ),
                                   ),
@@ -535,9 +581,27 @@ class _InstructorProfileSetupScreenState
     TextInputType? keyboardType,
     int maxLines = 1,
     void Function(String)? onSubmitted,
+    // Every field is capped, per the client: "har cheez pe LIMIT lagao na...
+    // koi shauqiya taur par DAS HAZAAR apna naam likhna shuru ho jaye to
+    // khatam hi kyun". Some fields also restrict which characters are typable
+    // at all (letters for Qualification, digits for Age/Experience).
+    int maxLength = 100,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
+      buildCounter:
+          (_, {required currentLength, required isFocused, maxLength}) =>
+              // Only show the counter as the user approaches the cap, so the
+              // form isn't littered with "0/100" under every field.
+              (isFocused && maxLength != null && currentLength > maxLength * 0.7)
+              ? Text(
+                  '$currentLength/$maxLength',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                )
+              : null,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

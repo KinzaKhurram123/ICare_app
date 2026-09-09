@@ -300,6 +300,8 @@ class _InstructorCreateAssignmentScreenState extends State<InstructorCreateAssig
                   if (widget.courseId == null) const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 120,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _titleController,
                     decoration: const InputDecoration(
                       labelText: 'Assignment Title *',
@@ -311,6 +313,8 @@ class _InstructorCreateAssignmentScreenState extends State<InstructorCreateAssig
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 2000,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _descriptionController,
                     decoration: const InputDecoration(
                       labelText: 'Description',
@@ -322,6 +326,8 @@ class _InstructorCreateAssignmentScreenState extends State<InstructorCreateAssig
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 4000,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _instructionsController,
                     decoration: const InputDecoration(
                       labelText: 'Instructions',
@@ -361,6 +367,8 @@ class _InstructorCreateAssignmentScreenState extends State<InstructorCreateAssig
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 5,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     initialValue: _totalMarks.toString(),
                     decoration: const InputDecoration(
                       labelText: 'Total Marks',

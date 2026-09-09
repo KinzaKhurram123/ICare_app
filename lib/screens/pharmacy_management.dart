@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/app_enums.dart';
 import 'package:icare/screens/cancelled_orders.dart';
@@ -41,106 +42,111 @@ class PharmacyManagementScreen extends StatelessWidget {
           color: AppColors.primary500,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomInputField(
-                width: Utils.windowWidth(context) * 0.9,
-                hintText: "Search",
-                trailingIcon: SvgWrapper(
-                  assetPath: ImagePaths.filters,
-                  onPress: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => FiltersScreen()),
-                    );
-                  },
-                ),
-                leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              SectionHeader(
-                title: "Order Details",
-                margin: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.scale(10),
-                ),
-                showAction: false,
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              SizedBox(
-                width: Utils.windowWidth(context),
-                height: Utils.windowHeight(context) * 0.6,
-                child: GridView(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.all(20),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isDesktop ? 5 : 2,
-                    mainAxisExtent: isDesktop
-                        ? 380
-                        : Utils.windowHeight(context) *
-                              0.27, // Increased from 340
-                    crossAxisSpacing: isDesktop ? 24 : 20,
-                    mainAxisSpacing: isDesktop ? 24 : 20,
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                CustomInputField(
+                  width: Utils.windowWidth(context) * 0.9,
+                  hintText: "Search",
+                  trailingIcon: SvgWrapper(
+                    assetPath: ImagePaths.filters,
+                    onPress: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (ctx) => FiltersScreen()),
+                      );
+                    },
                   ),
-                  children: [
-                    OrderTypecard(
-                      type: OrderType.recent,
-                      title: "Recent Orders",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (ctx) => RecievedOrders()),
-                        );
-                      },
-                    ),
-                    OrderTypecard(
-                      type: OrderType.delivered,
-                      title: "Delivered Orders",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => DelieveredOrder(),
-                          ),
-                        );
-                      },
-                    ),
-                    OrderTypecard(
-                      type: OrderType.cancelled,
-                      title: "Cancelled Orders",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => CancelledOrders(),
-                          ),
-                        );
-                      },
-                    ),
-                    OrderTypecard(
-                      type: OrderType.inTransit,
-                      title: "In-Transit Orders",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => TransitOrderScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  leadingIcon: SvgWrapper(assetPath: ImagePaths.search),
                 ),
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              SectionHeader(
-                title: "My Products",
-                margin: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.scale(15),
+                SizedBox(height: ScallingConfig.scale(20)),
+                SectionHeader(
+                  title: "Order Details",
+                  margin: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(10),
+                  ),
+                  showAction: false,
                 ),
-                onActionTap: () {
-                  // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => MyOrdersScreen() ));
-                },
-                showAction: true,
-              ),
-            ],
+                SizedBox(height: ScallingConfig.scale(20)),
+                SizedBox(
+                  width: Utils.windowWidth(context),
+                  height: Utils.windowHeight(context) * 0.6,
+                  child: GridView(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.all(20),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 5 : 2,
+                      mainAxisExtent: isDesktop
+                          ? 380
+                          : Utils.windowHeight(context) *
+                                0.27, // Increased from 340
+                      crossAxisSpacing: isDesktop ? 24 : 20,
+                      mainAxisSpacing: isDesktop ? 24 : 20,
+                    ),
+                    children: [
+                      OrderTypecard(
+                        type: OrderType.recent,
+                        title: "Recent Orders",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => RecievedOrders(),
+                            ),
+                          );
+                        },
+                      ),
+                      OrderTypecard(
+                        type: OrderType.delivered,
+                        title: "Delivered Orders",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => DelieveredOrder(),
+                            ),
+                          );
+                        },
+                      ),
+                      OrderTypecard(
+                        type: OrderType.cancelled,
+                        title: "Cancelled Orders",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => CancelledOrders(),
+                            ),
+                          );
+                        },
+                      ),
+                      OrderTypecard(
+                        type: OrderType.inTransit,
+                        title: "In-Transit Orders",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => TransitOrderScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: ScallingConfig.scale(20)),
+                SectionHeader(
+                  title: "My Products",
+                  margin: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(15),
+                  ),
+                  onActionTap: () {
+                    // Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => MyOrdersScreen() ));
+                  },
+                  showAction: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -189,7 +195,9 @@ class PharmacyManagementScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryColor.withValues(alpha: 0.2),
+                            color: AppColors.primaryColor.withValues(
+                              alpha: 0.2,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -403,7 +411,9 @@ class PharmacyManagementScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.2),
                                 blurRadius: 15,
                                 offset: const Offset(0, 6),
                               ),

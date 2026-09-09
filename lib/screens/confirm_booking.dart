@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/models/lab_test.dart';
 import 'package:icare/screens/select_payment_method.dart';
@@ -47,7 +48,9 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
         'contactLocation': widget.bookingData['address'],
         'city': widget.bookingData['city'],
         'homeSample': widget.bookingData['homeSample'],
-        'collection_type': widget.bookingData['homeSample'] == true ? 'home' : 'walk-in',
+        'collection_type': widget.bookingData['homeSample'] == true
+            ? 'home'
+            : 'walk-in',
         'totalAmount': _totalPrice,
         'contactName': 'Patient User',
         'contactPhone': '0000000000',
@@ -67,10 +70,8 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
       // until the payment flow actually confirms it.
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => SelectPaymentMethod(
-            labBookingId: bookingId,
-            amount: _totalPrice,
-          ),
+          builder: (_) =>
+              SelectPaymentMethod(labBookingId: bookingId, amount: _totalPrice),
         ),
       );
     } catch (e) {
@@ -98,116 +99,127 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
         leading: const CustomBackButton(),
         title: Text(
           'Booking Summary'.tr(),
-          style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader('Laboratory Information'.tr()),
-              _buildDetailCard([
-                _buildInfoLine(
-                  Icons.business_rounded,
-                  'Lab Name'.tr(),
-                  widget.bookingData['labTitle'] ?? 'Green Lab',
-                ),
-                _buildInfoLine(
-                  Icons.location_on_rounded,
-                  'Location'.tr(),
-                  widget.bookingData['city'] ?? 'Default City',
-                ),
-              ]),
-              const SizedBox(height: 24),
-
-              _buildSectionHeader('Schedule Details'.tr()),
-              _buildDetailCard([
-                _buildInfoLine(
-                  Icons.calendar_today_rounded,
-                  'Date'.tr(),
-                  widget.bookingData['date'] ?? 'Jan 1, 2024',
-                ),
-                _buildInfoLine(
-                  Icons.access_time_rounded,
-                  'Time'.tr(),
-                  widget.bookingData['time'] ?? '10:00 AM',
-                ),
-                _buildInfoLine(
-                  Icons.home_rounded,
-                  'Sample Type'.tr(),
-                  widget.bookingData['homeSample']
-                      ? 'Home Collection'.tr()
-                      : 'Walk-in'.tr(),
-                ),
-              ]),
-              const SizedBox(height: 24),
-
-              _buildSectionHeader('Selected Tests'.tr()),
-              _buildDetailCard(
-                widget.selectedTests
-                    .map((t) => _buildTestLine(t.name, 'PKR ${(t.price as num) > 0 ? t.price : 3000}'))
-                    .toList(),
-              ),
-              const SizedBox(height: 24),
-
-              _buildSectionHeader('Payment Summary'.tr()),
-              _buildDetailCard([
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Amount'.tr(),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'PKR $_totalPrice',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ]),
-              const SizedBox(height: 48),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _processBooking,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('Laboratory Information'.tr()),
+                _buildDetailCard([
+                  _buildInfoLine(
+                    Icons.business_rounded,
+                    'Lab Name'.tr(),
+                    widget.bookingData['labTitle'] ?? 'Green Lab',
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          'Confirm & Pay'.tr(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  _buildInfoLine(
+                    Icons.location_on_rounded,
+                    'Location'.tr(),
+                    widget.bookingData['city'] ?? 'Default City',
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
+                _buildSectionHeader('Schedule Details'.tr()),
+                _buildDetailCard([
+                  _buildInfoLine(
+                    Icons.calendar_today_rounded,
+                    'Date'.tr(),
+                    widget.bookingData['date'] ?? 'Jan 1, 2024',
+                  ),
+                  _buildInfoLine(
+                    Icons.access_time_rounded,
+                    'Time'.tr(),
+                    widget.bookingData['time'] ?? '10:00 AM',
+                  ),
+                  _buildInfoLine(
+                    Icons.home_rounded,
+                    'Sample Type'.tr(),
+                    widget.bookingData['homeSample']
+                        ? 'Home Collection'.tr()
+                        : 'Walk-in'.tr(),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
+                _buildSectionHeader('Selected Tests'.tr()),
+                _buildDetailCard(
+                  widget.selectedTests
+                      .map(
+                        (t) => _buildTestLine(
+                          t.name,
+                          'PKR ${(t.price as num) > 0 ? t.price : 3000}',
                         ),
+                      )
+                      .toList(),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+
+                _buildSectionHeader('Payment Summary'.tr()),
+                _buildDetailCard([
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Amount'.tr(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'PKR $_totalPrice',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ]),
+                const SizedBox(height: 48),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _processBooking,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Confirm & Pay'.tr(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

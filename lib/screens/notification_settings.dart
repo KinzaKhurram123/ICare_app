@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -15,7 +16,8 @@ class NotificationSettings extends ConsumerStatefulWidget {
   const NotificationSettings({super.key});
 
   @override
-  ConsumerState<NotificationSettings> createState() => _NotificationSettingsState();
+  ConsumerState<NotificationSettings> createState() =>
+      _NotificationSettingsState();
 }
 
 class _NotificationSettingsState extends ConsumerState<NotificationSettings> {
@@ -50,10 +52,9 @@ class _NotificationSettingsState extends ConsumerState<NotificationSettings> {
     if (title == 'Send prescription to email automatically') {
       final userId = ref.read(authProvider).user?.id ?? '';
       if (userId.isNotEmpty) {
-        NotificationService().updateNotificationPreferences(
-          userId,
-          {'emailPrescriptionAuto': value},
-        ).ignore();
+        NotificationService().updateNotificationPreferences(userId, {
+          'emailPrescriptionAuto': value,
+        }).ignore();
       }
     }
   }
@@ -74,12 +75,42 @@ class _NotificationSettingsState extends ConsumerState<NotificationSettings> {
         {"id": "2", "title": "Lab Results Ready", "onPress": () {}},
         {"id": "3", "title": "New Prescription", "onPress": () {}},
         {"id": "4", "title": "Medication Reminder", "onPress": () {}},
-        {"id": "5", "title": "Notification Sound", "onPress": () {}, "isToggle": true},
-        {"id": "6", "title": "Email: Appointment Confirmation", "onPress": () {}, "isToggle": true},
-        {"id": "7", "title": "Email: Lab Report Ready", "onPress": () {}, "isToggle": true},
-        {"id": "8", "title": "Email: Prescription Sent", "onPress": () {}, "isToggle": true},
-        {"id": "9", "title": "Email: Consultation Summary", "onPress": () {}, "isToggle": true},
-        {"id": "10", "title": "Email: Pharmacy Order Receipt", "onPress": () {}, "isToggle": true},
+        {
+          "id": "5",
+          "title": "Notification Sound",
+          "onPress": () {},
+          "isToggle": true,
+        },
+        {
+          "id": "6",
+          "title": "Email: Appointment Confirmation",
+          "onPress": () {},
+          "isToggle": true,
+        },
+        {
+          "id": "7",
+          "title": "Email: Lab Report Ready",
+          "onPress": () {},
+          "isToggle": true,
+        },
+        {
+          "id": "8",
+          "title": "Email: Prescription Sent",
+          "onPress": () {},
+          "isToggle": true,
+        },
+        {
+          "id": "9",
+          "title": "Email: Consultation Summary",
+          "onPress": () {},
+          "isToggle": true,
+        },
+        {
+          "id": "10",
+          "title": "Email: Pharmacy Order Receipt",
+          "onPress": () {},
+          "isToggle": true,
+        },
       ];
     } else if (isStudent) {
       settingsList = [
@@ -170,29 +201,36 @@ class _NotificationSettingsState extends ConsumerState<NotificationSettings> {
                                 ),
                               ),
                               isToggle
-                                ? FlutterSwitch(
-                                    width: 50.0,
-                                    height: 20.0,
-                                    toggleSize: 15.0,
-                                    value: toggleValue,
-                                    borderRadius: 30.0,
-                                    padding: 2.0,
-                                    toggleColor: const Color.fromRGBO(225, 225, 225, 1),
-                                    activeColor: AppColors.themeBlack,
-                                    inactiveColor: AppColors.darkGreyColor,
-                                    onToggle: (val) {
-                                      setState(() => _toggleStates[title] = val);
-                                      _saveToggle(title, val);
-                                    },
-                                  )
-                                : IconButton(
-                                    onPressed: item["onPress"],
-                                    icon: const Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: AppColors.primaryColor,
-                                      size: 16,
+                                  ? FlutterSwitch(
+                                      width: 50.0,
+                                      height: 20.0,
+                                      toggleSize: 15.0,
+                                      value: toggleValue,
+                                      borderRadius: 30.0,
+                                      padding: 2.0,
+                                      toggleColor: const Color.fromRGBO(
+                                        225,
+                                        225,
+                                        225,
+                                        1,
+                                      ),
+                                      activeColor: AppColors.themeBlack,
+                                      inactiveColor: AppColors.darkGreyColor,
+                                      onToggle: (val) {
+                                        setState(
+                                          () => _toggleStates[title] = val,
+                                        );
+                                        _saveToggle(title, val);
+                                      },
+                                    )
+                                  : IconButton(
+                                      onPressed: item["onPress"],
+                                      icon: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: AppColors.primaryColor,
+                                        size: 16,
+                                      ),
                                     ),
-                                  ),
                             ],
                           ),
                         ),
@@ -288,7 +326,7 @@ class _WebNotificationSettingsScreenState
       };
     } else {
       // Doctor — patient/customer-support messages removed per product spec
-      settingsState = { "New Appointment Bookings": true };
+      settingsState = {"New Appointment Bookings": true};
     }
   }
 
@@ -321,10 +359,9 @@ class _WebNotificationSettingsScreenState
       };
       final backendKey = emailPrefMap[key];
       if (backendKey != null) {
-        NotificationService().updateNotificationPreferences(
-          widget.userId,
-          {backendKey: value},
-        ).ignore();
+        NotificationService().updateNotificationPreferences(widget.userId, {
+          backendKey: value,
+        }).ignore();
       }
     }
   }
@@ -430,7 +467,7 @@ class _WebNotificationSettingsScreenState
         "Email: Send Report to Patient": Icons.forward_to_inbox_rounded,
       };
     } else {
-      return { "New Appointment Bookings": Icons.event_available_rounded };
+      return {"New Appointment Bookings": Icons.event_available_rounded};
     }
   }
 
@@ -454,208 +491,212 @@ class _WebNotificationSettingsScreenState
           lineHeight: 1.0,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Left: Header Info ──
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.notifications_active_rounded,
-                            color: AppColors.primaryColor,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          "Push & Email Alerts".tr(),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: "Gilroy-Bold",
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Control exactly what alerts you want to receive and how you receive them so you are never overwhelmed.".tr(),
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF64748B),
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 48),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Left: Header Info ──
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              shape: BoxShape.circle,
                             ),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Preferences saved successfully.".tr(),
-                                  ),
+                            child: const Icon(
+                              Icons.notifications_active_rounded,
+                              color: AppColors.primaryColor,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            "Push & Email Alerts".tr(),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: "Gilroy-Bold",
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Control exactly what alerts you want to receive and how you receive them so you are never overwhelmed."
+                                .tr(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF64748B),
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              );
-                              Navigator.of(context).pop();
-                            },
-                            icon: const Icon(Icons.save_rounded, size: 20),
-                            label: Text(
-                              "Save Preferences".tr(),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: "Gilroy-SemiBold",
+                                elevation: 0,
+                              ),
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Preferences saved successfully.".tr(),
+                                    ),
+                                  ),
+                                );
+                                Navigator.of(context).pop();
+                              },
+                              icon: const Icon(Icons.save_rounded, size: 20),
+                              label: Text(
+                                "Save Preferences".tr(),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: "Gilroy-SemiBold",
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 48),
-
-                  // ── Right: List of Toggles ──
-                  Expanded(
-                    flex: 5,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: const Color(0xFFF1F4F9),
-                          width: 1.5,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x05000000),
-                            offset: Offset(0, 4),
-                            blurRadius: 20,
                           ),
                         ],
                       ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: settingsState.keys.length,
-                        separatorBuilder: (context, index) => const Divider(
-                          color: Color(0xFFF1F5F9),
-                          height: 1,
-                          thickness: 1.5,
-                        ),
-                        itemBuilder: (context, index) {
-                          final key = settingsState.keys.elementAt(index);
-                          final val = settingsState[key]!;
-                          final desc = settingDescriptions[key]!;
-                          final icon = settingIcons[key]!;
+                    ),
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 24,
+                    const SizedBox(width: 48),
+
+                    // ── Right: List of Toggles ──
+                    Expanded(
+                      flex: 5,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFFF1F4F9),
+                            width: 1.5,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x05000000),
+                              offset: Offset(0, 4),
+                              blurRadius: 20,
                             ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: val
-                                        ? const Color(0xFFEFF6FF)
-                                        : const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(10),
+                          ],
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: settingsState.keys.length,
+                          separatorBuilder: (context, index) => const Divider(
+                            color: Color(0xFFF1F5F9),
+                            height: 1,
+                            thickness: 1.5,
+                          ),
+                          itemBuilder: (context, index) {
+                            final key = settingsState.keys.elementAt(index);
+                            final val = settingsState[key]!;
+                            final desc = settingDescriptions[key]!;
+                            final icon = settingIcons[key]!;
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 24,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: val
+                                          ? const Color(0xFFEFF6FF)
+                                          : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      icon,
+                                      color: val
+                                          ? AppColors.primaryColor
+                                          : const Color(0xFF94A3B8),
+                                      size: 20,
+                                    ),
                                   ),
-                                  child: Icon(
-                                    icon,
-                                    color: val
-                                        ? AppColors.primaryColor
-                                        : const Color(0xFF94A3B8),
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        key.tr(),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: val
-                                              ? const Color(0xFF1E293B)
-                                              : const Color(0xFF64748B),
-                                          fontFamily: "Gilroy-SemiBold",
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          key.tr(),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: val
+                                                ? const Color(0xFF1E293B)
+                                                : const Color(0xFF64748B),
+                                            fontFamily: "Gilroy-SemiBold",
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        desc,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: val
-                                              ? const Color(0xFF64748B)
-                                              : const Color(0xFF94A3B8),
-                                          height: 1.4,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          desc,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: val
+                                                ? const Color(0xFF64748B)
+                                                : const Color(0xFF94A3B8),
+                                            height: 1.4,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                FlutterSwitch(
-                                  width: 50.0,
-                                  height: 26.0,
-                                  toggleSize: 18.0,
-                                  value: val,
-                                  borderRadius: 30.0,
-                                  padding: 4.0,
-                                  toggleColor: Colors.white,
-                                  activeColor: AppColors.primaryColor,
-                                  inactiveColor: const Color(0xFFCBD5E1),
-                                  onToggle: (newVal) {
-                                    setState(() {
-                                      settingsState[key] = newVal;
-                                    });
-                                    _saveToggle(key, newVal);
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                  const SizedBox(width: 16),
+                                  FlutterSwitch(
+                                    width: 50.0,
+                                    height: 26.0,
+                                    toggleSize: 18.0,
+                                    value: val,
+                                    borderRadius: 30.0,
+                                    padding: 4.0,
+                                    toggleColor: Colors.white,
+                                    activeColor: AppColors.primaryColor,
+                                    inactiveColor: const Color(0xFFCBD5E1),
+                                    onToggle: (newVal) {
+                                      setState(() {
+                                        settingsState[key] = newVal;
+                                      });
+                                      _saveToggle(key, newVal);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

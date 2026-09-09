@@ -164,4 +164,61 @@ router.post('/report-ready', authMiddleware, async (req, res) => {
   res.json({ success: true, message: 'Report notification sent' });
 });
 
+// ─── PROMOTIONS & OFFERS ─────────────────────────────────────────────────────
+// Users have had a "Promotions & Offers" notification preference since launch,
+// but nothing could ever set it off — there was no promotion type and no way to
+// send one. These two routes are that missing half.
+
+// GET /api/notifications/promotions — the caller's own promotional offers.
+router.get('/promotions', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const items = await Notification.find({
+      userId: req.user.id,
+      type: 'promotion',
+    }).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ success: true, promotions: items });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/notifications/promotions — admin broadcasts an offer.
+// Only reaches users who left the promotions preference ON, which is what that
+// switch in Settings is for.
+router.post('/promotions', authMiddleware, async (req, res) => {
+  try {
+    await connectMongoDB();
+    const sender = await User.findById(req.user.id).lean();
+    if (!sender || sender.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admins only' });
+    }
+
+    const { title, message, roles, link } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ success: false, message: 'title and message are required' });
+    }
+
+    const filter = { 'notificationPrefs.promotions': true };
+    if (Array.isArray(roles) && roles.length) filter.role = { $in: roles };
+
+    const recipients = await User.find(filter, '_id').lean();
+    if (!recipients.length) {
+      return res.json({ success: true, sent: 0, message: 'No users have promotions enabled' });
+    }
+
+    await Notification.insertMany(recipients.map(u => ({
+      userId: u._id,
+      type: 'promotion',
+      title,
+      message,
+      data: link ? { link } : {},
+    })));
+
+    res.json({ success: true, sent: recipients.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:icare/screens/instructor_grading_screen.dart';
+import 'package:icare/navigators/deferred_route.dart';
+import 'package:icare/screens/instructor_grading_screen.dart'
+    deferred as i_grading;
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:intl/intl.dart';
@@ -20,10 +22,12 @@ class InstructorAssignmentsListScreen extends StatefulWidget {
   });
 
   @override
-  State<InstructorAssignmentsListScreen> createState() => _InstructorAssignmentsListScreenState();
+  State<InstructorAssignmentsListScreen> createState() =>
+      _InstructorAssignmentsListScreenState();
 }
 
-class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsListScreen> {
+class _InstructorAssignmentsListScreenState
+    extends State<InstructorAssignmentsListScreen> {
   final LmsService _lms = LmsService();
   List<dynamic> _assignments = [];
   bool _loading = true;
@@ -37,16 +41,23 @@ class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsL
   Future<void> _load() async {
     setState(() => _loading = true);
     final assignments = await _lms.getCourseAssignments(widget.courseId);
-    if (mounted) setState(() { _assignments = assignments; _loading = false; });
+    if (mounted)
+      setState(() {
+        _assignments = assignments;
+        _loading = false;
+      });
   }
 
   String _bucketOf(Map a) {
     final submissionCount = ((a['submissionCount'] ?? 0) as num).toInt();
     final gradedCount = ((a['gradedCount'] ?? 0) as num).toInt();
     final dueStr = a['dueDate']?.toString() ?? '';
-    final isUpcoming = dueStr.isNotEmpty && (DateTime.tryParse(dueStr)?.isAfter(DateTime.now()) ?? false);
+    final isUpcoming =
+        dueStr.isNotEmpty &&
+        (DateTime.tryParse(dueStr)?.isAfter(DateTime.now()) ?? false);
 
-    if (submissionCount > 0 && gradedCount >= submissionCount) return 'Completed';
+    if (submissionCount > 0 && gradedCount >= submissionCount)
+      return 'Completed';
     if (submissionCount > gradedCount) return 'Pending review';
     if (isUpcoming) return 'Upcoming';
     return 'No submissions yet';
@@ -67,7 +78,10 @@ class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsL
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text('Assignments', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(
+          'Assignments',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
@@ -75,25 +89,44 @@ class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsL
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _assignments.isEmpty
-              ? const Center(child: Text('No assignments in this course yet', style: TextStyle(color: Color(0xFF94A3B8))))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      for (final section in ['Pending review', 'Upcoming', 'Completed', 'No submissions yet'])
-                        if (buckets[section]!.isNotEmpty) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8, top: 8),
-                            child: Text(section,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5)),
+          ? const Center(
+              child: Text(
+                'No assignments in this course yet',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  for (final section in [
+                    'Pending review',
+                    'Upcoming',
+                    'Completed',
+                    'No submissions yet',
+                  ])
+                    if (buckets[section]!.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8, top: 8),
+                        child: Text(
+                          section,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.5,
                           ),
-                          ...buckets[section]!.map((a) => _buildAssignmentTile(a as Map)),
-                          const SizedBox(height: 12),
-                        ],
+                        ),
+                      ),
+                      ...buckets[section]!.map(
+                        (a) => _buildAssignmentTile(a as Map),
+                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -102,7 +135,10 @@ class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsL
     final dueStr = a['dueDate']?.toString() ?? '';
     String dueLabel = 'No due date';
     if (dueStr.isNotEmpty) {
-      try { dueLabel = 'Due ${DateFormat('MMM d, yyyy').format(DateTime.parse(dueStr))}'; } catch (_) {}
+      try {
+        dueLabel =
+            'Due ${DateFormat('MMM d, yyyy').format(DateTime.parse(dueStr))}';
+      } catch (_) {}
     }
     final submissionCount = ((a['submissionCount'] ?? 0) as num).toInt();
     final gradedCount = ((a['gradedCount'] ?? 0) as num).toInt();
@@ -118,19 +154,43 @@ class _InstructorAssignmentsListScreenState extends State<InstructorAssignmentsL
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: const Icon(Icons.assignment_outlined, color: AppColors.primaryColor),
-        ),
-        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-        subtitle: Text('$dueLabel · $submissionCount submitted, $gradedCount graded',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
-        onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (_) => InstructorGradingScreen(
-            assignmentId: a['_id']?.toString() ?? '',
-            assignmentTitle: title,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-        )).then((_) => _load()),
+          child: const Icon(
+            Icons.assignment_outlined,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        subtitle: Text(
+          '$dueLabel · $submissionCount submitted, $gradedCount graded',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Color(0xFF94A3B8),
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DeferredScreen(
+              loader: i_grading.loadLibrary,
+              builder: () => i_grading.InstructorGradingScreen(
+                assignmentId: a['_id']?.toString() ?? '',
+                assignmentTitle: title,
+              ),
+            ),
+          ),
+        ).then((_) => _load()),
       ),
     );
   }

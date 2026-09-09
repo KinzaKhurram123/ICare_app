@@ -1,8 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:icare/screens/chat_screen.dart';
-import 'package:icare/screens/classroom_course_view.dart';
-import 'package:icare/screens/instructor_grading_screen.dart';
+import 'package:icare/navigators/deferred_route.dart';
+import 'package:icare/screens/classroom_course_view.dart'
+    deferred as classroom_view;
+import 'package:icare/screens/instructor_grading_screen.dart'
+    deferred as i_grading;
 import 'package:icare/screens/doctor_appointments.dart';
 import 'package:icare/services/notification_service.dart';
 import 'package:icare/services/lms_service.dart';
@@ -21,34 +24,30 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
   final NotificationService _notificationService = NotificationService();
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
-  String _filter = 'all'; // 'all' | 'unread' | 'read' | a notification type
+  String _filter = 'all'; // 'all' | 'unread' | 'read'
 
-  // This screen is shared by doctors, instructors and students. The type
-  // filters (Appointments / Reminders / Reviews / General) only mean something
-  // to a doctor — an instructor has no appointments at all, so for them those
-  // chips are dead weight and only All / Read / Unread are shown.
-  bool _isInstructor = false;
+  // Ids that were unread when this screen opened. Opening the screen marks
+  // everything read - the client's point was that having to press "Mark all as
+  // read" is busywork ("jab khul gaya to uska matlab hai READ hai") and that
+  // the count kept sticking around. But the highlight is still useful, so what
+  // was new stays visually marked for this visit while the count goes to zero.
+  final Set<String> _newOnOpen = {};
+  bool _markedOnOpen = false;
+
+  /// True while this visit should still show the item as new.
+  bool _isNew(Map<String, dynamic> n) =>
+      _newOnOpen.contains(n['id']?.toString());
 
   List<Map<String, dynamic>> get _filteredNotifications {
     if (_filter == 'all') return _notifications;
-    if (_filter == 'unread') return _notifications.where((n) => !n['read']).toList();
-    if (_filter == 'read') return _notifications.where((n) => n['read'] == true).toList();
-    return _notifications.where((n) => n['type'] == _filter).toList();
+    if (_filter == 'unread') return _notifications.where(_isNew).toList();
+    return _notifications.where((n) => !_isNew(n)).toList();
   }
 
   @override
   void initState() {
     super.initState();
-    _resolveRole();
     _loadNotifications();
-  }
-
-  Future<void> _resolveRole() async {
-    try {
-      final user = await SharedPref().getUserData();
-      final isInst = (user?.role ?? '').toLowerCase() == 'instructor';
-      if (mounted && isInst) setState(() => _isInstructor = true);
-    } catch (_) {}
   }
 
   Future<void> _loadNotifications() async {
@@ -76,6 +75,7 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         );
         _isLoading = false;
       });
+      _clearUnreadOnFirstOpen();
     } else {
       // If failed or empty, set empty list
       setState(() {
@@ -83,6 +83,31 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         _isLoading = false;
       });
     }
+  }
+
+  /// Opening the list counts as reading it, so the badge must not survive the
+  /// visit. Runs once per screen instance; the ids seen as unread are kept in
+  /// [_newOnOpen] so they still render highlighted while the count reads zero.
+  void _clearUnreadOnFirstOpen() {
+    if (_markedOnOpen) return;
+    _markedOnOpen = true;
+
+    final unread = _notifications
+        .where((n) => n['read'] != true)
+        .map((n) => n['id']?.toString())
+        .whereType<String>()
+        .toSet();
+    if (unread.isEmpty) return;
+
+    setState(() {
+      _newOnOpen.addAll(unread);
+      for (final n in _notifications) {
+        n['read'] = true;
+      }
+    });
+    // Fire-and-forget: the count is already zero on screen, and a failed call
+    // simply means the server still has them unread for the next visit.
+    _notificationService.markAllAsRead();
   }
 
   IconData _getIconForType(String type) {
@@ -125,7 +150,9 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
 
   /// Navigate to the item a notification refers to (assignments, courses,
   /// appointments) so the user can act on it directly.
-  Future<void> _openNotificationTarget(Map<String, dynamic> notification) async {
+  Future<void> _openNotificationTarget(
+    Map<String, dynamic> notification,
+  ) async {
     final rawData = notification['data'];
     final type = notification['type']?.toString() ?? '';
 
@@ -158,9 +185,12 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => InstructorGradingScreen(
-                assignmentId: assignmentId,
-                assignmentTitle: m?.group(1) ?? 'Assignment',
+              builder: (_) => DeferredScreen(
+                loader: i_grading.loadLibrary,
+                builder: () => i_grading.InstructorGradingScreen(
+                  assignmentId: assignmentId,
+                  assignmentTitle: m?.group(1) ?? 'Assignment',
+                ),
               ),
             ),
           );
@@ -180,14 +210,18 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         final user = await SharedPref().getUserData();
         final isInstructor = (user?.role ?? '').toLowerCase() == 'instructor';
         if (!mounted) return;
-        final isClasswork = dType.contains('assignment') || dType.contains('quiz');
+        final isClasswork =
+            dType.contains('assignment') || dType.contains('quiz');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ClassroomCourseView(
-              course: course,
-              isInstructor: isInstructor,
-              initialTab: isClasswork ? 1 : 0,
+            builder: (_) => DeferredScreen(
+              loader: classroom_view.loadLibrary,
+              builder: () => classroom_view.ClassroomCourseView(
+                course: course,
+                isInstructor: isInstructor,
+                initialTab: isClasswork ? 1 : 0,
+              ),
             ),
           ),
         );
@@ -209,23 +243,14 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
     }
   }
 
-  Future<void> _markAllAsRead() async {
-    try {
-      await _notificationService.markAllAsRead();
-      setState(() {
-        for (var notification in _notifications) {
-          notification['read'] = true;
-        }
-      });
-    } catch (e) {
-      debugPrint('Error marking all as read: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width > 900;
-    final unreadCount = _notifications.where((n) => !n['read']).length;
+    // Deliberately the stored read flag, not _isNew: opening the screen is
+    // reading it, so the count goes to zero immediately. _isNew only keeps the
+    // highlight and the Unread filter meaningful for the rest of the visit.
+    final unreadCount = _notifications.where((n) => n['read'] != true).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -243,11 +268,8 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
           ),
         ),
         actions: [
-          if (unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: const Text('Mark all read'),
-            ),
+          // "Mark all read" removed - opening the screen already marks
+          // everything read, so the button had nothing left to do.
         ],
       ),
       body: _isLoading
@@ -304,25 +326,16 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
+                              // All / Unread / Read only. The type chips
+                              // (Appointments, Reminders, Reviews, General)
+                              // were removed at the client's request: "General
+                              // aur All ek hi cheez hai... ya All karte hain,
+                              // Unread karte hain, aur Read karte hain - BAS."
                               _buildFilterChip('all', 'All'),
                               const SizedBox(width: 8),
-                              _buildFilterChip('read', 'Read'),
-                              const SizedBox(width: 8),
                               _buildFilterChip('unread', 'Unread'),
-                              // Doctors and students keep the type filters;
-                              // an instructor never has appointments,
-                              // reminders or reviews, so those chips are hidden
-                              // for them rather than removed for everyone.
-                              if (!_isInstructor) ...[
-                                const SizedBox(width: 8),
-                                _buildFilterChip('appointment', 'Appointments'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('reminder', 'Reminders'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('review', 'Reviews'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('general', 'General'),
-                              ],
+                              const SizedBox(width: 8),
+                              _buildFilterChip('read', 'Read'),
                             ],
                           ),
                         ),
@@ -371,13 +384,19 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                           child: Center(
                             child: Text(
                               'No notifications match this filter',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         )
                       else
                         ..._filteredNotifications.asMap().entries.map(
-                          (entry) => _buildNotificationCard(entry.value, entry.key + 1),
+                          (entry) => _buildNotificationCard(
+                            entry.value,
+                            entry.key + 1,
+                          ),
                         ),
                     ],
                   ),
@@ -399,13 +418,18 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
         fontSize: 13,
       ),
-      side: BorderSide(color: selected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0)),
+      side: BorderSide(
+        color: selected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+      ),
       backgroundColor: Colors.white,
     );
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> notification, int number) {
-    final isRead = notification['read'] as bool;
+    // _isNew, not the stored flag: opening the screen marks everything read so
+    // the count clears, but what arrived since the last visit should still look
+    // new for this visit.
+    final isRead = !_isNew(notification);
     final color = notification['color'] as Color;
     final time = notification['time'] as DateTime;
     final timeAgo = _getTimeAgo(time);
@@ -470,14 +494,21 @@ class _DoctorNotificationsState extends State<DoctorNotifications> {
                   top: -6,
                   left: -6,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$number',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

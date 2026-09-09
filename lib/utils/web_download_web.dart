@@ -1,12 +1,19 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+// package:web rather than dart:html — dart:html does not exist under
+// dart2wasm, and one file importing it forces the whole app onto the JS build.
+import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:web/web.dart' as web;
+
 void downloadPdfBytes(Uint8List bytes, String filename) {
-  final blob = html.Blob([bytes], 'application/pdf');
-  final url = html.Url.createObjectUrlFromBlob(blob);
-  final anchor = html.AnchorElement(href: url)
+  final blob = web.Blob(
+    <JSAny>[bytes.toJS].toJS,
+    web.BlobPropertyBag(type: 'application/pdf'),
+  );
+  final url = web.URL.createObjectURL(blob);
+  (web.document.createElement('a') as web.HTMLAnchorElement)
+    ..href = url
     ..setAttribute('download', filename)
     ..click();
-  html.Url.revokeObjectUrl(url);
+  web.URL.revokeObjectURL(url);
 }

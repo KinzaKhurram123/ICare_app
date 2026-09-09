@@ -1166,13 +1166,11 @@ class LmsService {
       final response = await _api.get('/admin/categories');
       return List<Map<String, dynamic>>.from(response.data['categories'] ?? []);
     } catch (_) {
+      // Offline fallback only - must mirror seedDefaultCategories() in
+      // icare-backend/routes/admin.js, which the client trimmed to these two.
       return [
-        {'name': 'Health Program', 'value': 'HealthProgram'},
-        {'name': 'FCPS Part 1',    'value': 'FCPSPart1'},
-        {'name': 'Medical Training','value': 'Medical Training'},
-        {'name': 'Wellness',        'value': 'Wellness'},
-        {'name': 'Nutrition',       'value': 'Nutrition'},
-        {'name': 'Mental Health',   'value': 'Mental Health'},
+        {'name': 'Health Program',  'value': 'HealthProgram'},
+        {'name': 'Medical Training', 'value': 'Medical Training'},
       ];
     }
   }

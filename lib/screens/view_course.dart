@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
+import 'package:icare/navigators/deferred_route.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/services/lms_service.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/screens/lesson_player.dart';
-import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/classroom_course_view.dart'
+    deferred as classroom_view;
 import 'package:icare/screens/lms_purchase_flow.dart';
 import 'package:icare/screens/quiz_screen.dart';
 import 'package:icare/services/course_service.dart';
@@ -114,9 +117,11 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: const Text('Something went wrong. Please try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Something went wrong. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -126,8 +131,12 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
     final course = widget.courseData ?? {};
     final rawPrice = course['price'] ?? course['cost'] ?? 0;
     final rawDiscounted = course['discountedPrice'];
-    final basePrice = (rawPrice is num) ? rawPrice.toDouble() : double.tryParse(rawPrice.toString()) ?? 0.0;
-    final discountedPrice = (rawDiscounted is num && rawDiscounted > 0) ? rawDiscounted.toDouble() : null;
+    final basePrice = (rawPrice is num)
+        ? rawPrice.toDouble()
+        : double.tryParse(rawPrice.toString()) ?? 0.0;
+    final discountedPrice = (rawDiscounted is num && rawDiscounted > 0)
+        ? rawDiscounted.toDouble()
+        : null;
     final amount = discountedPrice ?? basePrice;
 
     // Free courses (real $0 price, or instructor's "Free" display toggle) → enroll directly without payment
@@ -149,13 +158,18 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
         if (mounted) {
           final errorStr = e.toString();
           if (errorStr.contains('Already purchased')) {
-            setState(() { _isPurchased = true; _isPurchasing = false; });
+            setState(() {
+              _isPurchased = true;
+              _isPurchasing = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("You are already enrolled.")),
             );
           } else {
             setState(() => _isPurchasing = false);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Enrollment failed: $e")));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text("Enrollment failed: $e")));
           }
         }
       }
@@ -166,14 +180,14 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => LmsPurchaseFlow(course: course),
-      ),
+      MaterialPageRoute(builder: (_) => LmsPurchaseFlow(course: course)),
     ).then((_) {
       // On return, re-check enrollment status
       if (mounted) {
         setState(() {
-          _isPurchased = widget.courseData?['isPurchased'] == true || _currentEnrollmentId != null;
+          _isPurchased =
+              widget.courseData?['isPurchased'] == true ||
+              _currentEnrollmentId != null;
         });
       }
     });
@@ -232,32 +246,35 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isWeb)
-              _buildWebView(
-                context,
-                name,
-                instructor,
-                desc,
-                image,
-                _isPurchased,
-                courseId,
-              )
-            else
-              _buildMobileView(
-                context,
-                name,
-                instructor,
-                desc,
-                image,
-                _isPurchased,
-                courseId,
-              ),
-          ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isWeb)
+                _buildWebView(
+                  context,
+                  name,
+                  instructor,
+                  desc,
+                  image,
+                  _isPurchased,
+                  courseId,
+                )
+              else
+                _buildMobileView(
+                  context,
+                  name,
+                  instructor,
+                  desc,
+                  image,
+                  _isPurchased,
+                  courseId,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -685,12 +702,22 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
       final isLocked = _lockReason == 'installment_overdue';
       return Column(
         children: [
-          Icon(isLocked ? Icons.lock_rounded : Icons.check_circle_rounded,
-              color: isLocked ? const Color(0xFFDC2626) : const Color(0xFF10B981), size: 48),
+          Icon(
+            isLocked ? Icons.lock_rounded : Icons.check_circle_rounded,
+            color: isLocked ? const Color(0xFFDC2626) : const Color(0xFF10B981),
+            size: 48,
+          ),
           const SizedBox(height: 12),
-          Text(isLocked ? 'Course Locked' : 'Enrolled',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
-                  color: isLocked ? const Color(0xFFDC2626) : const Color(0xFF10B981))),
+          Text(
+            isLocked ? 'Course Locked' : 'Enrolled',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isLocked
+                  ? const Color(0xFFDC2626)
+                  : const Color(0xFF10B981),
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             isLocked
@@ -703,25 +730,44 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              icon: Icon(isLocked ? Icons.lock_open_rounded : Icons.open_in_new_rounded, color: Colors.white),
-              label: Text(isLocked ? 'Pay Now to Unlock' : 'Open Course',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              icon: Icon(
+                isLocked ? Icons.lock_open_rounded : Icons.open_in_new_rounded,
+                color: Colors.white,
+              ),
+              label: Text(
+                isLocked ? 'Pay Now to Unlock' : 'Open Course',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
               // Opens the classroom view (Announcement / Course Content /
               // Grades / People) — the same screen "Open Classroom" leads to.
               // This used to push LmsCoursePage, the blue-banner layout, so
               // one enrolled course looked like two different products
               // depending on which button the student pressed to reach it.
-              onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ClassroomCourseView(
-                  course: widget.courseData ?? {},
-                  enrollmentId: _currentEnrollmentId,
-                  isInstructor: _isInstructor,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DeferredScreen(
+                    loader: classroom_view.loadLibrary,
+                    builder: () => classroom_view.ClassroomCourseView(
+                      course: widget.courseData ?? {},
+                      enrollmentId: _currentEnrollmentId,
+                      isInstructor: _isInstructor,
+                    ),
+                  ),
                 ),
-              )),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isLocked ? const Color(0xFFDC2626) : AppColors.primaryColor,
+                backgroundColor: isLocked
+                    ? const Color(0xFFDC2626)
+                    : AppColors.primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
             ),
@@ -731,16 +777,65 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
     }
 
     final price = widget.courseData?['price'];
-    final isFree = price == null || price == 0 || widget.courseData?['isFree'] == true;
-    final hasInstallment = widget.courseData?['installmentPlanEnabled'] == true &&
+    final isFree =
+        price == null || price == 0 || widget.courseData?['isFree'] == true;
+    final hasInstallment =
+        widget.courseData?['installmentPlanEnabled'] == true &&
         (widget.courseData?['installmentPlan'] as List?)?.isNotEmpty == true;
+
+    // The discount an instructor sets was saved and charged correctly, but was
+    // never shown here - the page printed the full price with no sign of it,
+    // which is what the client read as "40% laga hai, zero kyun dikh raha hai".
+    final rawDiscounted = widget.courseData?['discountedPrice'];
+    final discounted = (rawDiscounted is num && rawDiscounted > 0)
+        ? rawDiscounted.toDouble()
+        : null;
+    final rawPercent = widget.courseData?['discountPercent'];
+    final percent = (rawPercent is num) ? rawPercent.toInt() : 0;
+    final showDiscount = !isFree && discounted != null && percent > 0;
 
     return Column(
       children: [
+        if (showDiscount) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'PKR ${price.toString()}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF94A3B8),
+                  decoration: TextDecoration.lineThrough,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '$percent% OFF',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
-          isFree ? 'Free' : 'PKR ${price.toString()}',
+          isFree
+              ? 'Free'
+              : 'PKR ${(showDiscount ? discounted.toStringAsFixed(0) : price.toString())}',
           style: TextStyle(
-            fontSize: 32, fontWeight: FontWeight.w900,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
             color: isFree ? const Color(0xFF10B981) : const Color(0xFF0F172A),
           ),
         ),
@@ -752,12 +847,28 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
             child: _isPurchasing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Enroll Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Enroll Now',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
         if (hasInstallment) ...[
@@ -766,14 +877,20 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.payments_outlined, size: 18),
-              label: const Text('Enroll With Installment',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              onPressed: _isPurchasing ? null : () => _showInstallmentSheet(courseId),
+              label: const Text(
+                'Enroll With Installment',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              onPressed: _isPurchasing
+                  ? null
+                  : () => _showInstallmentSheet(courseId),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primaryColor,
                 side: BorderSide(color: AppColors.primaryColor, width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -792,7 +909,8 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         child: Column(
@@ -801,18 +919,28 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
           children: [
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2)),
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Installment Plan',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            const Text(
+              'Installment Plan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
             const SizedBox(height: 4),
-            const Text('Pay in easy installments. First payment on enrollment.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const Text(
+              'Pay in easy installments. First payment on enrollment.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
             const SizedBox(height: 20),
             ...plan.asMap().entries.map((e) {
               final i = e.key;
@@ -824,36 +952,66 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                   : 'After $days day${days == 1 ? '' : 's'}';
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: i == 0 ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                  color: i == 0
+                      ? const Color(0xFFEFF6FF)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: i == 0 ? AppColors.primaryColor.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+                    color: i == 0
+                        ? AppColors.primaryColor.withValues(alpha: 0.3)
+                        : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 28, height: 28,
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
-                          color: i == 0 ? AppColors.primaryColor : const Color(0xFF64748B),
-                          shape: BoxShape.circle),
+                        color: i == 0
+                            ? AppColors.primaryColor
+                            : const Color(0xFF64748B),
+                        shape: BoxShape.circle,
+                      ),
                       child: Center(
-                        child: Text('${i + 1}',
-                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                        child: Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(label,
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600,
-                              color: i == 0 ? AppColors.primaryColor : const Color(0xFF334155))),
-                    ),
-                    Text('PKR ${amt.toString()}',
+                      child: Text(
+                        label,
                         style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w800,
-                            color: i == 0 ? AppColors.primaryColor : const Color(0xFF0F172A))),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: i == 0
+                              ? AppColors.primaryColor
+                              : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'PKR ${amt.toString()}',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: i == 0
+                            ? AppColors.primaryColor
+                            : const Color(0xFF0F172A),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -866,7 +1024,9 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                   Navigator.pop(ctx);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => LmsPurchaseFlow(course: course)),
+                    MaterialPageRoute(
+                      builder: (_) => LmsPurchaseFlow(course: course),
+                    ),
                   ).then((_) {
                     if (mounted) setState(() {});
                   });
@@ -874,11 +1034,19 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
-                child: Text('Pay First Installment — PKR ${firstAmt.toString()}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                child: Text(
+                  'Pay First Installment — PKR ${firstAmt.toString()}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],
@@ -925,7 +1093,10 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Text(
           'This course is locked due to an overdue installment. Pay now to view the curriculum.',
-          style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Color(0xFFDC2626),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       );
     }
@@ -942,29 +1113,38 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
     }
 
     // Flatten all lessons to detect the last one for certificate
-    final allLessons = modules.expand((m) => (m['lessons'] as List? ?? [])).toList();
+    final allLessons = modules
+        .expand((m) => (m['lessons'] as List? ?? []))
+        .toList();
     final lastLessonId = allLessons.isNotEmpty
         ? (allLessons.last['_id'] ?? allLessons.last['id'])?.toString()
         : null;
     // Get course meta for certificate
-    final dynamic titleVal2 = widget.courseData?['title'] ?? widget.courseData?['name'];
+    final dynamic titleVal2 =
+        widget.courseData?['title'] ?? widget.courseData?['name'];
     final courseTitle = (titleVal2 is String) ? titleVal2 : 'Course';
     String instructorName = 'Instructor';
     final dynamic instrVal2 = widget.courseData?['instructor'];
     if (instrVal2 is Map) {
       instructorName = instrVal2['name']?.toString() ?? instructorName;
-    } else if (instrVal2 is String) instructorName = instrVal2;
+    } else if (instrVal2 is String)
+      instructorName = instrVal2;
 
     // Course type + lock metadata from backend
-    final courseType = widget.courseData?['courseType']?.toString() ?? 'self-paced';
+    final courseType =
+        widget.courseData?['courseType']?.toString() ?? 'self-paced';
     final startDateRaw = widget.courseData?['startDate'];
     DateTime? courseStartDate;
     if (startDateRaw != null) {
-      try { courseStartDate = DateTime.parse(startDateRaw.toString()); } catch (_) {}
+      try {
+        courseStartDate = DateTime.parse(startDateRaw.toString());
+      } catch (_) {}
     }
     // Backend-provided completed module IDs (for self-paced sequential lock)
     final completedModuleIds = <String>{
-      ...((widget.courseData?['completedModuleIds'] as List?) ?? []).map((e) => e.toString()),
+      ...((widget.courseData?['completedModuleIds'] as List?) ?? []).map(
+        (e) => e.toString(),
+      ),
       ..._completedModuleIds,
     };
 
@@ -995,26 +1175,37 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
             if (unlockRaw.isNotEmpty) {
               try {
                 final unlockDate = DateTime.parse(unlockRaw);
-                moduleLockLabel = 'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
+                moduleLockLabel =
+                    'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
               } catch (_) {}
             } else if (courseType == 'pragmatic' && courseStartDate != null) {
-              final unlockDays = (module['unlockAfterDays'] as num?)?.toInt() ?? 0;
-              final unlockDate = courseStartDate.add(Duration(days: unlockDays));
-              moduleLockLabel = 'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
+              final unlockDays =
+                  (module['unlockAfterDays'] as num?)?.toInt() ?? 0;
+              final unlockDate = courseStartDate.add(
+                Duration(days: unlockDays),
+              );
+              moduleLockLabel =
+                  'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
             } else if (courseType == 'self-paced' && mIndex > 0) {
               moduleLockLabel = 'Complete the previous module first';
             }
           } else if (!isModuleLocked && courseType == 'pragmatic') {
             // Client-side fallback for pragmatic if backend didn't set isLocked
-            final unlockDays = (module['unlockAfterDays'] as num?)?.toInt() ?? 0;
+            final unlockDays =
+                (module['unlockAfterDays'] as num?)?.toInt() ?? 0;
             if (unlockDays > 0 && courseStartDate != null) {
-              final unlockDate = courseStartDate.add(Duration(days: unlockDays));
+              final unlockDate = courseStartDate.add(
+                Duration(days: unlockDays),
+              );
               if (DateTime.now().isBefore(unlockDate)) {
                 isModuleLocked = true;
-                moduleLockLabel = 'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
+                moduleLockLabel =
+                    'Unlocks ${unlockDate.day}/${unlockDate.month}/${unlockDate.year}';
               }
             }
-          } else if (!isModuleLocked && courseType == 'self-paced' && mIndex > 0) {
+          } else if (!isModuleLocked &&
+              courseType == 'self-paced' &&
+              mIndex > 0) {
             // Client-side fallback for self-paced sequential lock
             final prevModule = modules[mIndex - 1];
             final prevId = prevModule['_id']?.toString() ?? '';
@@ -1030,27 +1221,52 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
           decoration: BoxDecoration(
             color: isModuleLocked ? const Color(0xFFF8FAFC) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isModuleLocked ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
+            border: Border.all(
+              color: isModuleLocked
+                  ? const Color(0xFFCBD5E1)
+                  : const Color(0xFFE2E8F0),
+            ),
           ),
           child: ExpansionTile(
             initiallyExpanded: mIndex == 0 && !isModuleLocked,
             leading: isModuleLocked
-                ? const Icon(Icons.lock_rounded, color: Color(0xFF94A3B8), size: 20)
+                ? const Icon(
+                    Icons.lock_rounded,
+                    color: Color(0xFF94A3B8),
+                    size: 20,
+                  )
                 : null,
             title: Row(
               children: [
-                Expanded(child: Text(
-                  module['title'] ?? "Module ${mIndex + 1}",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isModuleLocked ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                Expanded(
+                  child: Text(
+                    module['title'] ?? "Module ${mIndex + 1}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isModuleLocked
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF0F172A),
+                    ),
                   ),
-                )),
+                ),
                 if (moduleLockLabel != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                    child: Text(moduleLockLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      moduleLockLabel,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -1060,75 +1276,92 @@ class _ViewCourseState extends ConsumerState<ViewCourse> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Icon(Icons.schedule_rounded, color: Color(0xFF94A3B8), size: 18),
+                      const Icon(
+                        Icons.schedule_rounded,
+                        color: Color(0xFF94A3B8),
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         moduleLockLabel ?? 'Locked',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
+                        style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
                 )
               else
-              ...lessons.map((lesson) {
-                return ListTile(
-                  leading: const Icon(
-                    Icons.play_circle_fill_rounded,
-                    color: Color(0xFF3B82F6),
-                    size: 24,
-                  ),
-                  title: Text(
-                    lesson['title'] ?? "Untitled Lesson",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                ...lessons.map((lesson) {
+                  return ListTile(
+                    leading: const Icon(
+                      Icons.play_circle_fill_rounded,
+                      color: Color(0xFF3B82F6),
+                      size: 24,
                     ),
-                  ),
-                  subtitle: lesson['description'] != null
-                      ? Text(
-                          lesson['description'],
-                          style: const TextStyle(fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      : null,
-                  trailing: isPurchased
-                      ? const Icon(Icons.arrow_forward_ios_rounded, size: 12)
-                      : const Icon(
-                          Icons.lock_rounded,
-                          size: 16,
-                          color: Color(0xFF94A3B8),
-                        ),
-                  onTap: isPurchased
-                      ? () {
-                          final lessonId = (lesson['_id'] ?? lesson['id'])?.toString();
-                          final isLast = lastLessonId != null && lessonId == lastLessonId;
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (ctx) => LessonPlayer(
-                                lesson: lesson,
-                                isLastLesson: isLast,
-                                courseTitle: courseTitle,
-                                instructorName: instructorName,
-                                certificateReleased: widget.courseData?['certificateReleased'] == true,
-                                enrollmentId: _currentEnrollmentId,
-                                initialIsCompleted: lessonId != null && _completedLessonIds.contains(lessonId),
-                                onLessonCompleted: (id) => setState(() => _completedLessonIds.add(id)),
+                    title: Text(
+                      lesson['title'] ?? "Untitled Lesson",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: lesson['description'] != null
+                        ? Text(
+                            lesson['description'],
+                            style: const TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : null,
+                    trailing: isPurchased
+                        ? const Icon(Icons.arrow_forward_ios_rounded, size: 12)
+                        : const Icon(
+                            Icons.lock_rounded,
+                            size: 16,
+                            color: Color(0xFF94A3B8),
+                          ),
+                    onTap: isPurchased
+                        ? () {
+                            final lessonId = (lesson['_id'] ?? lesson['id'])
+                                ?.toString();
+                            final isLast =
+                                lastLessonId != null &&
+                                lessonId == lastLessonId;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => LessonPlayer(
+                                  lesson: lesson,
+                                  isLastLesson: isLast,
+                                  courseTitle: courseTitle,
+                                  instructorName: instructorName,
+                                  certificateReleased:
+                                      widget
+                                          .courseData?['certificateReleased'] ==
+                                      true,
+                                  enrollmentId: _currentEnrollmentId,
+                                  initialIsCompleted:
+                                      lessonId != null &&
+                                      _completedLessonIds.contains(lessonId),
+                                  onLessonCompleted: (id) => setState(
+                                    () => _completedLessonIds.add(id),
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      : () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Please enroll to access this content",
+                            );
+                          }
+                        : () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Please enroll to access this content",
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                );
-              }),
+                            );
+                          },
+                  );
+                }),
               // NOTE: the "Mark Module as Complete" row used to sit here.
               // Removed at the client's request — the curriculum list on this
               // screen should show only the module's own contents. Progress is

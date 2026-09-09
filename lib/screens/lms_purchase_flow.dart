@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:icare/widgets/drag_scroll.dart';
+import 'package:icare/navigators/deferred_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/models/user.dart';
 import 'package:icare/providers/auth_provider.dart';
-import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/classroom_course_view.dart'
+    deferred as classroom_view;
 import 'package:icare/screens/select_payment_method.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -103,12 +106,15 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
       });
 
       if (signupResponse.data['success'] == true) {
-        final token = signupResponse.data['token']?.toString()
-            ?? signupResponse.data['data']?['token']?.toString()
-            ?? signupResponse.data['accessToken']?.toString();
+        final token =
+            signupResponse.data['token']?.toString() ??
+            signupResponse.data['data']?['token']?.toString() ??
+            signupResponse.data['accessToken']?.toString();
 
         if (token == null || token.isEmpty) {
-          throw Exception('Account created but no token received. Please log in.');
+          throw Exception(
+            'Account created but no token received. Please log in.',
+          );
         }
 
         await SharedPref().setToken(token);
@@ -117,9 +123,10 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
 
         // Build user object from response (or form data as fallback) and store
         // in authProvider so the dashboard shows the real name instead of "User"
-        final rawUser = signupResponse.data['user']
-            ?? signupResponse.data['data']?['user']
-            ?? signupResponse.data['data'];
+        final rawUser =
+            signupResponse.data['user'] ??
+            signupResponse.data['data']?['user'] ??
+            signupResponse.data['data'];
         final user = rawUser is Map<String, dynamic>
             ? User.fromJson(rawUser)
             : User(
@@ -153,13 +160,19 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
 
       // Detect "already exists" → suggest login
       final lower = msg.toLowerCase();
-      final alreadyExists = lower.contains('already') || lower.contains('exists') || lower.contains('duplicate') || e is DioException && e.response?.statusCode == 409;
+      final alreadyExists =
+          lower.contains('already') ||
+          lower.contains('exists') ||
+          lower.contains('duplicate') ||
+          e is DioException && e.response?.statusCode == 409;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(alreadyExists
-              ? 'This email is already registered. Please log in instead.'
-              : msg),
+          content: Text(
+            alreadyExists
+                ? 'This email is already registered. Please log in instead.'
+                : msg,
+          ),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 4),
           action: alreadyExists
@@ -223,12 +236,16 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
   // (and mounted) at this point — LmsPurchaseFlow was already replaced by
   // it via pushReplacement, so navigation must happen using the caller's
   // context, not this widget's own (already-disposed) context.
-  Future<void> _handlePaymentSuccess(BuildContext callerContext, {String? voucherCode}) async {
+  Future<void> _handlePaymentSuccess(
+    BuildContext callerContext, {
+    String? voucherCode,
+  }) async {
     try {
       // Enroll user in course
       final res = await _api.post('/courses/enrollments', {
         'courseId': widget.course['_id'],
-        if (voucherCode != null && voucherCode.isNotEmpty) 'voucherCode': voucherCode,
+        if (voucherCode != null && voucherCode.isNotEmpty)
+          'voucherCode': voucherCode,
       });
 
       // Go straight to the course classroom — a normal course purchase should
@@ -239,14 +256,19 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
       // require it, not a blanket step for every enrollment.
       if (callerContext.mounted) {
         final enrollment = res.data is Map ? res.data['enrollment'] : null;
-        final enrollmentId = enrollment is Map ? enrollment['_id']?.toString() : null;
+        final enrollmentId = enrollment is Map
+            ? enrollment['_id']?.toString()
+            : null;
         Navigator.pushReplacement(
           callerContext,
           MaterialPageRoute(
-            builder: (_) => ClassroomCourseView(
-              course: widget.course,
-              enrollmentId: enrollmentId,
-              isInstructor: false,
+            builder: (_) => DeferredScreen(
+              loader: classroom_view.loadLibrary,
+              builder: () => classroom_view.ClassroomCourseView(
+                course: widget.course,
+                enrollmentId: enrollmentId,
+                isInstructor: false,
+              ),
             ),
           ),
         );
@@ -279,25 +301,28 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Course Summary Card
-            _buildCourseSummary(),
-            const SizedBox(height: 32),
-            
-            // Signup Form
-            _buildSignupForm(),
-            const SizedBox(height: 24),
-            
-            // Purchase Button
-            _buildPurchaseButton(),
-            const SizedBox(height: 16),
-            
-            // Login Link
-            _buildLoginLink(),
-          ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Course Summary Card
+              _buildCourseSummary(),
+              const SizedBox(height: 32),
+
+              // Signup Form
+              _buildSignupForm(),
+              const SizedBox(height: 24),
+
+              // Purchase Button
+              _buildPurchaseButton(),
+              const SizedBox(height: 16),
+
+              // Login Link
+              _buildLoginLink(),
+            ],
+          ),
         ),
       ),
     );
@@ -337,7 +362,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Course Info
           Expanded(
             child: Column(
@@ -399,13 +424,10 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
             const SizedBox(height: 8),
             const Text(
               'Sign up to access this course and start learning',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF64748B),
-              ),
+              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 24),
-            
+
             // Name Field
             TextFormField(
               controller: _nameController,
@@ -424,7 +446,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Email Field
             TextFormField(
               controller: _emailController,
@@ -447,7 +469,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Phone Field
             TextFormField(
               controller: _phoneController,
@@ -467,7 +489,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Password Field
             TextFormField(
               controller: _passwordController,
@@ -503,7 +525,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Confirm Password Field
             TextFormField(
               controller: _confirmPasswordController,
@@ -518,10 +540,14 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    _obscureConfirmPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
                   ),
                   onPressed: () {
-                    setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                    setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                    );
                   },
                 ),
                 border: OutlineInputBorder(
@@ -577,10 +603,7 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
               )
             : const Text(
                 'Sign Up & Continue to Payment',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
       ),
     );

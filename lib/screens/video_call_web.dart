@@ -4,11 +4,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
+import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 import 'dart:ui_web' as ui;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
@@ -30,7 +28,15 @@ import 'package:icare/widgets/tap_area.dart';
 // JS interop — Jitsi Meet External API
 // jitsiJoin and jitsiLeave now return Promises (handled via JSPromise)
 @JS('jitsiJoin')
-external JSPromise<JSString> _jitsiJoin(JSString room, JSString displayName, JSBoolean audioOnly, JSString jwt, JSString subject, JSString authToken, JSString chatChannel);
+external JSPromise<JSString> _jitsiJoin(
+  JSString room,
+  JSString displayName,
+  JSBoolean audioOnly,
+  JSString jwt,
+  JSString subject,
+  JSString authToken,
+  JSString chatChannel,
+);
 
 @JS('jitsiLeave')
 external JSPromise<JSAny?> _jitsiLeave();
@@ -56,18 +62,25 @@ class VideoCall extends StatefulWidget {
   final bool isAudioOnly;
   final String currentUserId;
   final String currentUserName;
+
   /// Optional appointment ID — used to mark consultation in progress / end
   final String? appointmentId;
+
   /// Patient's user ID — used to load patient history (doctor-side only)
   final String? patientId;
+
   /// Consultation ID — used for history form and prescription during call
   final String? consultationId;
+
   /// Overall consultation elapsed seconds — syncs video call timer to chat timer
   final int consultationElapsedSeconds;
+
   /// Signal ID of the outgoing call — used to detect if patient declined
   final String? outgoingSignalId;
+
   /// Callback when call ends (to return to chat)
   final VoidCallback? onCallEnded;
+
   /// False when this widget is embedded directly in a caller's own layout
   /// (e.g. reception_prescription_screen.dart's call+form split view)
   /// instead of being pushed as its own route — in that case Navigator.pop
@@ -109,7 +122,8 @@ class _VideoCallWebState extends State<VideoCall> {
   Timer? _declinePoller;
   Timer? _remoteLeftPoller;
   Timer? _closedPoller; // detects Jitsi hangup so this screen can close
-  CallTabButtonsBridge? _patientPrescriptionBridge; // patient-side "View Prescription" button
+  CallTabButtonsBridge?
+  _patientPrescriptionBridge; // patient-side "View Prescription" button
 
   // Side panel state
   bool _showChat = false;
@@ -144,17 +158,18 @@ class _VideoCallWebState extends State<VideoCall> {
 
   // Past consultations list + prescriptions map (keyed by appointmentId or date)
   List<Map<String, dynamic>> _pastConsultations = [];
-  Map<String, Map<String, dynamic>> _prescriptionsByDate = {}; // date-key → prescription data
+  Map<String, Map<String, dynamic>> _prescriptionsByDate =
+      {}; // date-key → prescription data
   bool _pastConsultationsLoading = false;
   bool _pastConsultationsLoaded = false;
 
-  final String _viewId =
-      'agora-call-${DateTime.now().millisecondsSinceEpoch}';
+  final String _viewId = 'agora-call-${DateTime.now().millisecondsSinceEpoch}';
 
   @override
   void initState() {
     super.initState();
-    _sessionSeconds = widget.consultationElapsedSeconds; // sync from chat timer (doctor)
+    _sessionSeconds =
+        widget.consultationElapsedSeconds; // sync from chat timer (doctor)
     _registerView();
     _joinCall();
     _syncTimerFromSharedPrefs(); // also try SharedPrefs (patient side)
@@ -195,7 +210,9 @@ class _VideoCallWebState extends State<VideoCall> {
     _closedPoller = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (!mounted) return;
       bool closed = false;
-      try { closed = _jitsiIsClosed(); } catch (_) {}
+      try {
+        closed = _jitsiIsClosed();
+      } catch (_) {}
       if (!closed) return;
       _closedPoller?.cancel();
 
@@ -209,10 +226,12 @@ class _VideoCallWebState extends State<VideoCall> {
 
       // Keep consultation rejoinable from the chat screen
       if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
-        AppointmentService().updateAppointmentStatus(
-          appointmentId: widget.appointmentId!,
-          status: 'in_progress',
-        ).catchError((_) => <String, dynamic>{});
+        AppointmentService()
+            .updateAppointmentStatus(
+              appointmentId: widget.appointmentId!,
+              status: 'in_progress',
+            )
+            .catchError((_) => <String, dynamic>{});
       }
     });
   }
@@ -258,10 +277,19 @@ class _VideoCallWebState extends State<VideoCall> {
         setState(() => _isDoctor = user?.role.toLowerCase() == 'doctor');
         // Patient prescription view — show a read-only "View Prescription" button
         // once the role is known and the call has started.
-        if (!_isDoctor && widget.consultationId != null && widget.consultationId!.isNotEmpty) {
+        if (!_isDoctor &&
+            widget.consultationId != null &&
+            widget.consultationId!.isNotEmpty) {
           _patientPrescriptionBridge = CallTabButtonsBridge();
           _patientPrescriptionBridge!.show(
-            buttons: [{'id': 'rx', 'label': 'View Prescription', 'side': 'center', 'top': 16}],
+            buttons: [
+              {
+                'id': 'rx',
+                'label': 'View Prescription',
+                'side': 'center',
+                'top': 16,
+              },
+            ],
             onToggle: (_) => _showPatientPrescriptionDialog(),
           );
         }
@@ -276,7 +304,9 @@ class _VideoCallWebState extends State<VideoCall> {
     // "Doctor is switching to video call..." + auto-hangup mid-consultation
     // whenever _jitsiIsRemoteLeft briefly flickered true (e.g. the doctor
     // toggling their camera), which is exactly what was reported.
-    if (!_isDoctor && widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
+    if (!_isDoctor &&
+        widget.appointmentId != null &&
+        widget.appointmentId!.isNotEmpty) {
       _startRemoteLeftPoller();
     }
   }
@@ -286,7 +316,9 @@ class _VideoCallWebState extends State<VideoCall> {
     if (!mounted || widget.consultationId == null) return;
     Map<String, dynamic>? draft;
     try {
-      draft = await ConsultationService().getPrescriptionDraft(widget.consultationId!);
+      draft = await ConsultationService().getPrescriptionDraft(
+        widget.consultationId!,
+      );
     } catch (_) {}
     if (!mounted) return;
 
@@ -306,40 +338,54 @@ class _VideoCallWebState extends State<VideoCall> {
         }).toList();
       }
       // medicines list
-      final rawMeds = draft['medicines'] as List? ?? draft['prescription']?['medicines'] as List? ?? [];
+      final rawMeds =
+          draft['medicines'] as List? ??
+          draft['prescription']?['medicines'] as List? ??
+          [];
       if (rawMeds.isNotEmpty) {
         dialogData['medicines'] = rawMeds.map((m) {
-          if (m is Map) return {
-            'medicineName': m['medicineName']?.toString() ?? m['name']?.toString() ?? '',
-            'dose': m['dosage']?.toString() ?? m['dose']?.toString() ?? '',
-            'frequency': m['frequency']?.toString() ?? '',
-            'duration': m['duration']?.toString() ?? '',
-          };
+          if (m is Map)
+            return {
+              'medicineName':
+                  m['medicineName']?.toString() ?? m['name']?.toString() ?? '',
+              'dose': m['dosage']?.toString() ?? m['dose']?.toString() ?? '',
+              'frequency': m['frequency']?.toString() ?? '',
+              'duration': m['duration']?.toString() ?? '',
+            };
           return {'medicineName': m.toString()};
         }).toList();
       }
       // lab tests
-      final rawLabs = draft['labTests'] as List? ?? draft['prescription']?['labTests'] as List? ?? [];
+      final rawLabs =
+          draft['labTests'] as List? ??
+          draft['prescription']?['labTests'] as List? ??
+          [];
       if (rawLabs.isNotEmpty) {
         dialogData['labTests'] = rawLabs.map((t) {
-          if (t is Map) return {'testName': t['testName']?.toString() ?? t['name']?.toString() ?? ''};
+          if (t is Map)
+            return {
+              'testName':
+                  t['testName']?.toString() ?? t['name']?.toString() ?? '',
+            };
           return {'testName': t.toString()};
         }).toList();
       }
       // notes
-      final notes = draft['doctorNotes']?.toString() ?? draft['notes']?.toString() ?? '';
+      final notes =
+          draft['doctorNotes']?.toString() ?? draft['notes']?.toString() ?? '';
       if (notes.isNotEmpty) dialogData['notes'] = notes;
     }
 
     // Call DOM-based dialog defined in web/index.html via dart:js
     try {
-      js.context.callMethod('showRxPreviewDialog', [js.JsObject.jsify(dialogData)]);
+      globalContext.callMethod('showRxPreviewDialog'.toJS, dialogData.jsify());
     } catch (_) {}
   }
 
   /// Poll for decline status — if patient declines, show dialog and go back to chat
   void _startDeclinePoller() {
-    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty) return;
+    if (widget.outgoingSignalId == null || widget.outgoingSignalId!.isEmpty)
+      return;
     if (!_isDoctor) return; // Only doctor needs to detect patient decline
 
     _declinePoller = Timer.periodic(const Duration(seconds: 2), (_) async {
@@ -348,12 +394,16 @@ class _VideoCallWebState extends State<VideoCall> {
         return;
       }
       try {
-        final status = await CallService().checkOutgoingCallStatus(widget.outgoingSignalId!);
+        final status = await CallService().checkOutgoingCallStatus(
+          widget.outgoingSignalId!,
+        );
         if (status == 'rejected' || status == 'declined') {
           _declinePoller?.cancel();
           _noAnswerTimer?.cancel();
           if (!mounted) return;
-          try { _jitsiLeave(); } catch (_) {}
+          try {
+            _jitsiLeave();
+          } catch (_) {}
           if (!mounted) return;
           _showDeclinedDialog();
         }
@@ -400,11 +450,16 @@ class _VideoCallWebState extends State<VideoCall> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
-          SizedBox(width: 10),
-          Text('Call Declined', style: TextStyle(fontWeight: FontWeight.w800)),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.call_end_rounded, color: Colors.red, size: 26),
+            SizedBox(width: 10),
+            Text(
+              'Call Declined',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
         content: const Text('The patient has declined your call.'),
         actions: [
           ElevatedButton(
@@ -412,7 +467,13 @@ class _VideoCallWebState extends State<VideoCall> {
               nav.pop(); // close dialog
               nav.pop(); // go back to chat interface
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text('Go Back'),
           ),
         ],
@@ -440,7 +501,9 @@ class _VideoCallWebState extends State<VideoCall> {
       // _remoteJoined = patient joined Agora; if still false after 15s → declined/no answer
       if (_remoteJoined) return;
       _noAnswerTimer?.cancel();
-      try { _jitsiLeave(); } catch (_) {}
+      try {
+        _jitsiLeave();
+      } catch (_) {}
       if (!mounted) return;
       // Capture navigator BEFORE dialog opens
       final nav = Navigator.of(context);
@@ -448,20 +511,35 @@ class _VideoCallWebState extends State<VideoCall> {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(children: [
-            Icon(Icons.call_end_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 8),
-            Text('Call Declined / Not Answered', style: TextStyle(fontWeight: FontWeight.w800)),
-          ]),
-          content: const Text('The patient declined your call or did not answer.'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.call_end_rounded, color: Colors.red, size: 28),
+              SizedBox(width: 8),
+              Text(
+                'Call Declined / Not Answered',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          content: const Text(
+            'The patient declined your call or did not answer.',
+          ),
           actions: [
             ElevatedButton(
               onPressed: () {
                 nav.pop(); // close dialog
                 nav.pop(); // go back to chat interface
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               child: const Text('Go Back'),
             ),
           ],
@@ -474,17 +552,23 @@ class _VideoCallWebState extends State<VideoCall> {
     if (widget.appointmentId == null || widget.appointmentId!.isEmpty) return;
     // When the browser tab/window is closed, mark appointment as completed
     // so it doesn't stay stuck as "in_progress"
-    html.window.onBeforeUnload.listen((_) {
-      if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
-        // Fire-and-forget: mark as completed so rejoin button disappears
-        try {
-          ApiService().put('/appointments/update_status', {
-            'appointmentId': widget.appointmentId!,
-            'status': 'completed',
-          });
-        } catch (_) {}
-      }
-    });
+    // addEventListener, not `window.onbeforeunload = ...`: the assignment form
+    // replaces whatever handler is already there, and web/index.html installs
+    // its own.
+    web.window.addEventListener(
+      'beforeunload',
+      ((web.Event _) {
+        if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
+          // Fire-and-forget: mark as completed so rejoin button disappears
+          try {
+            ApiService().put('/appointments/update_status', {
+              'appointmentId': widget.appointmentId!,
+              'status': 'completed',
+            });
+          } catch (_) {}
+        }
+      }).toJS,
+    );
   }
 
   Future<void> _maybeStartStatusPolling() async {
@@ -510,14 +594,14 @@ class _VideoCallWebState extends State<VideoCall> {
       try {
         final api = ApiService();
         // Use direct appointment endpoint
-        final response = await api.get(
-          '/appointments/${widget.appointmentId}',
-        );
+        final response = await api.get('/appointments/${widget.appointmentId}');
         final appt = response.data['appointment'];
         final status = appt?['status']?.toString() ?? '';
         if ((status == 'completed' || status == 'ended') && mounted) {
           _statusPollTimer?.cancel();
-          try { await _jitsiLeave().toDart; } catch (_) {}
+          try {
+            await _jitsiLeave().toDart;
+          } catch (_) {}
           if (mounted) _showConsultationEndedDialog();
         }
       } catch (_) {
@@ -534,7 +618,9 @@ class _VideoCallWebState extends State<VideoCall> {
               (match['status'] == 'completed' || match['status'] == 'ended') &&
               mounted) {
             _statusPollTimer?.cancel();
-            try { await _jitsiLeave().toDart; } catch (_) {}
+            try {
+              await _jitsiLeave().toDart;
+            } catch (_) {}
             if (mounted) _showConsultationEndedDialog();
           }
         } catch (_) {
@@ -554,7 +640,10 @@ class _VideoCallWebState extends State<VideoCall> {
           children: [
             Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
             SizedBox(width: 8),
-            Text('Consultation Ended', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text(
+              'Consultation Ended',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ],
         ),
         content: const Text('The doctor has ended the consultation.'),
@@ -563,7 +652,10 @@ class _VideoCallWebState extends State<VideoCall> {
             onPressed: () async {
               Navigator.pop(ctx);
               // Show rating dialog for patients after consultation
-              if (!_isDoctor && widget.appointmentId != null && widget.appointmentId!.isNotEmpty && mounted) {
+              if (!_isDoctor &&
+                  widget.appointmentId != null &&
+                  widget.appointmentId!.isNotEmpty &&
+                  mounted) {
                 await showRatingDialog(
                   context: context,
                   title: 'Rate Your Doctor',
@@ -577,12 +669,14 @@ class _VideoCallWebState extends State<VideoCall> {
                   },
                 );
               }
-              html.window.location.href = '/dashboard';
+              web.window.location.href = '/dashboard';
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: const Text('Go to Dashboard'),
           ),
@@ -626,7 +720,9 @@ class _VideoCallWebState extends State<VideoCall> {
       // Update timestamp FIRST (before UI update) so any concurrent call won't re-fetch
       final lastTs = msgs.last['createdAt'];
       if (lastTs != null) {
-        final parsed = DateTime.tryParse(lastTs.toString())?.millisecondsSinceEpoch;
+        final parsed = DateTime.tryParse(
+          lastTs.toString(),
+        )?.millisecondsSinceEpoch;
         if (parsed != null) _lastChatTimestamp = parsed;
       }
 
@@ -636,8 +732,11 @@ class _VideoCallWebState extends State<VideoCall> {
         final sender = m['sender']?.toString() ?? '';
         final text = m['text']?.toString() ?? '';
         // Skip our own messages — already shown optimistically (match by sender+text)
-        final alreadyShown = sender == _mySenderName &&
-            _chatMessages.any((c) => c['sender'] == sender && c['text'] == text);
+        final alreadyShown =
+            sender == _mySenderName &&
+            _chatMessages.any(
+              (c) => c['sender'] == sender && c['text'] == text,
+            );
         if (!alreadyShown) {
           newMsgs.add({'sender': sender, 'text': text});
         }
@@ -690,7 +789,8 @@ class _VideoCallWebState extends State<VideoCall> {
     try {
       final apptResult = await AppointmentService().getMyAppointmentsDetailed();
       if (apptResult['success'] == true) {
-        final appts = apptResult['appointments'] as List<AppointmentDetail>? ?? [];
+        final appts =
+            apptResult['appointments'] as List<AppointmentDetail>? ?? [];
         // Include completed appointments that have a complaint or notes
         for (final a in appts) {
           if (a.status.toLowerCase() == 'completed') {
@@ -721,35 +821,45 @@ class _VideoCallWebState extends State<VideoCall> {
     setState(() => _pastConsultationsLoading = true);
 
     // Fetch prescriptions in parallel — key by date string (yyyy-MM-dd)
-    MedicalRecordService().getMyRecords().then((res) {
-      if (res['success'] == true && mounted) {
-        final records = res['records'] as List? ?? [];
-        final map = <String, Map<String, dynamic>>{};
-        for (final r in records) {
-          final dateStr = r['createdAt']?.toString() ?? r['prescribedAt']?.toString() ?? '';
-          if (dateStr.isNotEmpty) {
-            try {
-              final d = DateTime.parse(dateStr);
-              final key = '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
-              map[key] = Map<String, dynamic>.from(r is Map ? r : {});
-            } catch (_) {}
+    MedicalRecordService()
+        .getMyRecords()
+        .then((res) {
+          if (res['success'] == true && mounted) {
+            final records = res['records'] as List? ?? [];
+            final map = <String, Map<String, dynamic>>{};
+            for (final r in records) {
+              final dateStr =
+                  r['createdAt']?.toString() ??
+                  r['prescribedAt']?.toString() ??
+                  '';
+              if (dateStr.isNotEmpty) {
+                try {
+                  final d = DateTime.parse(dateStr);
+                  final key =
+                      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                  map[key] = Map<String, dynamic>.from(r is Map ? r : {});
+                } catch (_) {}
+              }
+            }
+            if (mounted) setState(() => _prescriptionsByDate = map);
           }
-        }
-        if (mounted) setState(() => _prescriptionsByDate = map);
-      }
-    }).catchError((_) {});
+        })
+        .catchError((_) {});
 
     try {
       final apptResult = await AppointmentService().getMyAppointmentsDetailed();
       if (apptResult['success'] == true) {
-        final appts = apptResult['appointments'] as List<AppointmentDetail>? ?? [];
+        final appts =
+            apptResult['appointments'] as List<AppointmentDetail>? ?? [];
         final completed = appts
             .where((a) => a.status.toLowerCase() == 'completed')
             .map((a) {
               // Clean up reason — remove raw channel name noise
               String rawReason = a.reason ?? '';
               String cleanReason;
-              if (rawReason.toLowerCase().contains('instant consultation via connect now') ||
+              if (rawReason.toLowerCase().contains(
+                    'instant consultation via connect now',
+                  ) ||
                   rawReason.toLowerCase().contains('channel:')) {
                 cleanReason = 'Instant Video Consultation';
               } else if (rawReason.isEmpty) {
@@ -758,7 +868,8 @@ class _VideoCallWebState extends State<VideoCall> {
                 cleanReason = rawReason;
               }
 
-              final isVideo = (a.channelName?.isNotEmpty == true) ||
+              final isVideo =
+                  (a.channelName?.isNotEmpty == true) ||
                   rawReason.toLowerCase().contains('connect now') ||
                   rawReason.toLowerCase().contains('video');
 
@@ -775,8 +886,9 @@ class _VideoCallWebState extends State<VideoCall> {
             })
             .toList();
         // Sort newest first
-        completed.sort((a, b) =>
-            (b['date'] as String).compareTo(a['date'] as String));
+        completed.sort(
+          (a, b) => (b['date'] as String).compareTo(a['date'] as String),
+        );
         if (mounted) {
           setState(() {
             _pastConsultations = completed;
@@ -842,7 +954,9 @@ class _VideoCallWebState extends State<VideoCall> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Could not resolve consultation ID. Please try from the chat screen.'),
+              content: Text(
+                'Could not resolve consultation ID. Please try from the chat screen.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -863,7 +977,10 @@ class _VideoCallWebState extends State<VideoCall> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open history form: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Could not open history form: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -893,7 +1010,8 @@ class _VideoCallWebState extends State<VideoCall> {
         // The JS jitsiJoin dynamically creates containers using IDs like "jitsi-container-{timestamp}"
         // We match that pattern so JS can find it by scanning for containers on the page
         // No need to set a fixed id here - JS will create its own container
-        final jitsiDiv = web.document.createElement('div') as web.HTMLDivElement;
+        final jitsiDiv =
+            web.document.createElement('div') as web.HTMLDivElement;
         jitsiDiv.id = 'jitsi-container';
         jitsiDiv.style.width = '100%';
         jitsiDiv.style.height = '100%';
@@ -909,8 +1027,10 @@ class _VideoCallWebState extends State<VideoCall> {
       // displayName MUST be sent here: with JWT auth Jitsi shows the name
       // from the token's context.user.name, which overrides userInfo — the
       // app auth JWT carries no name, so without this the tiles say "User".
-      final response = await ApiService()
-          .post('/jitsi/token', {'room': room, 'displayName': displayName});
+      final response = await ApiService().post('/jitsi/token', {
+        'room': room,
+        'displayName': displayName,
+      });
       return response.data['token']?.toString();
     } catch (e) {
       debugPrint('Jitsi token fetch error: $e');
@@ -923,7 +1043,9 @@ class _VideoCallWebState extends State<VideoCall> {
       // Jitsi room name: alphanumeric only, prefixed with 'icare'
       final raw = widget.channelName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
       final roomName = 'icare${raw.substring(0, raw.length.clamp(0, 50))}';
-      var displayName = widget.currentUserName.isNotEmpty ? widget.currentUserName : 'User';
+      var displayName = widget.currentUserName.isNotEmpty
+          ? widget.currentUserName
+          : 'User';
 
       // Resolve the real name BEFORE fetching the Jitsi token — the token
       // embeds the display name, and that embedded name is what appears on
@@ -974,16 +1096,25 @@ class _VideoCallWebState extends State<VideoCall> {
       }
 
       if (mounted) {
-        setState(() { _joined = true; _loading = false; });
+        setState(() {
+          _joined = true;
+          _loading = false;
+        });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
     }
   }
 
   /// Doctor: switch from audio-only to video — just unmute camera in Jitsi
   Future<void> _convertToVideo() async {
-    try { _jitsiMuteCam(false.toJS); } catch (_) {}
+    try {
+      _jitsiMuteCam(false.toJS);
+    } catch (_) {}
     if (mounted) setState(() => _camOff = false);
   }
 
@@ -994,10 +1125,13 @@ class _VideoCallWebState extends State<VideoCall> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Leave $callLabel?',
-            style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(
+          'Leave $callLabel?',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: Text(
-            'Do you want to leave the $callLabel? You can rejoin from the chat screen.'),
+          'Do you want to leave the $callLabel? You can rejoin from the chat screen.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -1008,7 +1142,9 @@ class _VideoCallWebState extends State<VideoCall> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text('Leave $callLabel'),
           ),
@@ -1017,7 +1153,9 @@ class _VideoCallWebState extends State<VideoCall> {
     );
     if (confirm != true) return;
 
-    try { await _jitsiLeave().toDart; } catch (_) {}
+    try {
+      await _jitsiLeave().toDart;
+    } catch (_) {}
 
     // Mark appointment as in_progress so patient can rejoin
     if (widget.appointmentId != null && widget.appointmentId!.isNotEmpty) {
@@ -1031,18 +1169,25 @@ class _VideoCallWebState extends State<VideoCall> {
         debugPrint('❌ Failed to mark in_progress: $e');
       }
     } else {
-      debugPrint('⚠️ appointmentId is null — cannot mark in_progress. channelName: ${widget.channelName}');
+      debugPrint(
+        '⚠️ appointmentId is null — cannot mark in_progress. channelName: ${widget.channelName}',
+      );
     }
 
     if (mounted) _exitCallScreen();
   }
+
   /// End Consultation button — opens workflow screen for doctor to complete documentation
   Future<void> _endConsultation() async {
     // Check if this is a doctor ending consultation (has appointment details)
     if (widget.appointmentId == null || widget.appointmentId!.isEmpty) {
       // No appointment ID - just leave the call (for quick calls)
-      try { await CallService().endCall(widget.channelName); } catch (_) {}
-      try { await _jitsiLeave().toDart; } catch (_) {}
+      try {
+        await CallService().endCall(widget.channelName);
+      } catch (_) {}
+      try {
+        await _jitsiLeave().toDart;
+      } catch (_) {}
       if (mounted) _exitCallScreen();
       return;
     }
@@ -1056,11 +1201,16 @@ class _VideoCallWebState extends State<VideoCall> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('End Consultation?',
-              style: TextStyle(fontWeight: FontWeight.w800)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'End Consultation?',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           content: const Text(
-              'Are you sure you want to end this consultation? The doctor will be notified.'),
+            'Are you sure you want to end this consultation? The doctor will be notified.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1072,7 +1222,8 @@ class _VideoCallWebState extends State<VideoCall> {
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: const Text('End Consultation'),
             ),
@@ -1087,15 +1238,19 @@ class _VideoCallWebState extends State<VideoCall> {
           status: 'completed',
         );
       } catch (_) {}
-      try { await _jitsiLeave().toDart; } catch (_) {}
-      if (mounted) html.window.location.href = '/dashboard';
+      try {
+        await _jitsiLeave().toDart;
+      } catch (_) {}
+      if (mounted) web.window.location.href = '/dashboard';
       return;
     }
 
     // Doctor ending consultation — leave video and go back to chat screen
     try {
       // Leave video call first
-      try { await _jitsiLeave().toDart; } catch (_) {}
+      try {
+        await _jitsiLeave().toDart;
+      } catch (_) {}
 
       if (!mounted) return;
 
@@ -1105,10 +1260,7 @@ class _VideoCallWebState extends State<VideoCall> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -1117,14 +1269,18 @@ class _VideoCallWebState extends State<VideoCall> {
   /// Mute mic ONLY — does NOT affect camera
   void _toggleMic() {
     _micMuted = !_micMuted;
-    try { _jitsiMuteMic(_micMuted.toJS); } catch (_) {}
+    try {
+      _jitsiMuteMic(_micMuted.toJS);
+    } catch (_) {}
     if (mounted) setState(() {});
   }
 
   /// Toggle camera ONLY — does NOT affect mic
   void _toggleCam() {
     _camOff = !_camOff;
-    try { _jitsiMuteCam(_camOff.toJS); } catch (_) {}
+    try {
+      _jitsiMuteCam(_camOff.toJS);
+    } catch (_) {}
     if (mounted) setState(() {});
   }
 
@@ -1139,7 +1295,9 @@ class _VideoCallWebState extends State<VideoCall> {
 
     // Show message immediately (optimistic)
     if (mounted) {
-      setState(() => _chatMessages.add({'sender': _mySenderName, 'text': text}));
+      setState(
+        () => _chatMessages.add({'sender': _mySenderName, 'text': text}),
+      );
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_chatScroll.hasClients) {
           _chatScroll.animateTo(
@@ -1152,22 +1310,25 @@ class _VideoCallWebState extends State<VideoCall> {
     }
 
     // Send to backend (update lastTimestamp so poll skips duplicates)
-    ApiService().post('/call-chat/send', {
-      'channelName': widget.channelName,
-      'sender': _mySenderName,
-      'text': text,
-    }).then((res) {
-      // Update lastTimestamp from the saved message so poll won't duplicate it
-      try {
-        final createdAt = res.data['message']?['createdAt']?.toString();
-        if (createdAt != null) {
-          final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
-          if (ts != null) _lastChatTimestamp = ts;
-        }
-      } catch (_) {}
-    }).catchError((_) {
-      // Message already shown optimistically — no action needed
-    });
+    ApiService()
+        .post('/call-chat/send', {
+          'channelName': widget.channelName,
+          'sender': _mySenderName,
+          'text': text,
+        })
+        .then((res) {
+          // Update lastTimestamp from the saved message so poll won't duplicate it
+          try {
+            final createdAt = res.data['message']?['createdAt']?.toString();
+            if (createdAt != null) {
+              final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
+              if (ts != null) _lastChatTimestamp = ts;
+            }
+          } catch (_) {}
+        })
+        .catchError((_) {
+          // Message already shown optimistically — no action needed
+        });
   }
 
   Future<void> _pickAndSendFile() async {
@@ -1179,9 +1340,13 @@ class _VideoCallWebState extends State<VideoCall> {
       final name = file.name.toLowerCase();
 
       // Check if it's an image
-      final isImage = name.endsWith('.png') || name.endsWith('.jpg') ||
-          name.endsWith('.jpeg') || name.endsWith('.gif') ||
-          name.endsWith('.webp') || name.endsWith('.bmp');
+      final isImage =
+          name.endsWith('.png') ||
+          name.endsWith('.jpg') ||
+          name.endsWith('.jpeg') ||
+          name.endsWith('.gif') ||
+          name.endsWith('.webp') ||
+          name.endsWith('.bmp');
 
       String msgText;
       if (isImage && bytes != null) {
@@ -1192,72 +1357,99 @@ class _VideoCallWebState extends State<VideoCall> {
       } else if (bytes != null) {
         // Document — store as base64 data URL so receiver can download it
         final ext = file.name.split('.').last.toLowerCase();
-        final mime = ext == 'pdf' ? 'application/pdf'
+        final mime = ext == 'pdf'
+            ? 'application/pdf'
             : ext == 'doc' || ext == 'docx'
-                ? 'application/msword'
-                : ext == 'xls' || ext == 'xlsx'
-                    ? 'application/vnd.ms-excel'
-                    : 'application/octet-stream';
+            ? 'application/msword'
+            : ext == 'xls' || ext == 'xlsx'
+            ? 'application/vnd.ms-excel'
+            : 'application/octet-stream';
         final b64 = base64Encode(bytes);
         msgText = 'doc:${file.name}:data:$mime;base64,$b64';
       } else {
         msgText = '📎 ${file.name}';
       }
 
-      if (mounted) setState(() => _chatMessages.add({'sender': _mySenderName, 'text': msgText}));
-      ApiService().post('/call-chat/send', {
-        'channelName': widget.channelName,
-        'sender': _mySenderName,
-        'text': msgText,
-      }).then((res) {
-        try {
-          final createdAt = res.data['message']?['createdAt']?.toString();
-          if (createdAt != null) {
-            final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
-            if (ts != null) _lastChatTimestamp = ts;
-          }
-        } catch (_) {}
-      }).catchError((_) {});
+      if (mounted)
+        setState(
+          () => _chatMessages.add({'sender': _mySenderName, 'text': msgText}),
+        );
+      ApiService()
+          .post('/call-chat/send', {
+            'channelName': widget.channelName,
+            'sender': _mySenderName,
+            'text': msgText,
+          })
+          .then((res) {
+            try {
+              final createdAt = res.data['message']?['createdAt']?.toString();
+              if (createdAt != null) {
+                final ts = DateTime.tryParse(createdAt)?.millisecondsSinceEpoch;
+                if (ts != null) _lastChatTimestamp = ts;
+              }
+            } catch (_) {}
+          })
+          .catchError((_) {});
     } catch (_) {}
   }
 
   /// Resize image bytes using HTML canvas (Flutter Web only)
   /// Scales down to maxWidth while maintaining aspect ratio, outputs JPEG at 0.75 quality
-  Future<Uint8List> _resizeImageBytes(Uint8List bytes, {int maxWidth = 800}) async {
+  Future<Uint8List> _resizeImageBytes(
+    Uint8List bytes, {
+    int maxWidth = 800,
+  }) async {
     try {
       // Create a blob URL from the bytes
-      final blob = html.Blob([bytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
+      final blob = web.Blob(<JSAny>[bytes.toJS].toJS);
+      final url = web.URL.createObjectURL(blob);
 
       // Load into an HTML image element
-      final img = html.ImageElement();
+      final img = web.document.createElement('img') as web.HTMLImageElement;
+      final loaded = Completer<void>();
+      img.onload = ((web.Event _) => loaded.complete()).toJS;
+      img.onerror = ((web.Event _) {
+        if (!loaded.isCompleted)
+          loaded.completeError(StateError('image load failed'));
+      }).toJS;
       img.src = url;
-      await img.onLoad.first;
+      await loaded.future;
 
       // Calculate new dimensions
-      int w = img.naturalWidth ?? maxWidth;
-      int h = img.naturalHeight ?? maxWidth;
+      int w = img.naturalWidth;
+      int h = img.naturalHeight;
       if (w > maxWidth) {
         h = (h * maxWidth / w).round();
         w = maxWidth;
       }
 
       // Draw onto canvas and export as JPEG
-      final canvas = html.CanvasElement(width: w, height: h);
-      final ctx = canvas.context2D;
-      ctx.drawImageScaled(img, 0, 0, w, h);
+      final canvas =
+          web.document.createElement('canvas') as web.HTMLCanvasElement
+            ..width = w
+            ..height = h;
+      final ctx = canvas.getContext('2d') as web.CanvasRenderingContext2D;
+      ctx.drawImage(img, 0, 0, w, h);
 
-      html.Url.revokeObjectUrl(url);
+      web.URL.revokeObjectURL(url);
 
       // Get JPEG blob at 0.75 quality
       final completer = Completer<Uint8List>();
-      canvas.toBlob('image/jpeg', 0.75).then((resizedBlob) async {
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(resizedBlob);
-        await reader.onLoad.first;
-        final result = reader.result as List<int>;
-        completer.complete(Uint8List.fromList(result));
-      });
+      canvas.toBlob(
+        ((web.Blob? resizedBlob) {
+          if (resizedBlob == null) {
+            if (!completer.isCompleted) completer.complete(bytes);
+            return;
+          }
+          resizedBlob.arrayBuffer().toDart.then((buf) {
+            if (!completer.isCompleted) {
+              completer.complete(buf.toDart.asUint8List());
+            }
+          });
+        }).toJS,
+        'image/jpeg',
+        0.75.toJS,
+      );
       return await completer.future;
     } catch (_) {
       // If resize fails, return original bytes
@@ -1279,7 +1471,9 @@ class _VideoCallWebState extends State<VideoCall> {
     _chatController.dispose();
     _chatScroll.dispose();
     _doctorNotesController.dispose();
-    try { _jitsiLeave(); } catch (_) {}
+    try {
+      _jitsiLeave();
+    } catch (_) {}
     super.dispose();
   }
 
@@ -1302,7 +1496,10 @@ class _VideoCallWebState extends State<VideoCall> {
                   children: [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(height: 20),
-                    Text('Connecting...', style: TextStyle(color: Colors.white70)),
+                    Text(
+                      'Connecting...',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                   ],
                 ),
               ),
@@ -1347,16 +1544,21 @@ class _VideoCallWebState extends State<VideoCall> {
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Icon(Icons.open_in_full_rounded,
-                      color: Colors.white, size: 12),
+                  child: const Icon(
+                    Icons.open_in_full_rounded,
+                    color: Colors.white,
+                    size: 12,
+                  ),
                 ),
               ),
             ],
           ),
         );
       } catch (_) {
-        return const Text('🖼️ Image',
-            style: TextStyle(color: Colors.white, fontSize: 13));
+        return const Text(
+          '🖼️ Image',
+          style: TextStyle(color: Colors.white, fontSize: 13),
+        );
       }
     }
 
@@ -1382,17 +1584,17 @@ class _VideoCallWebState extends State<VideoCall> {
       final iconData = isPdf
           ? Icons.picture_as_pdf_rounded
           : isDoc
-              ? Icons.description_rounded
-              : isExcel
-                  ? Icons.table_chart_rounded
-                  : Icons.insert_drive_file_rounded;
+          ? Icons.description_rounded
+          : isExcel
+          ? Icons.table_chart_rounded
+          : Icons.insert_drive_file_rounded;
       final iconColor = isPdf
           ? const Color(0xFFEF4444)
           : isDoc
-              ? const Color(0xFF3B82F6)
-              : isExcel
-                  ? const Color(0xFF10B981)
-                  : Colors.white70;
+          ? const Color(0xFF3B82F6)
+          : isExcel
+          ? const Color(0xFF10B981)
+          : Colors.white70;
 
       return GestureDetector(
         onTap: () {
@@ -1416,15 +1618,19 @@ class _VideoCallWebState extends State<VideoCall> {
                 child: Text(
                   fileName,
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600),
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.download_rounded,
-                  color: Colors.white54, size: 14),
+              const Icon(
+                Icons.download_rounded,
+                color: Colors.white54,
+                size: 14,
+              ),
             ],
           ),
         ),
@@ -1432,8 +1638,10 @@ class _VideoCallWebState extends State<VideoCall> {
     }
 
     // Regular text message
-    return Text(text,
-        style: const TextStyle(color: Colors.white, fontSize: 13));
+    return Text(
+      text,
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+    );
   }
 
   /// Open image in fullscreen dialog
@@ -1461,8 +1669,11 @@ class _VideoCallWebState extends State<VideoCall> {
                           gaplessPlayback: true,
                         );
                       } catch (_) {
-                        return const Icon(Icons.broken_image_rounded,
-                            color: Colors.white54, size: 64);
+                        return const Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.white54,
+                          size: 64,
+                        );
                       }
                     },
                   ),
@@ -1474,7 +1685,7 @@ class _VideoCallWebState extends State<VideoCall> {
               top: 0,
               right: 0,
               child: TapArea(
-        behavior: HitTestBehavior.opaque,
+                behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.pop(ctx),
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -1482,8 +1693,11 @@ class _VideoCallWebState extends State<VideoCall> {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close_rounded,
-                      color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -1492,14 +1706,16 @@ class _VideoCallWebState extends State<VideoCall> {
               bottom: 0,
               right: 0,
               child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   Navigator.pop(ctx);
                   _downloadImageFromDataUrl(dataUrl);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(20),
@@ -1507,14 +1723,20 @@ class _VideoCallWebState extends State<VideoCall> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.download_rounded,
-                          color: Colors.white, size: 16),
+                      Icon(
+                        Icons.download_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       SizedBox(width: 6),
-                      Text('Download',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        'Download',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1529,7 +1751,8 @@ class _VideoCallWebState extends State<VideoCall> {
   /// Download a named file from base64 data URL
   void _downloadDocFromDataUrl(String dataUrl, String fileName) {
     try {
-      final anchor = html.AnchorElement(href: dataUrl)
+      (web.document.createElement('a') as web.HTMLAnchorElement)
+        ..href = dataUrl
         ..setAttribute('download', fileName)
         ..click();
     } catch (_) {}
@@ -1538,8 +1761,12 @@ class _VideoCallWebState extends State<VideoCall> {
   /// Download image from base64 data URL
   void _downloadImageFromDataUrl(String dataUrl) {
     try {
-      final anchor = html.AnchorElement(href: dataUrl)
-        ..setAttribute('download', 'image_${DateTime.now().millisecondsSinceEpoch}.jpg')
+      (web.document.createElement('a') as web.HTMLAnchorElement)
+        ..href = dataUrl
+        ..setAttribute(
+          'download',
+          'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        )
         ..click();
     } catch (_) {}
   }
@@ -1555,18 +1782,27 @@ class _VideoCallWebState extends State<VideoCall> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.chat_bubble_rounded,
-                  color: Colors.white70, size: 20),
+              const Icon(
+                Icons.chat_bubble_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              const Text('Chat',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
+              const Text(
+                'Chat',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: Colors.white54, size: 20),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white54,
+                  size: 20,
+                ),
                 onPressed: () => setState(() => _showChat = false),
               ),
             ],
@@ -1577,8 +1813,11 @@ class _VideoCallWebState extends State<VideoCall> {
         Expanded(
           child: _chatMessages.isEmpty
               ? const Center(
-                  child: Text('No messages yet',
-                      style: TextStyle(color: Colors.white38)))
+                  child: Text(
+                    'No messages yet',
+                    style: TextStyle(color: Colors.white38),
+                  ),
+                )
               : ListView.builder(
                   controller: _chatScroll,
                   padding: const EdgeInsets.all(12),
@@ -1588,49 +1827,53 @@ class _VideoCallWebState extends State<VideoCall> {
                     final isMe = msg['sender'] == _mySenderName;
                     final displaySender = isMe ? 'You' : (msg['sender'] ?? '');
                     // Use a stable key so existing messages don't rebuild/jerk
-                    final msgKey = ValueKey('msg_${i}_${msg['sender']}_${(msg['text'] ?? '').hashCode}');
+                    final msgKey = ValueKey(
+                      'msg_${i}_${msg['sender']}_${(msg['text'] ?? '').hashCode}',
+                    );
                     return KeyedSubtree(
                       key: msgKey,
                       child: Align(
-                      alignment: isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isMe
-                              ? AppColors.primaryColor
-                              : const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(12),
-                            topRight: const Radius.circular(12),
-                            bottomLeft: Radius.circular(isMe ? 12 : 2),
-                            bottomRight: Radius.circular(isMe ? 2 : 12),
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMe
+                                ? AppColors.primaryColor
+                                : const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(12),
+                              topRight: const Radius.circular(12),
+                              bottomLeft: Radius.circular(isMe ? 12 : 2),
+                              bottomRight: Radius.circular(isMe ? 2 : 12),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displaySender,
+                                style: TextStyle(
+                                  color: isMe
+                                      ? Colors.white70
+                                      : const Color(0xFF60A5FA),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              _buildMessageContent(msg['text'] ?? '', isMe),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: isMe
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              displaySender,
-                              style: TextStyle(
-                                color: isMe
-                                    ? Colors.white70
-                                    : const Color(0xFF60A5FA),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            _buildMessageContent(msg['text'] ?? '', isMe),
-                          ],
-                        ),
                       ),
-                    ),
                     );
                   },
                 ),
@@ -1646,8 +1889,10 @@ class _VideoCallWebState extends State<VideoCall> {
             children: [
               // File upload
               IconButton(
-                icon: const Icon(Icons.attach_file_rounded,
-                    color: Colors.white54),
+                icon: const Icon(
+                  Icons.attach_file_rounded,
+                  color: Colors.white54,
+                ),
                 onPressed: _pickAndSendFile,
                 tooltip: 'Attach file',
               ),
@@ -1665,7 +1910,9 @@ class _VideoCallWebState extends State<VideoCall> {
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                   onSubmitted: (_) => _sendChatMessage(),
                 ),
@@ -1679,8 +1926,11 @@ class _VideoCallWebState extends State<VideoCall> {
                     color: AppColors.primaryColor,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.send_rounded,
-                      color: Colors.white, size: 18),
+                  child: const Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
             ],
@@ -1701,16 +1951,27 @@ class _VideoCallWebState extends State<VideoCall> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.note_alt_rounded, color: Colors.white70, size: 20),
+              const Icon(
+                Icons.note_alt_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              const Text("Doctor's Notes",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
+              const Text(
+                "Doctor's Notes",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white54,
+                  size: 20,
+                ),
                 onPressed: () => setState(() => _showDoctorNotes = false),
               ),
             ],
@@ -1765,8 +2026,8 @@ class _VideoCallWebState extends State<VideoCall> {
                             setState(() => _notesSaving = true);
                             try {
                               // Save notes to backend via consultation notes endpoint
-                              final consultationId = widget.consultationId ??
-                                  widget.channelName;
+                              final consultationId =
+                                  widget.consultationId ?? widget.channelName;
                               final api = ApiService();
                               await api.put(
                                 '/consultations-v2/$consultationId/notes',
@@ -1799,7 +2060,10 @@ class _VideoCallWebState extends State<VideoCall> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.save_rounded, size: 18),
                     label: Text(_notesSaving ? 'Saving...' : 'Save Notes'),
@@ -1826,11 +2090,20 @@ class _VideoCallWebState extends State<VideoCall> {
         children: [
           Icon(icon, color: const Color(0xFF10B981), size: 16),
           const SizedBox(width: 10),
-          Text('$label: ', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+          Text(
+            '$label: ',
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -1847,16 +2120,27 @@ class _VideoCallWebState extends State<VideoCall> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.history_rounded, color: Colors.white70, size: 20),
+              const Icon(
+                Icons.history_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              const Text('Past Consultations',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
+              const Text(
+                'Past Consultations',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white54,
+                  size: 20,
+                ),
                 onPressed: () => setState(() => _showPastConsultations = false),
               ),
             ],
@@ -1865,297 +2149,491 @@ class _VideoCallWebState extends State<VideoCall> {
         Expanded(
           child: _pastConsultationsLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF10B981)))
+                  child: CircularProgressIndicator(color: Color(0xFF10B981)),
+                )
               : _pastConsultations.isEmpty
-                  ? const Center(
-                      child: Text('No past consultations found',
-                          style: TextStyle(color: Colors.white54)))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _pastConsultations.length,
-                      itemBuilder: (ctx, i) {
-                        final c = _pastConsultations[i];
-                        final dateStr = c['date'] as String? ?? '';
-                        DateTime? dt;
-                        try { dt = DateTime.parse(dateStr); } catch (_) {}
-                        final label = dt != null
-                            ? '${dt.day}/${dt.month}/${dt.year}'
-                            : dateStr.substring(0, dateStr.length > 10 ? 10 : dateStr.length);
-                        final type = c['type'] as String? ?? 'consultation';
-                        final reason = c['reason'] as String? ?? '';
-                        final doctor = c['doctor'] as String? ?? '';
-                        final patient = c['patient'] as String? ?? '';
-                        final timeSlot = c['timeSlot'] as String? ?? '';
-                        final specialization = c['doctorSpecialization'] as String? ?? 'General Practitioner';
+              ? const Center(
+                  child: Text(
+                    'No past consultations found',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _pastConsultations.length,
+                  itemBuilder: (ctx, i) {
+                    final c = _pastConsultations[i];
+                    final dateStr = c['date'] as String? ?? '';
+                    DateTime? dt;
+                    try {
+                      dt = DateTime.parse(dateStr);
+                    } catch (_) {}
+                    final label = dt != null
+                        ? '${dt.day}/${dt.month}/${dt.year}'
+                        : dateStr.substring(
+                            0,
+                            dateStr.length > 10 ? 10 : dateStr.length,
+                          );
+                    final type = c['type'] as String? ?? 'consultation';
+                    final reason = c['reason'] as String? ?? '';
+                    final doctor = c['doctor'] as String? ?? '';
+                    final patient = c['patient'] as String? ?? '';
+                    final timeSlot = c['timeSlot'] as String? ?? '';
+                    final specialization =
+                        c['doctorSpecialization'] as String? ??
+                        'General Practitioner';
 
-                        // Format time nicely
-                        String timeLabel = '';
-                        if (dt != null) {
-                          final hour = dt.hour;
-                          final min = dt.minute.toString().padLeft(2, '0');
-                          final period = hour >= 12 ? 'PM' : 'AM';
-                          final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-                          timeLabel = '$h:$min $period';
-                        } else if (timeSlot.isNotEmpty) {
-                          timeLabel = timeSlot;
-                        }
+                    // Format time nicely
+                    String timeLabel = '';
+                    if (dt != null) {
+                      final hour = dt.hour;
+                      final min = dt.minute.toString().padLeft(2, '0');
+                      final period = hour >= 12 ? 'PM' : 'AM';
+                      final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+                      timeLabel = '$h:$min $period';
+                    } else if (timeSlot.isNotEmpty) {
+                      timeLabel = timeSlot;
+                    }
 
-                        return GestureDetector(
-                          onTap: () {
-                            // Show consultation detail dialog
-                            showDialog(
-                              context: context,
-                              builder: (_) => Dialog(
-                                backgroundColor: const Color(0xFF1E293B),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                    return GestureDetector(
+                      onTap: () {
+                        // Show consultation detail dialog
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: const Color(0xFF1E293B),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              type == 'video' ? Icons.videocam_rounded : Icons.local_hospital_rounded,
-                                              color: const Color(0xFF10B981),
-                                              size: 20,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  reason.isNotEmpty ? reason : 'Consultation',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w800,
-                                                    fontSize: 15,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  type == 'video' ? 'Video Consultation' : 'In-Person Visit',
-                                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 12),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
-                                            onPressed: () => Navigator.pop(context),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 20),
-                                      const Divider(color: Color(0xFF334155)),
-                                      const SizedBox(height: 16),
-                                      _pastConsultDetailRow(Icons.calendar_today_rounded, 'Date', label),
-                                      if (timeLabel.isNotEmpty)
-                                        _pastConsultDetailRow(Icons.access_time_rounded, 'Time', timeLabel),
-                                      _pastConsultDetailRow(
-                                        Icons.person_rounded,
-                                        widget.patientId != null ? 'Patient' : 'Doctor',
-                                        widget.patientId != null ? patient : withDoctorTitle(doctor),
-                                      ),
-                                      if (widget.patientId == null)
-                                        _pastConsultDetailRow(Icons.medical_services_rounded, 'Specialization', specialization),
-                                      // ── Prescription data ──────────────────
-                                      Builder(builder: (_) {
-                                        // Match prescription by date key
-                                        final dateKey = dt != null
-                                            ? '${dt.year}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}'
-                                            : '';
-                                        final rx = dateKey.isNotEmpty ? _prescriptionsByDate[dateKey] : null;
-                                        final diagnosis = rx?['diagnosis']?.toString() ?? '';
-                                        final medicines = (rx?['prescription']?['medicines'] as List?) ?? [];
-                                        final labTests = (rx?['prescription']?['labTests'] as List?)
-                                            ?? (rx?['labTests'] as List?) ?? [];
-
-                                        if (rx == null) return const SizedBox.shrink();
-                                        return Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 14),
-                                            const Divider(color: Color(0xFF334155)),
-                                            const SizedBox(height: 10),
-                                            if (diagnosis.isNotEmpty)
-                                              _pastConsultDetailRow(Icons.local_hospital_rounded, 'Diagnosis', diagnosis),
-                                            if (medicines.isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Icon(Icons.medication_rounded, color: Color(0xFF3B82F6), size: 14),
-                                                  const SizedBox(width: 8),
-                                                  const SizedBox(width: 80,
-                                                    child: Text('Medicines', style: TextStyle(color: Colors.white54, fontSize: 12))),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: medicines.map((m) {
-                                                        final name = m is Map ? (m['name']?.toString() ?? m['medicineName']?.toString() ?? '') : m.toString();
-                                                        final dose = m is Map ? (m['dosage']?.toString() ?? m['dose']?.toString() ?? '') : '';
-                                                        final freq = m is Map ? (m['frequency']?.toString() ?? '') : '';
-                                                        return Padding(
-                                                          padding: const EdgeInsets.only(bottom: 3),
-                                                          child: Text(
-                                                            '• $name${dose.isNotEmpty ? " — $dose" : ""}${freq.isNotEmpty ? " ($freq)" : ""}',
-                                                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                                                          ),
-                                                        );
-                                                      }).toList(),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                            if (labTests.isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 14),
-                                                  const SizedBox(width: 8),
-                                                  const SizedBox(width: 80,
-                                                    child: Text('Lab Tests', style: TextStyle(color: Colors.white54, fontSize: 12))),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: labTests.map((t) {
-                                                        final name = t is Map ? (t['name']?.toString() ?? t['testName']?.toString() ?? '') : t.toString();
-                                                        return Padding(
-                                                          padding: const EdgeInsets.only(bottom: 3),
-                                                          child: Text('• $name', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                                                        );
-                                                      }).toList(),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ],
-                                        );
-                                      }),
-                                      const SizedBox(height: 20),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                                          color: const Color(
+                                            0xFF10B981,
+                                          ).withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        child: const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                        child: Icon(
+                                          type == 'video'
+                                              ? Icons.videocam_rounded
+                                              : Icons.local_hospital_rounded,
+                                          color: const Color(0xFF10B981),
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
-                                            SizedBox(width: 8),
-                                            Text('Consultation Completed', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
+                                            Text(
+                                              reason.isNotEmpty
+                                                  ? reason
+                                                  : 'Consultation',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                            Text(
+                                              type == 'video'
+                                                  ? 'Video Consultation'
+                                                  : 'In-Person Visit',
+                                              style: const TextStyle(
+                                                color: Color(0xFF10B981),
+                                                fontSize: 12,
+                                              ),
+                                            ),
                                           ],
                                         ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.close_rounded,
+                                          color: Colors.white54,
+                                          size: 20,
+                                        ),
+                                        onPressed: () => Navigator.pop(context),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFF334155)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      type == 'video'
-                                          ? Icons.videocam_rounded
-                                          : Icons.local_hospital_rounded,
-                                      color: const Color(0xFF10B981),
-                                      size: 16,
+                                  const SizedBox(height: 20),
+                                  const Divider(color: Color(0xFF334155)),
+                                  const SizedBox(height: 16),
+                                  _pastConsultDetailRow(
+                                    Icons.calendar_today_rounded,
+                                    'Date',
+                                    label,
+                                  ),
+                                  if (timeLabel.isNotEmpty)
+                                    _pastConsultDetailRow(
+                                      Icons.access_time_rounded,
+                                      'Time',
+                                      timeLabel,
                                     ),
-                                    const SizedBox(width: 6),
-                                    Text(label,
-                                        style: const TextStyle(
-                                            color: Colors.white,
+                                  _pastConsultDetailRow(
+                                    Icons.person_rounded,
+                                    widget.patientId != null
+                                        ? 'Patient'
+                                        : 'Doctor',
+                                    widget.patientId != null
+                                        ? patient
+                                        : withDoctorTitle(doctor),
+                                  ),
+                                  if (widget.patientId == null)
+                                    _pastConsultDetailRow(
+                                      Icons.medical_services_rounded,
+                                      'Specialization',
+                                      specialization,
+                                    ),
+                                  // ── Prescription data ──────────────────
+                                  Builder(
+                                    builder: (_) {
+                                      // Match prescription by date key
+                                      final dateKey = dt != null
+                                          ? '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}'
+                                          : '';
+                                      final rx = dateKey.isNotEmpty
+                                          ? _prescriptionsByDate[dateKey]
+                                          : null;
+                                      final diagnosis =
+                                          rx?['diagnosis']?.toString() ?? '';
+                                      final medicines =
+                                          (rx?['prescription']?['medicines']
+                                              as List?) ??
+                                          [];
+                                      final labTests =
+                                          (rx?['prescription']?['labTests']
+                                              as List?) ??
+                                          (rx?['labTests'] as List?) ??
+                                          [];
+
+                                      if (rx == null)
+                                        return const SizedBox.shrink();
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 14),
+                                          const Divider(
+                                            color: Color(0xFF334155),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          if (diagnosis.isNotEmpty)
+                                            _pastConsultDetailRow(
+                                              Icons.local_hospital_rounded,
+                                              'Diagnosis',
+                                              diagnosis,
+                                            ),
+                                          if (medicines.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const Icon(
+                                                  Icons.medication_rounded,
+                                                  color: Color(0xFF3B82F6),
+                                                  size: 14,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                const SizedBox(
+                                                  width: 80,
+                                                  child: Text(
+                                                    'Medicines',
+                                                    style: TextStyle(
+                                                      color: Colors.white54,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: medicines.map((
+                                                      m,
+                                                    ) {
+                                                      final name = m is Map
+                                                          ? (m['name']
+                                                                    ?.toString() ??
+                                                                m['medicineName']
+                                                                    ?.toString() ??
+                                                                '')
+                                                          : m.toString();
+                                                      final dose = m is Map
+                                                          ? (m['dosage']
+                                                                    ?.toString() ??
+                                                                m['dose']
+                                                                    ?.toString() ??
+                                                                '')
+                                                          : '';
+                                                      final freq = m is Map
+                                                          ? (m['frequency']
+                                                                    ?.toString() ??
+                                                                '')
+                                                          : '';
+                                                      return Padding(
+                                                        padding:
+                                                            const EdgeInsets.only(
+                                                              bottom: 3,
+                                                            ),
+                                                        child: Text(
+                                                          '• $name${dose.isNotEmpty ? " — $dose" : ""}${freq.isNotEmpty ? " ($freq)" : ""}',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                          if (labTests.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const Icon(
+                                                  Icons.biotech_rounded,
+                                                  color: Color(0xFF8B5CF6),
+                                                  size: 14,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                const SizedBox(
+                                                  width: 80,
+                                                  child: Text(
+                                                    'Lab Tests',
+                                                    style: TextStyle(
+                                                      color: Colors.white54,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: labTests.map((t) {
+                                                      final name = t is Map
+                                                          ? (t['name']
+                                                                    ?.toString() ??
+                                                                t['testName']
+                                                                    ?.toString() ??
+                                                                '')
+                                                          : t.toString();
+                                                      return Padding(
+                                                        padding:
+                                                            const EdgeInsets.only(
+                                                              bottom: 3,
+                                                            ),
+                                                        child: Text(
+                                                          '• $name',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(
+                                          0xFF10B981,
+                                        ).withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Color(0xFF10B981),
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Consultation Completed',
+                                          style: TextStyle(
+                                            color: Color(0xFF10B981),
                                             fontWeight: FontWeight.w700,
-                                            fontSize: 13)),
-                                    if (timeLabel.isNotEmpty) ...[
-                                      const SizedBox(width: 6),
-                                      Text(timeLabel,
-                                          style: const TextStyle(
-                                              color: Colors.white38,
-                                              fontSize: 11)),
-                                    ],
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        type == 'video' ? 'Video' : 'In-Person',
-                                        style: const TextStyle(
-                                            color: Color(0xFF10B981), fontSize: 10),
-                                      ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                // Doctor/Patient name
-                                Row(
-                                  children: [
-                                    const Icon(Icons.person_outline_rounded, color: Colors.white38, size: 13),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        widget.patientId != null ? patient : withDoctorTitle(doctor),
-                                        style: const TextStyle(color: Colors.white60, fontSize: 12),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (reason.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(reason,
-                                      style: const TextStyle(
-                                          color: Colors.white38, fontSize: 11),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                                  ),
                                 ],
-                                const SizedBox(height: 6),
-                                // Tap hint
-                                const Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text('Tap to view details',
-                                        style: TextStyle(color: Color(0xFF10B981), fontSize: 10)),
-                                    SizedBox(width: 4),
-                                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF10B981), size: 10),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         );
                       },
-                    ),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF334155)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  type == 'video'
+                                      ? Icons.videocam_rounded
+                                      : Icons.local_hospital_rounded,
+                                  color: const Color(0xFF10B981),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  label,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (timeLabel.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    timeLabel,
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    type == 'video' ? 'Video' : 'In-Person',
+                                    style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            // Doctor/Patient name
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.person_outline_rounded,
+                                  color: Colors.white38,
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    widget.patientId != null
+                                        ? patient
+                                        : withDoctorTitle(doctor),
+                                    style: const TextStyle(
+                                      color: Colors.white60,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (reason.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                reason,
+                                style: const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 11,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            // Tap hint
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Tap to view details',
+                                  style: TextStyle(
+                                    color: Color(0xFF10B981),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 10,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -2181,18 +2659,27 @@ class _VideoCallWebState extends State<VideoCall> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.history_rounded,
-                  color: Colors.white70, size: 20),
+              const Icon(
+                Icons.history_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              const Text('Patient History',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
+              const Text(
+                'Patient History',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: Colors.white54, size: 20),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white54,
+                  size: 20,
+                ),
                 onPressed: () => setState(() => _showHistory = false),
               ),
             ],
@@ -2204,22 +2691,29 @@ class _VideoCallWebState extends State<VideoCall> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _historySection('Current Consultation',
-                    Icons.video_call_rounded, const Color(0xFF3B82F6), [
-                  'Patient: $patientName',
-                  'Doctor: $doctorName',
-                  'Session: $_sessionTimeStr',
-                ]),
+                _historySection(
+                  'Current Consultation',
+                  Icons.video_call_rounded,
+                  const Color(0xFF3B82F6),
+                  [
+                    'Patient: $patientName',
+                    'Doctor: $doctorName',
+                    'Session: $_sessionTimeStr',
+                  ],
+                ),
                 const SizedBox(height: 16),
                 if (_historyLoading)
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
                       child: CircularProgressIndicator(
-                          color: Color(0xFF10B981), strokeWidth: 2),
+                        color: Color(0xFF10B981),
+                        strokeWidth: 2,
+                      ),
                     ),
                   )
-                else ..._buildRealHistorySections(),
+                else
+                  ..._buildRealHistorySections(),
               ],
             ),
           ),
@@ -2231,14 +2725,26 @@ class _VideoCallWebState extends State<VideoCall> {
   List<Widget> _buildRealHistorySections() {
     if (_historyRecords.isEmpty) {
       return [
-        _historySection('Previous Visits', Icons.calendar_today_rounded,
-            const Color(0xFF10B981), ['No previous consultations found']),
+        _historySection(
+          'Previous Visits',
+          Icons.calendar_today_rounded,
+          const Color(0xFF10B981),
+          ['No previous consultations found'],
+        ),
         const SizedBox(height: 16),
-        _historySection('Prescriptions', Icons.medication_rounded,
-            const Color(0xFFF59E0B), ['No prescriptions on file']),
+        _historySection(
+          'Prescriptions',
+          Icons.medication_rounded,
+          const Color(0xFFF59E0B),
+          ['No prescriptions on file'],
+        ),
         const SizedBox(height: 16),
-        _historySection('Lab Reports', Icons.biotech_rounded,
-            const Color(0xFF8B5CF6), ['No lab reports available']),
+        _historySection(
+          'Lab Reports',
+          Icons.biotech_rounded,
+          const Color(0xFF8B5CF6),
+          ['No lab reports available'],
+        ),
       ];
     }
 
@@ -2282,20 +2788,30 @@ class _VideoCallWebState extends State<VideoCall> {
         padding: const EdgeInsets.only(bottom: 10),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_rounded,
-                color: Color(0xFF10B981), size: 14),
+            const Icon(
+              Icons.calendar_today_rounded,
+              color: Color(0xFF10B981),
+              size: 14,
+            ),
             const SizedBox(width: 6),
-            Text(visitLabel,
-                style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13)),
+            Text(
+              visitLabel,
+              style: const TextStyle(
+                color: Color(0xFF10B981),
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       ),
       if (visitWidgets.isEmpty)
-        _historySection('Previous Visits', Icons.calendar_today_rounded,
-            const Color(0xFF10B981), ['No previous consultations recorded'])
+        _historySection(
+          'Previous Visits',
+          Icons.calendar_today_rounded,
+          const Color(0xFF10B981),
+          ['No previous consultations recorded'],
+        )
       else
         ...visitWidgets,
     ];
@@ -2304,16 +2820,30 @@ class _VideoCallWebState extends State<VideoCall> {
   String _formatDate(String raw) {
     final dt = DateTime.tryParse(raw)?.toLocal();
     if (dt == null) return raw;
-    final months = ['Jan','Feb','Mar','Apr','May','Jun',
-                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}  '
-        '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}';
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   // ── Clickable card for a full medical record ────────────────────────────
   Widget _buildVisitCard(Map<String, dynamic> rec) {
     final rawDate = rec['date'] ?? rec['createdAt'];
-    final dateStr = rawDate != null ? _formatDate(rawDate.toString()) : 'Unknown date';
+    final dateStr = rawDate != null
+        ? _formatDate(rawDate.toString())
+        : 'Unknown date';
     final diagnosis = rec['diagnosis']?.toString() ?? '';
     final notes = rec['notes']?.toString() ?? '';
     final doctorName = (rec['doctor'] is Map)
@@ -2339,14 +2869,24 @@ class _VideoCallWebState extends State<VideoCall> {
     final courses = (rec['assignedCourses'] as List?) ?? [];
 
     return GestureDetector(
-      onTap: () => _showVisitDetail(rec, dateStr, diagnosis, notes,
-          doctorName, medicines, labTests, courses),
+      onTap: () => _showVisitDetail(
+        rec,
+        dateStr,
+        diagnosis,
+        notes,
+        doctorName,
+        medicines,
+        labTests,
+        courses,
+      ),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+          border: Border.all(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2354,25 +2894,35 @@ class _VideoCallWebState extends State<VideoCall> {
             // Date + tap hint
             Row(
               children: [
-                const Icon(Icons.calendar_today_rounded,
-                    color: Color(0xFF10B981), size: 13),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  color: Color(0xFF10B981),
+                  size: 13,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(dateStr,
-                      style: const TextStyle(
-                          color: Color(0xFF10B981),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(
+                    dateStr,
+                    style: const TextStyle(
+                      color: Color(0xFF10B981),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-                const Icon(Icons.open_in_new_rounded,
-                    color: Color(0xFF64748B), size: 13),
+                const Icon(
+                  Icons.open_in_new_rounded,
+                  color: Color(0xFF64748B),
+                  size: 13,
+                ),
               ],
             ),
             const SizedBox(height: 6),
             // Doctor
-            Text(withDoctorTitle(doctorName),
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 12)),
+            Text(
+              withDoctorTitle(doctorName),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             // Diagnosis
             if (diagnosis.isNotEmpty) ...[
               const SizedBox(height: 4),
@@ -2380,8 +2930,7 @@ class _VideoCallWebState extends State<VideoCall> {
                 diagnosis.length > 60
                     ? '${diagnosis.substring(0, 60)}…'
                     : diagnosis,
-                style: const TextStyle(
-                    color: Colors.white54, fontSize: 11),
+                style: const TextStyle(color: Colors.white54, fontSize: 11),
               ),
             ],
             const SizedBox(height: 8),
@@ -2392,16 +2941,19 @@ class _VideoCallWebState extends State<VideoCall> {
               children: [
                 if (medicines.isNotEmpty)
                   _historyChip(
-                      '💊 ${medicines.length} med${medicines.length > 1 ? 's' : ''}',
-                      const Color(0xFF3B82F6)),
+                    '💊 ${medicines.length} med${medicines.length > 1 ? 's' : ''}',
+                    const Color(0xFF3B82F6),
+                  ),
                 if (labTests.isNotEmpty)
                   _historyChip(
-                      '🧪 ${labTests.length} test${labTests.length > 1 ? 's' : ''}',
-                      const Color(0xFF8B5CF6)),
+                    '🧪 ${labTests.length} test${labTests.length > 1 ? 's' : ''}',
+                    const Color(0xFF8B5CF6),
+                  ),
                 if (courses.isNotEmpty)
                   _historyChip(
-                      '📚 ${courses.length} course${courses.length > 1 ? 's' : ''}',
-                      const Color(0xFF10B981)),
+                    '📚 ${courses.length} course${courses.length > 1 ? 's' : ''}',
+                    const Color(0xFF10B981),
+                  ),
                 if (notes.isNotEmpty)
                   _historyChip('📝 Notes', const Color(0xFFF59E0B)),
               ],
@@ -2420,15 +2972,23 @@ class _VideoCallWebState extends State<VideoCall> {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
   // ── Simple tile for appointment-only records (no medical record yet) ────
   Widget _buildSimpleVisitTile(
-      String dateStr, String doctorName, String complaint) {
+    String dateStr,
+    String doctorName,
+    String complaint,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2440,19 +3000,27 @@ class _VideoCallWebState extends State<VideoCall> {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  color: Color(0xFF64748B), size: 13),
+              const Icon(
+                Icons.calendar_today_rounded,
+                color: Color(0xFF64748B),
+                size: 13,
+              ),
               const SizedBox(width: 6),
-              Text(dateStr,
-                  style: const TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                dateStr,
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(withDoctorTitle(doctorName),
-              style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          Text(
+            withDoctorTitle(doctorName),
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
           if (complaint.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
@@ -2494,32 +3062,44 @@ class _VideoCallWebState extends State<VideoCall> {
                   gradient: LinearGradient(
                     colors: [Color(0xFF1E3A5F), Color(0xFF0F172A)],
                   ),
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.history_rounded,
-                        color: Color(0xFF10B981), size: 22),
+                    const Icon(
+                      Icons.history_rounded,
+                      color: Color(0xFF10B981),
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Visit Details',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 16)),
-                          Text(dateStr,
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 12)),
+                          const Text(
+                            'Visit Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            dateStr,
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded,
-                          color: Colors.white54, size: 20),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white54,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -2533,8 +3113,12 @@ class _VideoCallWebState extends State<VideoCall> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Doctor
-                      _detailRow(Icons.person_rounded,
-                          const Color(0xFF3B82F6), 'Doctor', withDoctorTitle(doctorName)),
+                      _detailRow(
+                        Icons.person_rounded,
+                        const Color(0xFF3B82F6),
+                        'Doctor',
+                        withDoctorTitle(doctorName),
+                      ),
                       const SizedBox(height: 12),
 
                       // Diagnosis
@@ -2561,8 +3145,11 @@ class _VideoCallWebState extends State<VideoCall> {
 
                       // Medicines
                       if (medicines.isNotEmpty) ...[
-                        _detailLabel(Icons.medication_rounded,
-                            const Color(0xFF3B82F6), 'Prescribed Medicines'),
+                        _detailLabel(
+                          Icons.medication_rounded,
+                          const Color(0xFF3B82F6),
+                          'Prescribed Medicines',
+                        ),
                         const SizedBox(height: 6),
                         ...medicines.map((m) {
                           final name = m is Map
@@ -2587,23 +3174,31 @@ class _VideoCallWebState extends State<VideoCall> {
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: const Color(0xFF3B82F6)
-                                      .withValues(alpha: 0.3)),
+                                color: const Color(
+                                  0xFF3B82F6,
+                                ).withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.medication_rounded,
-                                        color: Color(0xFF3B82F6), size: 14),
+                                    const Icon(
+                                      Icons.medication_rounded,
+                                      color: Color(0xFF3B82F6),
+                                      size: 14,
+                                    ),
                                     const SizedBox(width: 6),
                                     Expanded(
-                                      child: Text(name,
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 13)),
+                                      child: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -2615,23 +3210,32 @@ class _VideoCallWebState extends State<VideoCall> {
                                     spacing: 8,
                                     children: [
                                       if (dosage.isNotEmpty)
-                                        _miniChip(dosage,
-                                            const Color(0xFF3B82F6)),
+                                        _miniChip(
+                                          dosage,
+                                          const Color(0xFF3B82F6),
+                                        ),
                                       if (freq.isNotEmpty)
-                                        _miniChip(freq,
-                                            const Color(0xFF10B981)),
+                                        _miniChip(
+                                          freq,
+                                          const Color(0xFF10B981),
+                                        ),
                                       if (duration.isNotEmpty)
-                                        _miniChip(duration,
-                                            const Color(0xFFF59E0B)),
+                                        _miniChip(
+                                          duration,
+                                          const Color(0xFFF59E0B),
+                                        ),
                                     ],
                                   ),
                                 ],
                                 if (instructions.isNotEmpty) ...[
                                   const SizedBox(height: 4),
-                                  Text('📝 $instructions',
-                                      style: const TextStyle(
-                                          color: Colors.white54,
-                                          fontSize: 11)),
+                                  Text(
+                                    '📝 $instructions',
+                                    style: const TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 ],
                               ],
                             ),
@@ -2642,45 +3246,57 @@ class _VideoCallWebState extends State<VideoCall> {
 
                       // Lab Tests
                       if (labTests.isNotEmpty) ...[
-                        _detailLabel(Icons.biotech_rounded,
-                            const Color(0xFF8B5CF6), 'Lab Tests Ordered'),
+                        _detailLabel(
+                          Icons.biotech_rounded,
+                          const Color(0xFF8B5CF6),
+                          'Lab Tests Ordered',
+                        ),
                         const SizedBox(height: 6),
                         ...labTests.map((t) {
                           final name = t is Map
                               ? (t['name'] ?? t['testName'] ?? 'Lab Test')
-                                  .toString()
+                                    .toString()
                               : t.toString();
                           final urgency = t is Map
                               ? (t['urgency'] ?? 'Routine').toString()
                               : 'Routine';
-                          final urgencyColor =
-                              urgency.toLowerCase() == 'stat'
-                                  ? const Color(0xFFEF4444)
-                                  : urgency.toLowerCase() == 'urgent'
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFF8B5CF6);
+                          final urgencyColor = urgency.toLowerCase() == 'stat'
+                              ? const Color(0xFFEF4444)
+                              : urgency.toLowerCase() == 'urgent'
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF8B5CF6);
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: const Color(0xFF8B5CF6)
-                                      .withValues(alpha: 0.3)),
+                                color: const Color(
+                                  0xFF8B5CF6,
+                                ).withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.biotech_rounded,
-                                    color: Color(0xFF8B5CF6), size: 14),
+                                const Icon(
+                                  Icons.biotech_rounded,
+                                  color: Color(0xFF8B5CF6),
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(name,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                                 _miniChip(urgency, urgencyColor),
                               ],
@@ -2692,36 +3308,48 @@ class _VideoCallWebState extends State<VideoCall> {
 
                       // Assigned Courses
                       if (courses.isNotEmpty) ...[
-                        _detailLabel(Icons.school_rounded,
-                            const Color(0xFF10B981), 'Assigned Courses'),
+                        _detailLabel(
+                          Icons.school_rounded,
+                          const Color(0xFF10B981),
+                          'Assigned Courses',
+                        ),
                         const SizedBox(height: 6),
                         ...courses.map((c) {
                           final name = c is Map
-                              ? (c['title'] ?? c['name'] ?? 'Course')
-                                  .toString()
+                              ? (c['title'] ?? c['name'] ?? 'Course').toString()
                               : c.toString();
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: const Color(0xFF10B981)
-                                      .withValues(alpha: 0.3)),
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.play_circle_rounded,
-                                    color: Color(0xFF10B981), size: 14),
+                                const Icon(
+                                  Icons.play_circle_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(name,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -2738,9 +3366,13 @@ class _VideoCallWebState extends State<VideoCall> {
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.all(24),
-                            child: Text('No details recorded for this visit',
-                                style: TextStyle(
-                                    color: Colors.white38, fontSize: 13)),
+                            child: Text(
+                              'No details recorded for this visit',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -2754,30 +3386,39 @@ class _VideoCallWebState extends State<VideoCall> {
     );
   }
 
-  Widget _detailRow(
-      IconData icon, Color color, String label, String value) {
+  Widget _detailRow(IconData icon, Color color, String label, String value) {
     return Row(
       children: [
         Icon(icon, color: color, size: 14),
         const SizedBox(width: 6),
-        Text('$label: ',
-            style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 12,
-                fontWeight: FontWeight.w600)),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         Expanded(
-          child: Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700)),
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ],
     );
   }
 
   Widget _detailSection(
-      IconData icon, Color color, String title, String content) {
+    IconData icon,
+    Color color,
+    String title,
+    String content,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2791,9 +3432,14 @@ class _VideoCallWebState extends State<VideoCall> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
-          child: Text(content,
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 12, height: 1.5)),
+          child: Text(
+            content,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
         ),
       ],
     );
@@ -2804,11 +3450,14 @@ class _VideoCallWebState extends State<VideoCall> {
       children: [
         Icon(icon, color: color, size: 14),
         const SizedBox(width: 6),
-        Text(title,
-            style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-                fontSize: 13)),
+        Text(
+          title,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }
@@ -2820,14 +3469,23 @@ class _VideoCallWebState extends State<VideoCall> {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(5),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
   Widget _historySection(
-      String title, IconData icon, Color color, List<String> items) {
+    String title,
+    IconData icon,
+    Color color,
+    List<String> items,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -2841,20 +3499,26 @@ class _VideoCallWebState extends State<VideoCall> {
             children: [
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 8),
-              Text(title,
-                  style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13)),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(item,
-                    style: const TextStyle(
-                        color: Colors.white60, fontSize: 12)),
-              )),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                item,
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2884,13 +3548,20 @@ class _VideoCallWebState extends State<VideoCall> {
             children: [
               // Top bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      isCalling ? Icons.phone_forwarded_rounded : Icons.phone_in_talk_rounded,
-                      color: isCalling ? Colors.orangeAccent : const Color(0xFF10B981),
+                      isCalling
+                          ? Icons.phone_forwarded_rounded
+                          : Icons.phone_in_talk_rounded,
+                      color: isCalling
+                          ? Colors.orangeAccent
+                          : const Color(0xFF10B981),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -2920,7 +3591,10 @@ class _VideoCallWebState extends State<VideoCall> {
                       height: 160,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.25), width: 2),
+                        border: Border.all(
+                          color: Colors.orangeAccent.withValues(alpha: 0.25),
+                          width: 2,
+                        ),
                       ),
                     ),
                     Container(
@@ -2928,7 +3602,10 @@ class _VideoCallWebState extends State<VideoCall> {
                       height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4), width: 2),
+                        border: Border.all(
+                          color: Colors.orangeAccent.withValues(alpha: 0.4),
+                          width: 2,
+                        ),
                       ),
                     ),
                   ],
@@ -2939,12 +3616,18 @@ class _VideoCallWebState extends State<VideoCall> {
                       shape: BoxShape.circle,
                       color: Colors.white12,
                       border: Border.all(
-                        color: isCalling ? Colors.orangeAccent : const Color(0xFF10B981),
+                        color: isCalling
+                            ? Colors.orangeAccent
+                            : const Color(0xFF10B981),
                         width: 3,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (isCalling ? Colors.orangeAccent : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                          color:
+                              (isCalling
+                                      ? Colors.orangeAccent
+                                      : const Color(0xFF10B981))
+                                  .withValues(alpha: 0.3),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -2977,9 +3660,13 @@ class _VideoCallWebState extends State<VideoCall> {
               ),
               const SizedBox(height: 8),
               Text(
-                isCalling ? 'Ringing... waiting for answer' : 'Audio Call Connected',
+                isCalling
+                    ? 'Ringing... waiting for answer'
+                    : 'Audio Call Connected',
                 style: TextStyle(
-                  color: isCalling ? Colors.orangeAccent.withValues(alpha: 0.8) : Colors.white54,
+                  color: isCalling
+                      ? Colors.orangeAccent.withValues(alpha: 0.8)
+                      : Colors.white54,
                   fontSize: 14,
                 ),
               ),
@@ -2997,7 +3684,9 @@ class _VideoCallWebState extends State<VideoCall> {
                         if (!isCalling) ...[
                           // Mic toggle (only shown when connected)
                           _audioCallBtn(
-                            icon: _micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            icon: _micMuted
+                                ? Icons.mic_off_rounded
+                                : Icons.mic_rounded,
                             label: _micMuted ? 'Unmute' : 'Mute',
                             color: _micMuted ? Colors.grey : Colors.white,
                             bg: Colors.white24,
@@ -3032,9 +3721,12 @@ class _VideoCallWebState extends State<VideoCall> {
                       isCalling
                           ? 'Cancel to stop calling'
                           : _isDoctor
-                              ? 'Red = Leave  •  Green = Switch to Video'
-                              : 'Red = Leave Call',
-                      style: const TextStyle(color: Colors.white30, fontSize: 11),
+                          ? 'Red = Leave  •  Green = Switch to Video'
+                          : 'Red = Leave Call',
+                      style: const TextStyle(
+                        color: Colors.white30,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
@@ -3066,8 +3758,10 @@ class _VideoCallWebState extends State<VideoCall> {
             child: Icon(icon, color: color, size: size * 0.45),
           ),
           const SizedBox(height: 6),
-          Text(label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -3082,9 +3776,11 @@ class _VideoCallWebState extends State<VideoCall> {
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 56),
             const SizedBox(height: 16),
-            Text(_error ?? 'Unknown error',
-                style: const TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center),
+            Text(
+              _error ?? 'Unknown error',
+              style: const TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -3144,14 +3840,20 @@ class _VideoCallWebState extends State<VideoCall> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon,
-                    color: active ? Colors.white : Colors.white60, size: 16),
+                Icon(
+                  icon,
+                  color: active ? Colors.white : Colors.white60,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
-                Text(label,
-                    style: TextStyle(
-                        color: active ? Colors.white : Colors.white60,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: active ? Colors.white : Colors.white60,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -3166,10 +3868,7 @@ class _VideoCallWebState extends State<VideoCall> {
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
-                ),
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                 child: Center(
                   child: Text(
                     badgeCount > 9 ? '9+' : '$badgeCount',

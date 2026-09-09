@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
 import 'package:icare/widgets/custom_text.dart';
@@ -26,23 +27,29 @@ class RefundPolicy extends StatelessWidget {
           lineHeight: 1.0,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: Utils.windowWidth(context) * 0.075,
-          vertical: 20,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomText(
-              text: "iCare – RM Health Solutions (Private) Limited\nEffective Date: 01/07/2026",
-              fontFamily: "Gilroy-Medium",
-              fontSize: 12,
-              color: AppColors.themeDarkGrey,
-            ),
-            SizedBox(height: Utils.windowHeight(context) * 0.02),
-            ..._sections.map((s) => _MobilePolicySection(title: s[0], body: s[1])),
-          ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: EdgeInsets.symmetric(
+            horizontal: Utils.windowWidth(context) * 0.075,
+            vertical: 20,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomText(
+                text:
+                    "iCare – RM Health Solutions (Private) Limited\nEffective Date: 01/07/2026",
+                fontFamily: "Gilroy-Medium",
+                fontSize: 12,
+                color: AppColors.themeDarkGrey,
+              ),
+              SizedBox(height: Utils.windowHeight(context) * 0.02),
+              ..._sections.map(
+                (s) => _MobilePolicySection(title: s[0], body: s[1]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -115,45 +122,57 @@ class _WebRefundPolicy extends StatelessWidget {
           lineHeight: 1.0,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              padding: const EdgeInsets.all(48),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFF1F4F9), width: 1.5),
-                boxShadow: const [BoxShadow(color: Color(0x0A000000), offset: Offset(0, 4), blurRadius: 20)],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Refund Policy",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
-                      fontFamily: "Gilroy-Bold",
-                    ),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                padding: const EdgeInsets.all(48),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFF1F4F9),
+                    width: 1.5,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "iCare – RM Health Solutions (Private) Limited\nEffective Date: 01/07/2026",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF94A3B8),
-                      fontFamily: "Gilroy-Medium",
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0A000000),
+                      offset: Offset(0, 4),
+                      blurRadius: 20,
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
-                  const SizedBox(height: 32),
-                  ..._sections.map((s) => _buildSection(s[0], s[1])),
-                ],
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Refund Policy",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                        fontFamily: "Gilroy-Bold",
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "iCare – RM Health Solutions (Private) Limited\nEffective Date: 01/07/2026",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF94A3B8),
+                        fontFamily: "Gilroy-Medium",
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
+                    const SizedBox(height: 32),
+                    ..._sections.map((s) => _buildSection(s[0], s[1])),
+                  ],
+                ),
               ),
             ),
           ),

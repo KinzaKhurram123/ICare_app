@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -140,7 +141,8 @@ class UpcomingBOokingsList extends ConsumerWidget {
       ),
       itemBuilder: (ctx, i) {
         final appointment = data![i] as AppointmentDetail;
-        if (selectedRole == "lab_technician") return TestAppointment(status: status);
+        if (selectedRole == "lab_technician")
+          return TestAppointment(status: status);
 
         final isInProgress = appointment.status.toLowerCase() == 'in_progress';
         return Column(
@@ -155,19 +157,34 @@ class UpcomingBOokingsList extends ConsumerWidget {
                   children: [
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.fiber_manual_record, color: Color(0xFF8B5CF6), size: 10),
+                          Icon(
+                            Icons.fiber_manual_record,
+                            color: Color(0xFF8B5CF6),
+                            size: 10,
+                          ),
                           SizedBox(width: 8),
-                          Text('Consultation in Progress'.tr(),
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6))),
+                          Text(
+                            'Consultation in Progress'.tr(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF8B5CF6),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -176,7 +193,9 @@ class UpcomingBOokingsList extends ConsumerWidget {
                       onPressed: () {
                         String channelName = appointment.id;
                         final notes = appointment.reason ?? '';
-                        final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                        final match = RegExp(
+                          r'Channel:\s*(\S+)',
+                        ).firstMatch(notes);
                         if (match != null) channelName = match.group(1)!;
                         Navigator.of(ctx).push(
                           MaterialPageRoute(
@@ -198,7 +217,9 @@ class UpcomingBOokingsList extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
                   ],
@@ -290,351 +311,373 @@ class _WebBookingCategoriesState extends State<_WebBookingCategories> {
           lineHeight: 1.0,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Left Sidebar ──
-                  SizedBox(
-                    width: 280,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Filter by Status".tr(),
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                            fontFamily: "Gilroy-Bold",
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Left Sidebar ──
+                    SizedBox(
+                      width: 280,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Filter by Status".tr(),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              fontFamily: "Gilroy-Bold",
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Select a category to view your bookings".tr(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            height: 1.5,
+                          const SizedBox(height: 8),
+                          Text(
+                            "Select a category to view your bookings".tr(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                              height: 1.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 28),
+                          const SizedBox(height: 28),
 
-                        // Tab buttons
-                        ...List.generate(_tabs.length, (index) {
-                          final tab = _tabs[index];
-                          final isSelected = _selectedTab == index;
-                          final Color color = tab["color"];
+                          // Tab buttons
+                          ...List.generate(_tabs.length, (index) {
+                            final tab = _tabs[index];
+                            final isSelected = _selectedTab == index;
+                            final Color color = tab["color"];
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTab = index;
-                                  });
-                                  widget.tabController.animateTo(index);
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? color.withValues(alpha: 0.08)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? color.withValues(alpha: 0.3)
-                                          : const Color(0xFFE2E8F0),
-                                      width: 1.5,
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedTab = index;
+                                    });
+                                    widget.tabController.animateTo(index);
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 16,
                                     ),
-                                    boxShadow: isSelected
-                                        ? [
-                                            BoxShadow(
-                                              color: color.withValues(alpha: 0.1),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? color.withValues(alpha: 0.15)
-                                              : const Color(0xFFF8FAFC),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          tab["icon"],
-                                          color: isSelected
-                                              ? color
-                                              : const Color(0xFF94A3B8),
-                                          size: 22,
-                                        ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? color.withValues(alpha: 0.08)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? color.withValues(alpha: 0.3)
+                                            : const Color(0xFFE2E8F0),
+                                        width: 1.5,
                                       ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Text(
-                                          (tab["label"] as String).tr(),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: color.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
                                             color: isSelected
-                                                ? color
-                                                : const Color(0xFF64748B),
-                                            fontFamily: "Gilroy-SemiBold",
+                                                ? color.withValues(alpha: 0.15)
+                                                : const Color(0xFFF8FAFC),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? color.withValues(alpha: 0.15)
-                                              : const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          widget.appointments
-                                              .where((a) {
-                                                if (index == 0) {
-                                                  return a.status.toLowerCase() == 'confirmed';
-                                                }
-                                                if (index == 1) {
-                                                  return a.status.toLowerCase() == 'pending';
-                                                }
-                                                if (index == 2) {
-                                                  return a.status.toLowerCase() == 'completed';
-                                                }
-                                                return a.status.toLowerCase() == 'cancelled';
-                                              })
-                                              .length
-                                              .toString(),
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
+                                          child: Icon(
+                                            tab["icon"],
                                             color: isSelected
                                                 ? color
                                                 : const Color(0xFF94A3B8),
+                                            size: 22,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Text(
+                                            (tab["label"] as String).tr(),
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: isSelected
+                                                  ? color
+                                                  : const Color(0xFF64748B),
+                                              fontFamily: "Gilroy-SemiBold",
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? color.withValues(alpha: 0.15)
+                                                : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            widget.appointments
+                                                .where((a) {
+                                                  if (index == 0) {
+                                                    return a.status
+                                                            .toLowerCase() ==
+                                                        'confirmed';
+                                                  }
+                                                  if (index == 1) {
+                                                    return a.status
+                                                            .toLowerCase() ==
+                                                        'pending';
+                                                  }
+                                                  if (index == 2) {
+                                                    return a.status
+                                                            .toLowerCase() ==
+                                                        'completed';
+                                                  }
+                                                  return a.status
+                                                          .toLowerCase() ==
+                                                      'cancelled';
+                                                })
+                                                .length
+                                                .toString(),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: isSelected
+                                                  ? color
+                                                  : const Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        }),
+                            );
+                          }),
 
-                        const SizedBox(height: 28),
+                          const SizedBox(height: 28),
 
-                        // Stats summary
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFFF1F4F9),
-                              width: 1.5,
+                          // Stats summary
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFF1F4F9),
+                                width: 1.5,
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Quick Stats".tr(),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E293B),
-                                  fontFamily: "Gilroy-Bold",
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildStatRow(
-                                "Total Bookings".tr(),
-                                widget.appointments.length.toString(),
-                                const Color(0xFF3B82F6),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildStatRow(
-                                "In Progress".tr(),
-                                widget.appointments
-                                    .where((a) => a.status.toLowerCase() == 'in_progress')
-                                    .length
-                                    .toString(),
-                                const Color(0xFF8B5CF6),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildStatRow(
-                                "Upcoming".tr(),
-                                widget.appointments
-                                    .where(
-                                      (a) =>
-                                          a.status.toLowerCase() == 'pending' ||
-                                          a.status.toLowerCase() == 'confirmed',
-                                    )
-                                    .length
-                                    .toString(),
-                                const Color(0xFF3B82F6),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildStatRow(
-                                "Cancelled".tr(),
-                                widget.appointments
-                                    .where(
-                                      (a) =>
-                                          a.status.toLowerCase() == 'cancelled',
-                                    )
-                                    .length
-                                    .toString(),
-                                const Color(0xFFEF4444),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildStatRow(
-                                "Completed".tr(),
-                                widget.appointments
-                                    .where(
-                                      (a) =>
-                                          a.status.toLowerCase() == 'completed',
-                                    )
-                                    .length
-                                    .toString(),
-                                const Color(0xFF22C55E),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 32),
-
-                  // ── Right: Booking Cards ──
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Tab header
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                            border: Border.all(
-                              color: const Color(0xFFF1F4F9),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _tabs[_selectedTab]["icon"],
-                                color: _tabs[_selectedTab]["color"],
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                "${(_tabs[_selectedTab]["label"] as String).tr()} ${'Bookings'.tr()}",
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E293B),
-                                  fontFamily: "Gilroy-Bold",
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: (_tabs[_selectedTab]["color"] as Color)
-                                      .withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  "${widget.appointments.where((a) {
-                                    if (_selectedTab == 0) return a.status.toLowerCase() == 'confirmed';
-                                    if (_selectedTab == 1) return a.status.toLowerCase() == 'pending';
-                                    if (_selectedTab == 2) return a.status.toLowerCase() == 'completed';
-                                    return a.status.toLowerCase() == 'cancelled';
-                                  }).length} ${'bookings'.tr()}",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: _tabs[_selectedTab]["color"],
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Quick Stats".tr(),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E293B),
+                                    fontFamily: "Gilroy-Bold",
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Booking cards list
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(20),
+                                const SizedBox(height: 16),
+                                _buildStatRow(
+                                  "Total Bookings".tr(),
+                                  widget.appointments.length.toString(),
+                                  const Color(0xFF3B82F6),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildStatRow(
+                                  "In Progress".tr(),
+                                  widget.appointments
+                                      .where(
+                                        (a) =>
+                                            a.status.toLowerCase() ==
+                                            'in_progress',
+                                      )
+                                      .length
+                                      .toString(),
+                                  const Color(0xFF8B5CF6),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildStatRow(
+                                  "Upcoming".tr(),
+                                  widget.appointments
+                                      .where(
+                                        (a) =>
+                                            a.status.toLowerCase() ==
+                                                'pending' ||
+                                            a.status.toLowerCase() ==
+                                                'confirmed',
+                                      )
+                                      .length
+                                      .toString(),
+                                  const Color(0xFF3B82F6),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildStatRow(
+                                  "Cancelled".tr(),
+                                  widget.appointments
+                                      .where(
+                                        (a) =>
+                                            a.status.toLowerCase() ==
+                                            'cancelled',
+                                      )
+                                      .length
+                                      .toString(),
+                                  const Color(0xFFEF4444),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildStatRow(
+                                  "Completed".tr(),
+                                  widget.appointments
+                                      .where(
+                                        (a) =>
+                                            a.status.toLowerCase() ==
+                                            'completed',
+                                      )
+                                      .length
+                                      .toString(),
+                                  const Color(0xFF22C55E),
+                                ),
+                              ],
                             ),
-                            border: Border.all(
-                              color: const Color(0xFFF1F4F9),
-                              width: 1.5,
-                            ),
                           ),
-                          child: _WebBookingList(
-                            status: _tabs[_selectedTab]["status"],
-                            data: widget.appointments.where((a) {
-                              if (_selectedTab == 0) {
-                                return a.status.toLowerCase() == 'confirmed';
-                              }
-                              if (_selectedTab == 1) {
-                                return a.status.toLowerCase() == 'pending';
-                              }
-                              if (_selectedTab == 2) {
-                                return a.status.toLowerCase() == 'completed';
-                              }
-                              return a.status.toLowerCase() == 'cancelled';
-                            }).toList(),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(width: 32),
+
+                    // ── Right: Booking Cards ──
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Tab header
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 20,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                              border: Border.all(
+                                color: const Color(0xFFF1F4F9),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _tabs[_selectedTab]["icon"],
+                                  color: _tabs[_selectedTab]["color"],
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "${(_tabs[_selectedTab]["label"] as String).tr()} ${'Bookings'.tr()}",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E293B),
+                                    fontFamily: "Gilroy-Bold",
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (_tabs[_selectedTab]["color"] as Color)
+                                            .withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    "${widget.appointments.where((a) {
+                                      if (_selectedTab == 0) return a.status.toLowerCase() == 'confirmed';
+                                      if (_selectedTab == 1) return a.status.toLowerCase() == 'pending';
+                                      if (_selectedTab == 2) return a.status.toLowerCase() == 'completed';
+                                      return a.status.toLowerCase() == 'cancelled';
+                                    }).length} ${'bookings'.tr()}",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _tabs[_selectedTab]["color"],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Booking cards list
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(20),
+                              ),
+                              border: Border.all(
+                                color: const Color(0xFFF1F4F9),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _WebBookingList(
+                              status: _tabs[_selectedTab]["status"],
+                              data: widget.appointments.where((a) {
+                                if (_selectedTab == 0) {
+                                  return a.status.toLowerCase() == 'confirmed';
+                                }
+                                if (_selectedTab == 1) {
+                                  return a.status.toLowerCase() == 'pending';
+                                }
+                                if (_selectedTab == 2) {
+                                  return a.status.toLowerCase() == 'completed';
+                                }
+                                return a.status.toLowerCase() == 'cancelled';
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -689,7 +732,8 @@ class _WebBookingList extends ConsumerWidget {
           const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
       itemBuilder: (ctx, i) {
         final appointment = data[i] as AppointmentDetail;
-        if (selectedRole == "lab_technician") return TestAppointment(status: status);
+        if (selectedRole == "lab_technician")
+          return TestAppointment(status: status);
 
         final isInProgress = appointment.status.toLowerCase() == 'in_progress';
 
@@ -703,15 +747,19 @@ class _WebBookingList extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFF8B5CF6).withValues(alpha: 0.05),
-                  border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 10, height: 10,
+                      width: 10,
+                      height: 10,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF8B5CF6), shape: BoxShape.circle,
+                        color: Color(0xFF8B5CF6),
+                        shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -719,7 +767,8 @@ class _WebBookingList extends ConsumerWidget {
                       child: Text(
                         'Consultation in Progress',
                         style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                           color: Color(0xFF8B5CF6),
                         ),
                       ),
@@ -728,11 +777,14 @@ class _WebBookingList extends ConsumerWidget {
                     ElevatedButton.icon(
                       onPressed: () {
                         // Use stored channelName, fallback to notes, then appointment id
-                        String channelName = appointment.channelName?.isNotEmpty == true
+                        String channelName =
+                            appointment.channelName?.isNotEmpty == true
                             ? appointment.channelName!
                             : appointment.id;
                         final notes = appointment.reason ?? '';
-                        final match = RegExp(r'Channel:\s*(\S+)').firstMatch(notes);
+                        final match = RegExp(
+                          r'Channel:\s*(\S+)',
+                        ).firstMatch(notes);
                         if (match != null && channelName == appointment.id) {
                           channelName = match.group(1)!;
                         }
@@ -754,13 +806,21 @@ class _WebBookingList extends ConsumerWidget {
                       icon: const Icon(Icons.video_call_rounded, size: 18),
                       label: const Text(
                         'Rejoin',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
                     ),

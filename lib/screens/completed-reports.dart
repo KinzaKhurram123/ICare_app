@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/widgets/back_button.dart';
 
 class CompletedReportsScreen extends StatelessWidget {
@@ -53,173 +54,119 @@ class _WebCompletedReportsScreen extends StatelessWidget {
           child: CustomBackButton(),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top Stunning Header
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
-              padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF064E3B), Color(0xFF0F766E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Column(
+            children: [
+              // Top Stunning Header
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 50,
+                  vertical: 10,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF064E3B).withValues(alpha: 0.15),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(32),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF064E3B), Color(0xFF0F766E)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        width: 1.5,
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF064E3B).withValues(alpha: 0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
                     ),
-                    child: const Icon(
-                      Icons.check_circle_rounded,
-                      color: Colors.white,
-                      size: 56,
-                    ),
-                  ),
-                  const SizedBox(width: 40),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Completed Reports",
-                          style: TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            fontFamily: "Gilroy-Bold",
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Access and review all successfully processed laboratory test reports and results.",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 25,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: const [
-                        Text(
-                          "Total Completed",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          "32",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 40,
-                            fontFamily: "Gilroy-Bold",
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Search and Filter Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(50, 40, 50, 30),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1600),
+                  ],
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Archived Reports",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E293B),
-                        fontFamily: "Gilroy-Bold",
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 56,
                       ),
                     ),
-                    Container(
-                      width: 350,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
+                    const SizedBox(width: 40),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Completed Reports",
+                            style: TextStyle(
+                              fontSize: 44,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              fontFamily: "Gilroy-Bold",
+                              letterSpacing: -1,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Access and review all successfully processed laboratory test reports and results.",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500,
+                              height: 1.5,
+                            ),
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search_rounded,
-                            color: Color(0xFF94A3B8),
-                            size: 24,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 25,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                hintText: "Search reports...",
-                                hintStyle: TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
+                        ],
+                      ),
+                      child: Column(
+                        children: const [
+                          Text(
+                            "Total Completed",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            "32",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontFamily: "Gilroy-Bold",
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -228,27 +175,94 @@ class _WebCompletedReportsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
 
-            // Grid of Orders
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 0),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1600),
-                child: Wrap(
-                  spacing: 30,
-                  runSpacing: 30,
-                  alignment: WrapAlignment.start,
-                  children: List.generate(
-                    6,
-                    (index) =>
-                        const SizedBox(width: 400, child: _WebCompletedCard()),
+              // Search and Filter Bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(50, 40, 50, 30),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1600),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Archived Reports",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                          fontFamily: "Gilroy-Bold",
+                        ),
+                      ),
+                      Container(
+                        width: 350,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 20,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextField(
+                                decoration: const InputDecoration(
+                                  hintText: "Search reports...",
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 80),
-          ],
+
+              // Grid of Orders
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 50,
+                  vertical: 0,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1600),
+                  child: Wrap(
+                    spacing: 30,
+                    runSpacing: 30,
+                    alignment: WrapAlignment.start,
+                    children: List.generate(
+                      6,
+                      (index) => const SizedBox(
+                        width: 400,
+                        child: _WebCompletedCard(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );

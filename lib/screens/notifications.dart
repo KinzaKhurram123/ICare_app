@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/navigators/deferred_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/bookings_history.dart';
@@ -8,7 +9,8 @@ import 'package:icare/screens/reminder_list.dart';
 import 'package:icare/services/notification_service.dart';
 import 'package:icare/services/course_service.dart';
 import 'package:icare/services/lms_service.dart';
-import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/classroom_course_view.dart'
+    deferred as classroom_view;
 import 'package:icare/screens/lms_course_page.dart';
 import 'package:icare/screens/certificates_screen.dart';
 import 'package:icare/utils/theme.dart';
@@ -29,6 +31,35 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List<dynamic> _notifications = [];
   bool _isLoading = true;
 
+  // Opening this screen is reading it. The client did not want to press
+  // "Mark all read" at all - "jab KHUL GAYA to uska matlab hai READ hai" - so
+  // the count clears on open and that button is gone. The ids that were unread
+  // when the screen opened stay highlighted for this visit only.
+  final Set<String> _newOnOpen = {};
+  bool _markedOnOpen = false;
+
+  bool _isNew(dynamic n) =>
+      n is Map && _newOnOpen.contains(n['_id']?.toString());
+
+  void _clearUnreadOnFirstOpen() {
+    if (_markedOnOpen) return;
+    _markedOnOpen = true;
+    final unread = _notifications
+        .whereType<Map>()
+        .where((n) => n['read'] != true)
+        .map((n) => n['_id']?.toString())
+        .whereType<String>()
+        .toSet();
+    if (unread.isEmpty) return;
+    setState(() {
+      _newOnOpen.addAll(unread);
+      for (final n in _notifications) {
+        if (n is Map) n['read'] = true;
+      }
+    });
+    _notificationService.markAllAsRead();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +79,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           }
           _isLoading = false;
         });
+        _clearUnreadOnFirstOpen();
       }
     } catch (e) {
       if (mounted) {
@@ -65,25 +97,34 @@ class _NotificationScreenState extends State<NotificationScreen> {
         '_id': '1',
         'type': 'appointment',
         'title': 'Appointment Confirmed',
-        'message': 'Your appointment with Dr. Ahmed Khan has been confirmed for tomorrow at 10:00 AM',
+        'message':
+            'Your appointment with Dr. Ahmed Khan has been confirmed for tomorrow at 10:00 AM',
         'read': false,
-        'createdAt': DateTime.now().subtract(const Duration(minutes: 30)).toIso8601String(),
+        'createdAt': DateTime.now()
+            .subtract(const Duration(minutes: 30))
+            .toIso8601String(),
       },
       {
         '_id': '2',
         'type': 'lab',
         'title': 'Lab Results Ready',
-        'message': 'Your blood test results are now available. Please check your reports section.',
+        'message':
+            'Your blood test results are now available. Please check your reports section.',
         'read': false,
-        'createdAt': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+        'createdAt': DateTime.now()
+            .subtract(const Duration(hours: 2))
+            .toIso8601String(),
       },
       {
         '_id': '3',
         'type': 'prescription',
         'title': 'New Prescription',
-        'message': 'Dr. Sara Malik has prescribed new medication for you. View details in prescriptions.',
+        'message':
+            'Dr. Sara Malik has prescribed new medication for you. View details in prescriptions.',
         'read': true,
-        'createdAt': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        'createdAt': DateTime.now()
+            .subtract(const Duration(days: 1))
+            .toIso8601String(),
       },
       {
         '_id': '4',
@@ -91,20 +132,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
         'title': 'Medication Reminder',
         'message': 'Time to take your evening medication - Aspirin 100mg',
         'read': true,
-        'createdAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+        'createdAt': DateTime.now()
+            .subtract(const Duration(days: 2))
+            .toIso8601String(),
       },
     ];
   }
 
-  Future<void> _markAllAsRead() async {
-    setState(() {
-      for (final n in _notifications) {
-        n['read'] = true;
-      }
-    });
-    await _notificationService.markAllAsRead();
-    _loadNotificationsQuiet();
-  }
 
   void _markAsReadOptimistic(String id) {
     // Update local state immediately so the dot disappears without a reload flash
@@ -134,16 +168,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final String type = notif['type'] ?? '';
     switch (type) {
       case 'appointment':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BookingsHistoryScreen()));
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const BookingsHistoryScreen()),
+        );
         break;
       case 'lab':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LabReportsScreen()));
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const LabReportsScreen()));
         break;
       case 'prescription':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PatientPrescriptions()));
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const PatientPrescriptions()));
         break;
       case 'reminder':
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReminderList()));
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const ReminderList()));
         break;
       default:
         _openLmsTarget(notif);
@@ -158,7 +200,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final courseId = data['courseId']?.toString() ?? '';
     if (courseId.isEmpty) return;
     if (data['subType']?.toString() == 'coteacher_invite') {
-      _showCoTeacherInviteDialog(courseId, data['courseName']?.toString() ?? 'this course');
+      _showCoTeacherInviteDialog(
+        courseId,
+        data['courseName']?.toString() ?? 'this course',
+      );
       return;
     }
     if (data['type']?.toString() == 'certificate_ready') {
@@ -167,7 +212,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
     if (data['type']?.toString() == 'certificate_issued') {
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const CertificatesScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CertificatesScreen()),
+      );
       return;
     }
     try {
@@ -186,15 +234,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final course = Map<String, dynamic>.from(enrollment['course'] as Map);
       final dType = data['type']?.toString() ?? '';
       // Assignment-related → open Classwork tab directly
-      final isClasswork = dType.contains('assignment') || dType.contains('quiz');
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ClassroomCourseView(
-          course: course,
-          enrollmentId: enrollment!['_id']?.toString(),
-          isInstructor: false,
-          initialTab: isClasswork ? 1 : 0,
+      final isClasswork =
+          dType.contains('assignment') || dType.contains('quiz');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DeferredScreen(
+            loader: classroom_view.loadLibrary,
+            builder: () => classroom_view.ClassroomCourseView(
+              course: course,
+              enrollmentId: enrollment!['_id']?.toString(),
+              isInstructor: false,
+              initialTab: isClasswork ? 1 : 0,
+            ),
+          ),
         ),
-      ));
+      );
     } catch (e) {
       debugPrint('Notification navigation error: $e');
     }
@@ -216,25 +270,42 @@ class _NotificationScreenState extends State<NotificationScreen> {
         }
       }
       if (course == null || !mounted) return;
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => LmsCoursePage(course: course!, isInstructor: true, initialTabIndex: 2),
-      ));
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LmsCoursePage(
+            course: course!,
+            isInstructor: true,
+            initialTabIndex: 2,
+          ),
+        ),
+      );
     } catch (e) {
       debugPrint('Certificate notification navigation error: $e');
     }
   }
 
-  Future<void> _showCoTeacherInviteDialog(String courseId, String courseName) async {
+  Future<void> _showCoTeacherInviteDialog(
+    String courseId,
+    String courseName,
+  ) async {
     final choice = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Co-Teacher Invitation'),
-        content: Text('You\'ve been invited to co-teach "$courseName". Accept to join this course.'),
+        content: Text(
+          'You\'ve been invited to co-teach "$courseName". Accept to join this course.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Decline')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Decline'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A73E8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A73E8),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Accept'),
           ),
@@ -247,16 +318,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ? await lms.acceptCoTeacherInvite(courseId)
         : await lms.rejectCoTeacherInvite(courseId);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result['success'] == true
-          ? (choice ? 'Invitation accepted — check My Courses' : 'Invitation declined')
-          : (result['message'] ?? 'Failed')),
-      backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result['success'] == true
+              ? (choice
+                    ? 'Invitation accepted — check My Courses'
+                    : 'Invitation declined')
+              : (result['message'] ?? 'Failed'),
+        ),
+        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+      ),
+    );
   }
 
+  // The stored flag, not _isNew: opening the screen clears the count. _isNew
+  // only keeps the highlight meaningful for the rest of the visit.
   int get _unreadCount =>
-      _notifications.where((n) => n['read'] == false).length;
+      _notifications.where((n) => n is Map && n['read'] != true).length;
 
   @override
   Widget build(BuildContext context) {
@@ -277,14 +356,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         actions: [
-          if (_unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: Text(
-                'Mark all read'.tr(),
-                style: const TextStyle(fontSize: 13),
-              ),
-            ),
+          // "Mark all read" removed: opening the screen already marks
+          // everything read, so the button was busywork the client explicitly
+          // objected to.
         ],
       ),
       body: _buildBody(false),
@@ -320,7 +394,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Row(
                   children: [
                     TapArea(
-        behavior: HitTestBehavior.opaque,
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => goBackOrHome(context),
                       child: Container(
                         padding: const EdgeInsets.all(10),
@@ -358,11 +432,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                     ),
                     if (_unreadCount > 0) ...[
-                      TextButton(
-                        onPressed: _markAllAsRead,
-                        child: Text('Mark all read'.tr()),
-                      ),
-                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -471,7 +540,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
         itemBuilder: (context, index) {
           final notif = _notifications[index];
-          final bool isUnread = notif['read'] == false;
+          // _isNew, not the stored flag: opening the screen marks
+          // everything read so the badge clears, but what arrived since the
+          // last visit should still look new while the user is on the page.
+          final bool isUnread = _isNew(notif);
           final String type = notif['type'] ?? 'default';
           final String title = notif['title'] ?? 'Notification';
           final String message = notif['message'] ?? '';

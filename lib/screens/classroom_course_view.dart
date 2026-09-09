@@ -1,13 +1,18 @@
 import 'dart:async';
+import 'package:icare/navigators/deferred_route.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:icare/screens/assignment_submit_screen.dart';
 import 'package:icare/screens/quiz_take_screen.dart';
-import 'package:icare/screens/instructor_create_assignment_screen.dart';
-import 'package:icare/screens/instructor_create_quiz_screen.dart';
-import 'package:icare/screens/instructor_schedule_session_screen.dart';
-import 'package:icare/screens/instructor_grading_screen.dart';
+import 'package:icare/screens/instructor_create_assignment_screen.dart'
+    deferred as i_assign;
+import 'package:icare/screens/instructor_create_quiz_screen.dart'
+    deferred as i_quiz;
+import 'package:icare/screens/instructor_schedule_session_screen.dart'
+    deferred as i_session;
+import 'package:icare/screens/instructor_grading_screen.dart'
+    deferred as i_grading;
 import 'package:icare/screens/instructor_course_content_screen.dart';
 import 'package:icare/screens/lesson_detail_page.dart';
 import 'package:icare/screens/doctor_notifications.dart';
@@ -158,12 +163,18 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       _loadAttendanceReport();
     }
     _loadUnreadNotifCount();
-    _notifPoller = Timer.periodic(const Duration(seconds: 20), (_) => _loadUnreadNotifCount());
+    _notifPoller = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _loadUnreadNotifCount(),
+    );
   }
 
   void _startLivePolling() {
     _checkLiveSession();
-    _livePoller = Timer.periodic(const Duration(seconds: 5), (_) => _checkLiveSession());
+    _livePoller = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkLiveSession(),
+    );
     _lockTicker = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
@@ -175,7 +186,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       if (!mounted || result['success'] != true) return;
       final list = (result['notifications'] as List?) ?? [];
       final unread = list.where((n) => n is Map && n['read'] != true).length;
-      if (unread != _unreadNotifCount) setState(() => _unreadNotifCount = unread);
+      if (unread != _unreadNotifCount)
+        setState(() => _unreadNotifCount = unread);
     } catch (_) {}
   }
 
@@ -207,11 +219,18 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   }
 
   Future<void> _loadStream() async {
-    if (_courseId.isEmpty) { setState(() => _loadingStream = false); return; }
+    if (_courseId.isEmpty) {
+      setState(() => _loadingStream = false);
+      return;
+    }
     setState(() => _loadingStream = true);
     try {
       final data = await _lms.getCourseAnnouncements(_courseId);
-      if (mounted) setState(() { _announcements = data; _loadingStream = false; });
+      if (mounted)
+        setState(() {
+          _announcements = data;
+          _loadingStream = false;
+        });
     } catch (_) {
       if (mounted) setState(() => _loadingStream = false);
     }
@@ -223,7 +242,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   /// lists re-fetched — and since those now come from _loadModules, they
   /// have to trigger it explicitly or the new item wouldn't appear.
   Future<void> _loadClasswork({bool refreshModules = true}) async {
-    if (_courseId.isEmpty) { setState(() => _loadingClasswork = false); return; }
+    if (_courseId.isEmpty) {
+      setState(() => _loadingClasswork = false);
+      return;
+    }
     setState(() => _loadingClasswork = true);
     if (refreshModules) unawaited(_loadModules());
     try {
@@ -254,32 +276,66 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     }
   }
 
-  Future<void> _issueCertificate(String enrollmentId, String studentName) async {
+  Future<void> _issueCertificate(
+    String enrollmentId,
+    String studentName,
+  ) async {
     setState(() => _certLoading = true);
     final result = await _lms.generateCertificate(enrollmentId: enrollmentId);
     if (mounted) {
       setState(() => _certLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['success'] == true ? 'Certificate issued for $studentName' : (result['message'] ?? 'Failed to issue certificate')),
-        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['success'] == true
+                ? 'Certificate issued for $studentName'
+                : (result['message'] ?? 'Failed to issue certificate'),
+          ),
+          backgroundColor: result['success'] == true
+              ? Colors.green
+              : Colors.red,
+        ),
+      );
       if (result['success'] == true) _loadClasswork();
     }
   }
 
-  Future<void> _approveCert(String certId, String studentName, String action) async {
+  Future<void> _approveCert(
+    String certId,
+    String studentName,
+    String action,
+  ) async {
     final noteCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(action == 'approve' ? 'Approve Certificate' : 'Reject Certificate'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('${action == 'approve' ? 'Approve' : 'Reject'} certificate for $studentName?'),
-          const SizedBox(height: 12),
-          TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Note (optional)', border: OutlineInputBorder()), maxLines: 2),
-        ]),
+        title: Text(
+          action == 'approve' ? 'Approve Certificate' : 'Reject Certificate',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${action == 'approve' ? 'Approve' : 'Reject'} certificate for $studentName?',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              maxLength: 200,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+              controller: noteCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
@@ -292,29 +348,51 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       ),
     );
     if (confirmed != true) return;
-    final result = await _lms.approveCertificate(certId, action: action, note: noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : null);
+    final result = await _lms.approveCertificate(
+      certId,
+      action: action,
+      note: noteCtrl.text.trim().isNotEmpty ? noteCtrl.text.trim() : null,
+    );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['success'] == true ? 'Done!' : (result['message'] ?? 'Failed')),
-        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['success'] == true
+                ? 'Done!'
+                : (result['message'] ?? 'Failed'),
+          ),
+          backgroundColor: result['success'] == true
+              ? Colors.green
+              : Colors.red,
+        ),
+      );
       if (result['success'] == true) _loadClasswork();
     }
   }
 
   Future<void> _loadPeople() async {
-    if (_courseId.isEmpty) { setState(() => _loadingPeople = false); return; }
+    if (_courseId.isEmpty) {
+      setState(() => _loadingPeople = false);
+      return;
+    }
     setState(() => _loadingPeople = true);
     try {
       final data = await _lms.getEnrolledStudents(_courseId);
-      if (mounted) setState(() { _students = data; _loadingPeople = false; });
+      if (mounted)
+        setState(() {
+          _students = data;
+          _loadingPeople = false;
+        });
     } catch (_) {
       if (mounted) setState(() => _loadingPeople = false);
     }
   }
 
   Future<void> _loadModules() async {
-    if (_courseId.isEmpty) { setState(() => _loadingModules = false); return; }
+    if (_courseId.isEmpty) {
+      setState(() => _loadingModules = false);
+      return;
+    }
     setState(() => _loadingModules = true);
     try {
       final results = await Future.wait([
@@ -325,29 +403,42 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       ]);
       dynamic parsed = results[0];
       if (parsed is String && parsed.isNotEmpty) {
-        try { parsed = jsonDecode(parsed); } catch (_) {}
+        try {
+          parsed = jsonDecode(parsed);
+        } catch (_) {}
       }
       final course = parsed is Map ? (parsed['course'] ?? parsed) : {};
       final mods = (course is Map ? course['modules'] : null) ?? [];
-      if (mounted) setState(() {
-        _modules = List<dynamic>.from(mods);
-        _courseType = (course is Map ? course['courseType']?.toString() : null) ?? 'self-paced';
-        _lockReason = course is Map ? course['lockReason']?.toString() : null;
-        _installmentPlanEnabled = (course is Map ? course['installmentPlanEnabled'] as bool? : null) ?? false;
-        _installments = (course is Map ? course['installments'] as List? : null) ?? [];
-        // Also update assignments/quizzes/sessions for Course Content tab
-        if (results[1] is List) _assignments = results[1] as List;
-        if (results[2] is List) _quizzes = results[2] as List;
-        if (results[3] is List) _sessions = results[3] as List;
-        _loadingModules = false;
-      });
+      if (mounted)
+        setState(() {
+          _modules = List<dynamic>.from(mods);
+          _courseType =
+              (course is Map ? course['courseType']?.toString() : null) ??
+              'self-paced';
+          _lockReason = course is Map ? course['lockReason']?.toString() : null;
+          _installmentPlanEnabled =
+              (course is Map
+                  ? course['installmentPlanEnabled'] as bool?
+                  : null) ??
+              false;
+          _installments =
+              (course is Map ? course['installments'] as List? : null) ?? [];
+          // Also update assignments/quizzes/sessions for Course Content tab
+          if (results[1] is List) _assignments = results[1] as List;
+          if (results[2] is List) _quizzes = results[2] as List;
+          if (results[3] is List) _sessions = results[3] as List;
+          _loadingModules = false;
+        });
     } catch (_) {
       if (mounted) setState(() => _loadingModules = false);
     }
   }
 
   Future<void> _loadStudentGrades() async {
-    if (_courseId.isEmpty) { setState(() => _loadingGrades = false); return; }
+    if (_courseId.isEmpty) {
+      setState(() => _loadingGrades = false);
+      return;
+    }
     setState(() => _loadingGrades = true);
     try {
       // grades/attendance/quiz-list were fetched one-at-a-time (await after
@@ -371,7 +462,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       for (int i = 0; i < quizList.length; i++) {
         final qAttempts = attemptResults[i];
         if (qAttempts.isNotEmpty) {
-          final latest = Map<String, dynamic>.from(qAttempts.first is Map ? qAttempts.first : {});
+          final latest = Map<String, dynamic>.from(
+            qAttempts.first is Map ? qAttempts.first : {},
+          );
           latest['quizTitle'] = quizList[i]['title']?.toString() ?? 'Quiz';
           attempts.add(latest);
         }
@@ -380,7 +473,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         setState(() {
           _myGrades = grades;
           _myQuizAttempts = attempts;
-          _myAttendance = (attendance['total'] as num? ?? 0) > 0 ? attendance : null;
+          _myAttendance = (attendance['total'] as num? ?? 0) > 0
+              ? attendance
+              : null;
           _loadingGrades = false;
         });
       }
@@ -397,8 +492,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       if (result['success'] == false) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${result['message'] ?? 'Unknown error'}'), backgroundColor: Colors.red),
-        );
+            SnackBar(
+              content: Text('Failed: ${result['message'] ?? 'Unknown error'}'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
         return;
       }
@@ -406,14 +504,21 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       await _loadStream();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Announcement posted!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
-      );
+          const SnackBar(
+            content: Text('Announcement posted!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to post: $e'), backgroundColor: Colors.red),
-      );
+          SnackBar(
+            content: Text('Failed to post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -432,24 +537,34 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               icon: const Icon(Icons.live_tv_rounded, color: Colors.white),
               label: const Text(
                 'Join Live Session',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             )
           : widget.isInstructor
-              ? FloatingActionButton.extended(
-                  onPressed: _showCreateMenu,
-                  backgroundColor: const Color(0xFF1A73E8),
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
-                  label: const Text('Create',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                )
-              : null,
+          ? FloatingActionButton.extended(
+              onPressed: _showCreateMenu,
+              backgroundColor: const Color(0xFF1A73E8),
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: const Text(
+                'Create',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
+          : null,
       body: TabBarView(
         controller: _tabs,
         children: [
           _buildStreamTab(isWide),
           _buildCourseContentTab(isWide),
-          widget.isInstructor ? _buildPeopleTab(isWide) : _buildStudentGradesTab(),
+          widget.isInstructor
+              ? _buildPeopleTab(isWide)
+              : _buildStudentGradesTab(),
           widget.isInstructor ? _buildGradesTab() : _buildPeopleTab(isWide),
           if (widget.isInstructor) _buildAttendanceTab(),
         ],
@@ -474,7 +589,7 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       title: Row(
         children: [
           TapArea(
-        behavior: HitTestBehavior.opaque,
+            behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.pop(context),
             child: const Text(
               'Classroom',
@@ -487,8 +602,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Icon(Icons.chevron_right_rounded,
-                size: 18, color: Color(0xFF9AA0A6)),
+            child: Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Color(0xFF9AA0A6),
+            ),
           ),
           Flexible(
             child: Text(
@@ -506,43 +624,68 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       actions: [
         if (widget.isInstructor)
           IconButton(
-            icon: Stack(clipBehavior: Clip.none, children: [
-              const Icon(Icons.notifications_outlined,
-                  color: Color(0xFF444746), size: 20),
-              if (_unreadNotifCount > 0)
-                Positioned(
-                  right: -4, top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    constraints: const BoxConstraints(minWidth: 16),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                    child: Text(
-                      _unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: Color(0xFF444746),
+                  size: 20,
+                ),
+                if (_unreadNotifCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-            ]),
+              ],
+            ),
             tooltip: 'Notifications',
             onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(
-                builder: (_) => const DoctorNotifications(),
-              ));
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DoctorNotifications()),
+              );
               _loadUnreadNotifCount();
             },
           ),
         // Settings only (Edit Course content)
         if (widget.isInstructor)
           IconButton(
-            icon: const Icon(Icons.settings_outlined,
-                color: Color(0xFF444746), size: 20),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: Color(0xFF444746),
+              size: 20,
+            ),
             tooltip: 'Course Settings',
             onPressed: () {
               if (_courseId.isNotEmpty) {
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => InstructorCourseContentScreen(courseId: _courseId),
-                ));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        InstructorCourseContentScreen(courseId: _courseId),
+                  ),
+                );
               }
             },
           ),
@@ -553,10 +696,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         unselectedLabelColor: const Color(0xFF444746),
         indicatorColor: const Color(0xFF1A73E8),
         indicatorWeight: 3,
-        labelStyle:
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        unselectedLabelStyle:
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
         isScrollable: widget.isInstructor,
         tabs: [
           const Tab(text: 'Announcement'),
@@ -598,11 +742,15 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     if (!isLive) {
       // Update local state so FAB hides immediately
       if (_isSessionLive) setState(() => _isSessionLive = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No live session right now. Check back when your instructor goes live.'),
-        backgroundColor: Color(0xFF64748B),
-        duration: Duration(seconds: 3),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No live session right now. Check back when your instructor goes live.',
+          ),
+          backgroundColor: Color(0xFF64748B),
+          duration: Duration(seconds: 3),
+        ),
+      );
       return;
     }
 
@@ -616,19 +764,25 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         if (sid.isNotEmpty && sid != courseId) sessionId = sid;
         // If still no real session doc, abort with a message
         if (sessionId.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Session is starting — please try again in a moment.'),
-            backgroundColor: Color(0xFF64748B),
-            duration: Duration(seconds: 3),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Session is starting — please try again in a moment.',
+              ),
+              backgroundColor: Color(0xFF64748B),
+              duration: Duration(seconds: 3),
+            ),
+          );
           return;
         }
       } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not connect. Please try again.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not connect. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
         return;
       }
     }
@@ -668,24 +822,65 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                       colors: [Color(0xFFB91C1C), Color(0xFFEF4444)],
                     ),
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Row(children: [
-                    const Icon(Icons.live_tv_rounded, color: Colors.white, size: 28),
-                    const SizedBox(width: 12),
-                    const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('🔴 LIVE NOW — Your instructor is live!',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
-                      SizedBox(height: 2),
-                      Text('Tap anywhere to join the live session',
-                          style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    ])),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                      child: const Text('JOIN NOW', style: TextStyle(color: Color(0xFFB91C1C), fontWeight: FontWeight.w900, fontSize: 13)),
-                    ),
-                  ]),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.live_tv_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '🔴 LIVE NOW — Your instructor is live!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Tap anywhere to join the live session',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'JOIN NOW',
+                          style: TextStyle(
+                            color: Color(0xFFB91C1C),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -752,10 +947,7 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  color,
-                  color.withValues(alpha: 0.75),
-                ],
+                colors: [color, color.withValues(alpha: 0.75)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -764,7 +956,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           // Diagonal pattern
           Positioned.fill(
             child: CustomPaint(
-              painter: _BannerPatternPainter(Colors.white.withValues(alpha: 0.08)),
+              painter: _BannerPatternPainter(
+                Colors.white.withValues(alpha: 0.08),
+              ),
             ),
           ),
           // Decorative circles (like GC illustrations)
@@ -816,8 +1010,7 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                   const SizedBox(height: 4),
                   Text(
                     _section,
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 14),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ],
@@ -882,22 +1075,31 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.assignment_outlined,
-                        size: 16, color: Color(0xFF1A73E8)),
+                    const Icon(
+                      Icons.assignment_outlined,
+                      size: 16,
+                      color: Color(0xFF1A73E8),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(
-                            fontSize: 13, color: Color(0xFF202124)),
+                          fontSize: 13,
+                          color: Color(0xFF202124),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (dueLabel.isNotEmpty)
-                      Text(dueLabel,
-                          style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF70757A))),
+                      Text(
+                        dueLabel,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF70757A),
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -906,12 +1108,15 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           GestureDetector(
             onTap: () {
               if (widget.isInstructor) {
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => InstructorAssignmentsListScreen(
-                    courseId: _courseId,
-                    courseTitle: _courseTitle,
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InstructorAssignmentsListScreen(
+                      courseId: _courseId,
+                      courseTitle: _courseTitle,
+                    ),
                   ),
-                ));
+                );
               } else {
                 _tabs.animateTo(1);
               }
@@ -962,7 +1167,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                       ? 'Announce something to your class...'
                       : 'Share something or ask a question...',
                   style: const TextStyle(
-                      fontSize: 14, color: Color(0xFF9AA0A6)),
+                    fontSize: 14,
+                    color: Color(0xFF9AA0A6),
+                  ),
                 ),
               ),
             ),
@@ -976,11 +1183,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(widget.isInstructor ? 'New announcement' : 'New post',
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF202124))),
+        title: Text(
+          widget.isInstructor ? 'New announcement' : 'New post',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF202124),
+          ),
+        ),
         content: SizedBox(
           width: 500,
           child: TextField(
@@ -989,15 +1199,16 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             maxLines: 4,
             decoration: const InputDecoration(
               hintText: 'Share something with your class...',
-              hintStyle:
-                  TextStyle(fontSize: 14, color: Color(0xFF9AA0A6)),
+              hintStyle: TextStyle(fontSize: 14, color: Color(0xFF9AA0A6)),
               border: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFDADCE0))),
+                borderSide: BorderSide(color: Color(0xFFDADCE0)),
+              ),
               enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFDADCE0))),
+                borderSide: BorderSide(color: Color(0xFFDADCE0)),
+              ),
               focusedBorder: OutlineInputBorder(
-                  borderSide:
-                      BorderSide(color: Color(0xFF1A73E8), width: 2)),
+                borderSide: BorderSide(color: Color(0xFF1A73E8), width: 2),
+              ),
             ),
           ),
         ),
@@ -1007,8 +1218,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               _postCtrl.clear();
               Navigator.pop(ctx);
             },
-            child: const Text('Cancel',
-                style: TextStyle(color: Color(0xFF444746))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF444746)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1020,13 +1233,13 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4)),
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
             child: const Text('Post'),
           ),
         ],
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -1034,9 +1247,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   Widget _buildAnnouncementFeed() {
     if (_loadingStream) {
       return const Center(
-          child: Padding(
-              padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(strokeWidth: 2)));
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
     }
 
     // Build a combined feed: announcements + recent assignments
@@ -1044,20 +1259,24 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
     // Announcements
     for (final a in _announcements) {
-      feedItems.add(_FeedItem(
-        type: _FeedItemType.announcement,
-        data: a,
-        date: _parseDate(a['createdAt']?.toString() ?? ''),
-      ));
+      feedItems.add(
+        _FeedItem(
+          type: _FeedItemType.announcement,
+          data: a,
+          date: _parseDate(a['createdAt']?.toString() ?? ''),
+        ),
+      );
     }
 
     // Recent assignment posts
     for (final a in _assignments) {
-      feedItems.add(_FeedItem(
-        type: _FeedItemType.assignment,
-        data: a,
-        date: _parseDate(a['createdAt']?.toString() ?? ''),
-      ));
+      feedItems.add(
+        _FeedItem(
+          type: _FeedItemType.assignment,
+          data: a,
+          date: _parseDate(a['createdAt']?.toString() ?? ''),
+        ),
+      );
     }
 
     // Sort by date descending
@@ -1073,22 +1292,29 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Icon(Icons.campaign_outlined,
-                size: 48, color: Colors.grey.shade300),
+            Icon(
+              Icons.campaign_outlined,
+              size: 48,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
             const Text(
               'This is where you can talk to your class',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF202124)),
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF202124),
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
               'Use the stream to share announcements, post assignments, and reply to student comments.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13, color: Color(0xFF5F6368), height: 1.5),
+                fontSize: 13,
+                color: Color(0xFF5F6368),
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -1117,10 +1343,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       // Falls back to 'User', not 'Instructor' — students post here too now,
       // and labelling an unnamed student's post as the instructor's would
       // misattribute it.
-      authorName = (item.data['author'] as Map?)?['name']?.toString() ??
+      authorName =
+          (item.data['author'] as Map?)?['name']?.toString() ??
           item.data['authorName']?.toString() ??
           'User';
-      content = item.data['content']?.toString() ??
+      content =
+          item.data['content']?.toString() ??
           item.data['message']?.toString() ??
           '';
     } else {
@@ -1182,9 +1410,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                                   authorName,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF202124)),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF202124),
+                                  ),
                                 ),
                               ),
                               if (item.data['authorRole']?.toString() ==
@@ -1192,7 +1421,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE8F0FE),
                                     borderRadius: BorderRadius.circular(4),
@@ -1200,9 +1431,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                                   child: const Text(
                                     'Instructor',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1A73E8)),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1A73E8),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1212,13 +1444,17 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                         Text(
                           content,
                           style: const TextStyle(
-                              fontSize: 14, color: Color(0xFF202124)),
+                            fontSize: 14,
+                            color: Color(0xFF202124),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           dateLabel,
                           style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF70757A)),
+                            fontSize: 12,
+                            color: Color(0xFF70757A),
+                          ),
                         ),
                       ],
                     ),
@@ -1231,30 +1467,46 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                   if (isAnnouncement &&
                       (widget.isInstructor ||
                           (_currentUserId != null &&
-                              item.data['authorId']?.toString() == _currentUserId)))
-                    Builder(builder: (_) {
-                      final isAuthor = _currentUserId != null &&
-                          item.data['authorId']?.toString() == _currentUserId;
-                      return PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded,
-                            size: 18, color: Color(0xFF70757A)),
-                        padding: EdgeInsets.zero,
-                        itemBuilder: (_) => [
-                          if (isAuthor)
-                            const PopupMenuItem(
+                              item.data['authorId']?.toString() ==
+                                  _currentUserId)))
+                    Builder(
+                      builder: (_) {
+                        final isAuthor =
+                            _currentUserId != null &&
+                            item.data['authorId']?.toString() == _currentUserId;
+                        return PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert_rounded,
+                            size: 18,
+                            color: Color(0xFF70757A),
+                          ),
+                          padding: EdgeInsets.zero,
+                          itemBuilder: (_) => [
+                            if (isAuthor)
+                              const PopupMenuItem(
                                 value: 'edit',
-                                child: Text('Edit', style: TextStyle(fontSize: 14))),
-                          const PopupMenuItem(
+                                child: Text(
+                                  'Edit',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            const PopupMenuItem(
                               value: 'delete',
-                              child: Text('Delete', style: TextStyle(fontSize: 14))),
-                        ],
-                        onSelected: (val) {
-                          final postId = item.data['_id']?.toString() ?? '';
-                          if (val == 'edit') _editAnnouncement(postId, content);
-                          if (val == 'delete') _deleteAnnouncement(postId);
-                        },
-                      );
-                    }),
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
+                          onSelected: (val) {
+                            final postId = item.data['_id']?.toString() ?? '';
+                            if (val == 'edit')
+                              _editAnnouncement(postId, content);
+                            if (val == 'delete') _deleteAnnouncement(postId);
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
@@ -1276,28 +1528,42 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     }
     // Announcement: try to match "posted a new assignment/quiz: <title>"
     final lower = content.toLowerCase();
-    final match = RegExp(r'(assignment|quiz|session)\s*:\s*(.+)$', caseSensitive: false)
-        .firstMatch(content);
+    final match = RegExp(
+      r'(assignment|quiz|session)\s*:\s*(.+)$',
+      caseSensitive: false,
+    ).firstMatch(content);
     if (match != null) {
       final kind = match.group(1)!.toLowerCase();
       final title = match.group(2)!.trim().toLowerCase();
       if (kind == 'assignment') {
-        final found = _assignments.where((a) =>
-            (a['title']?.toString().trim().toLowerCase() ?? '') == title).toList();
+        final found = _assignments
+            .where(
+              (a) =>
+                  (a['title']?.toString().trim().toLowerCase() ?? '') == title,
+            )
+            .toList();
         if (found.isNotEmpty) {
           _openItem('assignment', found.first);
           return;
         }
       } else if (kind == 'quiz') {
-        final found = _quizzes.where((q) =>
-            (q['title']?.toString().trim().toLowerCase() ?? '') == title).toList();
+        final found = _quizzes
+            .where(
+              (q) =>
+                  (q['title']?.toString().trim().toLowerCase() ?? '') == title,
+            )
+            .toList();
         if (found.isNotEmpty) {
           _openItem('quiz', found.first);
           return;
         }
       } else if (kind == 'session') {
-        final found = _sessions.where((s) =>
-            (s['title']?.toString().trim().toLowerCase() ?? '') == title).toList();
+        final found = _sessions
+            .where(
+              (s) =>
+                  (s['title']?.toString().trim().toLowerCase() ?? '') == title,
+            )
+            .toList();
         if (found.isNotEmpty) {
           _openItem('session', found.first);
           return;
@@ -1326,10 +1592,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Announcement', style: TextStyle(fontWeight: FontWeight.w800)),
-        content: TextField(controller: ctrl, maxLines: 4, decoration: const InputDecoration(border: OutlineInputBorder())),
+        title: const Text(
+          'Edit Announcement',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 4,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1349,10 +1625,16 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Announcement?', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Delete Announcement?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: const Text('This will permanently remove the announcement.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1361,7 +1643,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 await _loadStream();
               } catch (_) {}
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -1385,7 +1670,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF5F6368))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF5F6368)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1413,7 +1701,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF5F6368))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF5F6368)),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1424,7 +1715,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               } catch (_) {}
             },
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, foregroundColor: Colors.white),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -1447,76 +1740,140 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         children: [
           // Existing comments — all of them. This used to take(3), which
           // silently hid the rest of a thread once a discussion got going.
-          ...comments.map((c) => Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Row(children: [
-              CircleAvatar(radius: 12, backgroundColor: const Color(0xFF1A73E8),
-                  child: Text((c['authorName'] ?? 'U')[0].toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.white))),
-              const SizedBox(width: 8),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(c['authorName'] ?? 'User', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                Text(c['text'] ?? '', style: const TextStyle(fontSize: 13)),
-              ])),
-              // Author can edit/delete their own comment; the instructor can
-              // delete any to moderate. Matches the post-level menu and the
-              // rules announcements.js enforces server-side.
-              if (widget.isInstructor ||
-                  (_currentUserId != null &&
-                      c['authorId']?.toString() == _currentUserId))
-                Builder(builder: (_) {
-                  final isAuthor = _currentUserId != null &&
-                      c['authorId']?.toString() == _currentUserId;
-                  return PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded,
-                        size: 16, color: Color(0xFF70757A)),
-                    padding: EdgeInsets.zero,
-                    itemBuilder: (_) => [
-                      if (isAuthor)
-                        const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit', style: TextStyle(fontSize: 14))),
-                      const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete', style: TextStyle(fontSize: 14))),
-                    ],
-                    onSelected: (val) {
-                      final commentId = c['_id']?.toString() ?? '';
-                      if (commentId.isEmpty) return;
-                      if (val == 'edit') {
-                        _editComment(postId, commentId, c['text']?.toString() ?? '');
-                      }
-                      if (val == 'delete') _deleteComment(postId, commentId);
-                    },
-                  );
-                }),
-            ]),
-          )),
+          ...comments.map(
+            (c) => Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: const Color(0xFF1A73E8),
+                    child: Text(
+                      (c['authorName'] ?? 'U')[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 10, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          c['authorName'] ?? 'User',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          c['text'] ?? '',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Author can edit/delete their own comment; the instructor can
+                  // delete any to moderate. Matches the post-level menu and the
+                  // rules announcements.js enforces server-side.
+                  if (widget.isInstructor ||
+                      (_currentUserId != null &&
+                          c['authorId']?.toString() == _currentUserId))
+                    Builder(
+                      builder: (_) {
+                        final isAuthor =
+                            _currentUserId != null &&
+                            c['authorId']?.toString() == _currentUserId;
+                        return PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert_rounded,
+                            size: 16,
+                            color: Color(0xFF70757A),
+                          ),
+                          padding: EdgeInsets.zero,
+                          itemBuilder: (_) => [
+                            if (isAuthor)
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text(
+                                  'Edit',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
+                          onSelected: (val) {
+                            final commentId = c['_id']?.toString() ?? '';
+                            if (commentId.isEmpty) return;
+                            if (val == 'edit') {
+                              _editComment(
+                                postId,
+                                commentId,
+                                c['text']?.toString() ?? '',
+                              );
+                            }
+                            if (val == 'delete')
+                              _deleteComment(postId, commentId);
+                          },
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
           // Add comment input
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-            child: Row(children: [
-              CircleAvatar(radius: 14, backgroundColor: const Color(0xFFE8F0FE),
-                  child: const Icon(Icons.person_rounded, size: 16, color: Color(0xFF1A73E8))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(
-                controller: ctrl,
-                decoration: InputDecoration(
-                  hintText: 'Add class comment...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF70757A)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Color(0xFFDADCE0))),
-                  filled: true, fillColor: Colors.white,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: const Color(0xFFE8F0FE),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    size: 16,
+                    color: Color(0xFF1A73E8),
+                  ),
                 ),
-                onSubmitted: (text) async {
-                  if (text.trim().isEmpty || postId.isEmpty) return;
-                  try {
-                    await _lms.addComment(postId, text.trim());
-                    ctrl.clear();
-                    await _loadStream();
-                  } catch (_) {}
-                },
-              )),
-            ]),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: ctrl,
+                    decoration: InputDecoration(
+                      hintText: 'Add class comment...',
+                      hintStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF70757A),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(color: Color(0xFFDADCE0)),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    onSubmitted: (text) async {
+                      if (text.trim().isEmpty || postId.isEmpty) return;
+                      try {
+                        await _lms.addComment(postId, text.trim());
+                        ctrl.clear();
+                        await _loadStream();
+                      } catch (_) {}
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1525,7 +1882,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
   DateTime? _parseDate(String s) {
     if (s.isEmpty) return null;
-    try { return DateTime.parse(s); } catch (_) { return null; }
+    try {
+      return DateTime.parse(s);
+    } catch (_) {
+      return null;
+    }
   }
 
   // ════════════════════════════════════════════════
@@ -1535,18 +1896,24 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   Widget _buildCourseContentTab(bool isWide) {
     // Instructor: embed the full course content management screen inline
     if (widget.isInstructor) {
-      return _EmbeddedCourseContent(key: _embeddedContentKey, courseId: _courseId);
+      return _EmbeddedCourseContent(
+        key: _embeddedContentKey,
+        courseId: _courseId,
+      );
     }
 
     // Student: read-only modules view
-    if (_loadingModules) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    if (_loadingModules)
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
 
     // Check if any session is currently live — only used here for the
     // banner's displayed title; whether the banner shows at all, and what
     // happens on tap, is driven solely by _isSessionLive (kept in sync by
     // the 5s poller in _checkLiveSession) so this tab can never show a
     // stale "JOIN" affordance after the instructor has ended the session.
-    final liveSession = _sessions.where((s) => s['status']?.toString() == 'live').firstOrNull;
+    final liveSession = _sessions
+        .where((s) => s['status']?.toString() == 'live')
+        .firstOrNull;
 
     // Installment-locked students see only the "pay now" banner — assignments,
     // quizzes, and standalone sessions must not stay reachable as a side door
@@ -1559,7 +1926,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     // Matches the same hide-when-modules-exist rule already applied on the
     // instructor side (instructor_course_content_screen.dart).
     final hideStandalone = isInstallmentLocked || _modules.isNotEmpty;
-    final standaloneAssignments = hideStandalone ? const <dynamic>[] : _assignments;
+    final standaloneAssignments = hideStandalone
+        ? const <dynamic>[]
+        : _assignments;
     final standaloneQuizzes = hideStandalone ? const <dynamic>[] : _quizzes;
     final standaloneSessions = hideStandalone
         ? const <dynamic>[]
@@ -1574,67 +1943,152 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           // a locked student immediately understands why content is hidden.
           if (_lockReason == 'installment_overdue') ...[
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => InstallmentScheduleScreen(courseId: _courseId, courseTitle: _courseTitle),
-              )).then((_) => _loadModules()),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => InstallmentScheduleScreen(
+                    courseId: _courseId,
+                    courseTitle: _courseTitle,
+                  ),
+                ),
+              ).then((_) => _loadModules()),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDC2626),
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: const Color(0xFFDC2626).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Row(children: [
-                  const Icon(Icons.lock_rounded, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('COURSE LOCKED', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                    Text('Installment overdue — pay now to unlock', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-                  ])),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                    child: const Text('PAY NOW', style: TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w800)),
-                  ),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lock_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'COURSE LOCKED',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            'Installment overdue — pay now to unlock',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'PAY NOW',
+                        style: TextStyle(
+                          color: Color(0xFFDC2626),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ] else if (_installmentPlanEnabled && _installments.isNotEmpty) ...[
-            Builder(builder: (_) {
-              final total = _installments.length;
-              final nextPending = _installments.firstWhere(
-                (i) => i['status'] != 'paid',
-                orElse: () => null,
-              );
-              if (nextPending == null) return const SizedBox.shrink();
-              final idx = nextPending['index'];
-              final due = DateTime.tryParse(nextPending['dueDate']?.toString() ?? '');
-              final dueStr = due != null ? DateFormat('d MMM').format(due) : '';
-              return GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => InstallmentScheduleScreen(courseId: _courseId, courseTitle: _courseTitle),
-                )).then((_) => _loadModules()),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFBFDBFE)),
+            Builder(
+              builder: (_) {
+                final total = _installments.length;
+                final nextPending = _installments.firstWhere(
+                  (i) => i['status'] != 'paid',
+                  orElse: () => null,
+                );
+                if (nextPending == null) return const SizedBox.shrink();
+                final idx = nextPending['index'];
+                final due = DateTime.tryParse(
+                  nextPending['dueDate']?.toString() ?? '',
+                );
+                final dueStr = due != null
+                    ? DateFormat('d MMM').format(due)
+                    : '';
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InstallmentScheduleScreen(
+                        courseId: _courseId,
+                        courseTitle: _courseTitle,
+                      ),
+                    ),
+                  ).then((_) => _loadModules()),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_view_month_rounded,
+                          color: Color(0xFF6366F1),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Installment plan: installment $idx of $total${dueStr.isNotEmpty ? ' — due $dueStr' : ''}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          'View schedule',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF6366F1),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(children: [
-                    const Icon(Icons.calendar_view_month_rounded, color: Color(0xFF6366F1), size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(
-                      'Installment plan: installment $idx of $total${dueStr.isNotEmpty ? ' — due $dueStr' : ''}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                    )),
-                    const Text('View schedule', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                  ]),
-                ),
-              );
-            }),
+                );
+              },
+            ),
           ],
           // Live session banner — gated on _isSessionLive (polled every 5s),
           // not on the unpolled _sessions list, so it appears/disappears in
@@ -1649,22 +2103,66 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 decoration: BoxDecoration(
                   color: Colors.red,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Row(children: [
-                  const Icon(Icons.live_tv_rounded, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('● LIVE NOW', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                    Text(liveSession?['title']?.toString() ?? 'Live Session',
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-                  ])),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                    child: const Text('JOIN', style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w900)),
-                  ),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.live_tv_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '● LIVE NOW',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            liveSession?['title']?.toString() ?? 'Live Session',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'JOIN',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1676,16 +2174,29 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             // at the client's request: the locking behaviour is already obvious
             // from the module cards themselves, so the strip was just noise
             // above every course.
-            ..._modules.asMap().entries.map((e) => _buildModuleCard(e.value, e.key)),
+            ..._modules.asMap().entries.map(
+              (e) => _buildModuleCard(e.value, e.key),
+            ),
           ] else ...[
-            Center(child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Column(children: [
-                Icon(Icons.library_books_outlined, size: 56, color: Colors.grey.shade300),
-                const SizedBox(height: 16),
-                const Text('No modules yet', style: TextStyle(fontSize: 16, color: Color(0xFF94A3B8))),
-              ]),
-            )),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.library_books_outlined,
+                      size: 56,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No modules yet',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
 
           // Standalone Live Sessions (scheduled / ended)
@@ -1693,11 +2204,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             const SizedBox(height: 8),
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Row(children: [
-                Icon(Icons.live_tv_rounded, color: Colors.red, size: 18),
-                SizedBox(width: 8),
-                Text('Live Sessions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-              ]),
+              child: Row(
+                children: [
+                  Icon(Icons.live_tv_rounded, color: Colors.red, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'Live Sessions',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
             ),
             ...standaloneSessions.map((s) => _buildStudentSessionTile(s)),
           ],
@@ -1707,11 +2227,24 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             const SizedBox(height: 8),
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Row(children: [
-                Icon(Icons.assignment_rounded, color: Color(0xFF6366F1), size: 18),
-                SizedBox(width: 8),
-                Text('Assignments', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-              ]),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.assignment_rounded,
+                    color: Color(0xFF6366F1),
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Assignments',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
             ),
             ...standaloneAssignments.map((a) => _buildStudentAssignmentTile(a)),
           ],
@@ -1721,11 +2254,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             const SizedBox(height: 8),
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Row(children: [
-                Icon(Icons.quiz_rounded, color: Color(0xFFF59E0B), size: 18),
-                SizedBox(width: 8),
-                Text('Quizzes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
-              ]),
+              child: Row(
+                children: [
+                  Icon(Icons.quiz_rounded, color: Color(0xFFF59E0B), size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'Quizzes',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
             ),
             ...standaloneQuizzes.map((q) => _buildStudentQuizTile(q)),
           ],
@@ -1753,8 +2295,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           unlockLabel = 'Unlocks ${d.day}/${d.month}/${d.year}';
         } catch (_) {}
       } else if (!isPragmatic && idx > 0) {
-        final prevTitle = (_modules[idx - 1] is Map ? _modules[idx - 1]['title']?.toString() : null)
-            ?? 'Module $idx';
+        final prevTitle =
+            (_modules[idx - 1] is Map
+                ? _modules[idx - 1]['title']?.toString()
+                : null) ??
+            'Module $idx';
         unlockLabel = 'Complete "$prevTitle" to unlock';
       }
       unlockLabel ??= 'Locked';
@@ -1766,7 +2311,13 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -1776,25 +2327,75 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           initiallyExpanded: !isLocked,
           enabled: !isLocked,
           leading: CircleAvatar(
-            backgroundColor: isLocked ? const Color(0xFF94A3B8) : const Color(0xFF1A73E8),
+            backgroundColor: isLocked
+                ? const Color(0xFF94A3B8)
+                : const Color(0xFF1A73E8),
             child: isLocked
                 ? const Icon(Icons.lock_rounded, color: Colors.white, size: 18)
-                : Text('${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                : Text(
+                    '${idx + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
-          title: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isLocked ? const Color(0xFF94A3B8) : const Color(0xFF0F172A))),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isLocked
+                  ? const Color(0xFF94A3B8)
+                  : const Color(0xFF0F172A),
+            ),
+          ),
           subtitle: isLocked && unlockLabel != null
-              ? Text(unlockLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6366F1)))
+              ? Text(
+                  unlockLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6366F1),
+                  ),
+                )
               : (description.isNotEmpty
-                  ? Text(description, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis)
-                  : Text('${lessons.length} lesson${lessons.length == 1 ? '' : 's'}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)))),
+                    ? Text(
+                        description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : Text(
+                        '${lessons.length} lesson${lessons.length == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      )),
           children: isLocked
               ? []
               : lessons.isEmpty
-                  ? [const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text('No lessons in this module', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-                    )]
-                  : lessons.map<Widget>((lesson) => _buildLessonTile(lesson, moduleId: module['_id']?.toString())).toList(),
+              ? [
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text(
+                      'No lessons in this module',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                    ),
+                  ),
+                ]
+              : lessons
+                    .map<Widget>(
+                      (lesson) => _buildLessonTile(
+                        lesson,
+                        moduleId: module['_id']?.toString(),
+                      ),
+                    )
+                    .toList(),
         ),
       ),
     );
@@ -1806,8 +2407,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   // schedule-lock check (parse failure -> null -> treated as unlocked) and
   // the formatted date label for any session created before that fix.
   DateTime? _parseLegacyDMY(String raw) {
-    final match = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?$', caseSensitive: false)
-        .firstMatch(raw.trim());
+    final match = RegExp(
+      r'^(\d{1,2})/(\d{1,2})/(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?$',
+      caseSensitive: false,
+    ).firstMatch(raw.trim());
     if (match == null) return null;
     final day = int.parse(match.group(1)!);
     final month = int.parse(match.group(2)!);
@@ -1817,18 +2420,37 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final ampm = match.group(6)?.toUpperCase();
     if (ampm == 'PM' && hour != 12) hour += 12;
     if (ampm == 'AM' && hour == 12) hour = 0;
-    try { return DateTime(year, month, day, hour, minute); } catch (_) { return null; }
+    try {
+      return DateTime(year, month, day, hour, minute);
+    } catch (_) {
+      return null;
+    }
   }
 
   DateTime? _parseScheduledAt(String raw) {
-    try { return DateTime.parse(raw); } catch (_) {}
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {}
     return _parseLegacyDMY(raw);
   }
 
   String _fmtSessionDate(String raw) {
     final dt = _parseScheduledAt(raw)?.toLocal();
     if (dt == null) return raw;
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final m = dt.minute.toString().padLeft(2, '0');
     final ampm = dt.hour < 12 ? 'AM' : 'PM';
@@ -1844,89 +2466,177 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final meetingLink = session['meetingLink']?.toString() ?? '';
     final isEnded = status == 'ended' || status == 'completed';
     final id = session['_id']?.toString() ?? '';
-    final hasMeetLink = meetingLink.isNotEmpty && meetingLink.startsWith('http');
+    final hasMeetLink =
+        meetingLink.isNotEmpty && meetingLink.startsWith('http');
 
     return GestureDetector(
-      onTap: isEnded ? () => _showCompletedSessionOptions(id, title, recordingUrl, driveUrl) : null,
+      onTap: isEnded
+          ? () =>
+                _showCompletedSessionOptions(id, title, recordingUrl, driveUrl)
+          : null,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isEnded ? const Color(0xFFF1F5F9) : const Color(0xFFFFF7ED),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isEnded ? const Color(0xFF94A3B8).withValues(alpha: 0.3) : const Color(0xFFFB923C).withValues(alpha: 0.4)),
+          border: Border.all(
+            color: isEnded
+                ? const Color(0xFF94A3B8).withValues(alpha: 0.3)
+                : const Color(0xFFFB923C).withValues(alpha: 0.4),
+          ),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (isEnded ? const Color(0xFF64748B) : Colors.red).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(isEnded ? Icons.check_circle_outline_rounded : Icons.live_tv_rounded,
-                size: 20, color: isEnded ? const Color(0xFF64748B) : Colors.red),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-              if (scheduledAt.isNotEmpty)
-                Text(_fmtSessionDate(scheduledAt),
-                  style: TextStyle(fontSize: 12, color: isEnded ? const Color(0xFF64748B) : const Color(0xFFF59E0B))),
-            ])),
-            if (isEnded)
-              GestureDetector(
-                onTap: driveUrl.isEmpty ? null : () async {
-                  final uri = Uri.tryParse(driveUrl);
-                  if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: driveUrl.isEmpty ? Colors.grey[200] : const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(8),
+                    color: (isEnded ? const Color(0xFF64748B) : Colors.red)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    driveUrl.isEmpty ? 'Ended' : 'Recording',
-                    style: TextStyle(
-                      color: driveUrl.isEmpty ? Colors.black45 : Colors.white,
-                      fontSize: 12, fontWeight: FontWeight.w600,
+                  child: Icon(
+                    isEnded
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.live_tv_rounded,
+                    size: 20,
+                    color: isEnded ? const Color(0xFF64748B) : Colors.red,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      if (scheduledAt.isNotEmpty)
+                        Text(
+                          _fmtSessionDate(scheduledAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isEnded
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFFF59E0B),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (isEnded)
+                  GestureDetector(
+                    onTap: driveUrl.isEmpty
+                        ? null
+                        : () async {
+                            final uri = Uri.tryParse(driveUrl);
+                            if (uri != null)
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                          },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: driveUrl.isEmpty
+                            ? Colors.grey[200]
+                            : const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        driveUrl.isEmpty ? 'Ended' : 'Recording',
+                        style: TextStyle(
+                          color: driveUrl.isEmpty
+                              ? Colors.black45
+                              : Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Upcoming',
+                      style: TextStyle(
+                        color: Color(0xFF1A73E8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(8)),
-                child: const Text('Upcoming', style: TextStyle(color: Color(0xFF1A73E8), fontSize: 12, fontWeight: FontWeight.w600)),
-              ),
-          ]),
-          if (hasMeetLink) ...[
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () async {
-                final uri = Uri.tryParse(meetingLink);
-                if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A73E8).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF1A73E8).withValues(alpha: 0.3)),
-                ),
-                child: const Row(children: [
-                  Icon(Icons.video_call_rounded, color: Color(0xFF1A73E8), size: 18),
-                  SizedBox(width: 8),
-                  Text('Join via Google Meet', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A73E8))),
-                  Spacer(),
-                  Icon(Icons.open_in_new_rounded, color: Color(0xFF1A73E8), size: 16),
-                ]),
-              ),
+              ],
             ),
+            if (hasMeetLink) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.tryParse(meetingLink);
+                  if (uri != null)
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A73E8).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF1A73E8).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.video_call_rounded,
+                        color: Color(0xFF1A73E8),
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Join via Google Meet',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A73E8),
+                        ),
+                      ),
+                      Spacer(),
+                      Icon(
+                        Icons.open_in_new_rounded,
+                        color: Color(0xFF1A73E8),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -1938,41 +2648,75 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final id = assignment['_id']?.toString() ?? '';
 
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => AssignmentSubmitScreen(
-          assignment: Map<String, dynamic>.from(assignment is Map ? assignment : {}),
-          courseId: _courseId,
-        ),
-      )).then((_) {
-        // The Grades tab caches _myGrades from initState and only otherwise
-        // refreshes on manual pull-to-refresh — without this, a student who
-        // just submitted saw the Grades tab still show "Pending" for it
-        // until they thought to pull-to-refresh themselves.
-        _loadStudentGrades();
-        _loadClasswork();
-      }),
+      onTap: () =>
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AssignmentSubmitScreen(
+                assignment: Map<String, dynamic>.from(
+                  assignment is Map ? assignment : {},
+                ),
+                courseId: _courseId,
+              ),
+            ),
+          ).then((_) {
+            // The Grades tab caches _myGrades from initState and only otherwise
+            // refreshes on manual pull-to-refresh — without this, a student who
+            // just submitted saw the Grades tab still show "Pending" for it
+            // until they thought to pull-to-refresh themselves.
+            _loadStudentGrades();
+            _loadClasswork();
+          }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F3FF),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
-        ),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFF6366F1).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Icon(Icons.assignment_rounded, size: 20, color: Color(0xFF6366F1)),
+          border: Border.all(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-            Text('${marks.isNotEmpty ? '$marks marks' : ''}${dueDate.isNotEmpty ? '  ·  Due: ${_fmtSessionDate(dueDate)}' : ''}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-          ])),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
-        ]),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.assignment_rounded,
+                size: 20,
+                color: Color(0xFF6366F1),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    '${marks.isNotEmpty ? '$marks marks' : ''}${dueDate.isNotEmpty ? '  ·  Due: ${_fmtSessionDate(dueDate)}' : ''}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+          ],
+        ),
       ),
     );
   }
@@ -1984,34 +2728,65 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final id = quiz['_id']?.toString() ?? '';
 
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (_) => QuizTakeScreen(
-          quiz: Map<String, dynamic>.from(quiz is Map ? quiz : {}),
-          enrollmentId: widget.enrollmentId ?? '',
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizTakeScreen(
+            quiz: Map<String, dynamic>.from(quiz is Map ? quiz : {}),
+            enrollmentId: widget.enrollmentId ?? '',
+          ),
         ),
-      )).then((_) => _loadModules()),
+      ).then((_) => _loadModules()),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: const Color(0xFFFFFBEB),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
-        ),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Icon(Icons.quiz_rounded, size: 20, color: Color(0xFFF59E0B)),
+          border: Border.all(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
-            Text('${timeLimit.isNotEmpty ? '$timeLimit min' : ''}${passingScore.isNotEmpty ? '  ·  Pass: $passingScore%' : ''}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-          ])),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
-        ]),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.quiz_rounded,
+                size: 20,
+                color: Color(0xFFF59E0B),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    '${timeLimit.isNotEmpty ? '$timeLimit min' : ''}${passingScore.isNotEmpty ? '  ·  Pass: $passingScore%' : ''}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+          ],
+        ),
       ),
     );
   }
@@ -2022,32 +2797,56 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final type = lesson['type']?.toString() ?? 'lesson';
     final isLive = type == 'live';
     final status = lesson['status']?.toString() ?? '';
-    final scheduledAt = lesson['scheduledAt']?.toString() ?? lesson['scheduledDate']?.toString() ?? '';
+    final scheduledAt =
+        lesson['scheduledAt']?.toString() ??
+        lesson['scheduledDate']?.toString() ??
+        '';
     final meetingLink = lesson['meetingLink']?.toString() ?? '';
-    final hasMeetLink = isLive && meetingLink.isNotEmpty && meetingLink.startsWith('http');
-    final isScheduled = isLive && status != 'live' && status != 'ended' && status != 'completed';
+    final hasMeetLink =
+        isLive && meetingLink.isNotEmpty && meetingLink.startsWith('http');
+    final isScheduled =
+        isLive &&
+        status != 'live' &&
+        status != 'ended' &&
+        status != 'completed';
 
     String dateLabel = '';
     DateTime? scheduledDateTime;
     if (scheduledAt.isNotEmpty) {
       scheduledDateTime = _parseScheduledAt(scheduledAt)?.toLocal();
       if (scheduledDateTime != null) {
-        dateLabel = DateFormat('MMM d, yyyy – h:mm a').format(scheduledDateTime);
+        dateLabel = DateFormat(
+          'MMM d, yyyy – h:mm a',
+        ).format(scheduledDateTime);
       }
     }
     // Locked = scheduled for a future date/time — the tile greys out and
     // can't be tapped until that moment passes, then it flips to "ready"
     // (still needs the instructor to actually start it, a live room can't
     // auto-start itself, but it's no longer misleadingly shown as open).
-    final isTimeLocked = isScheduled && scheduledDateTime != null && scheduledDateTime.isAfter(DateTime.now());
+    final isTimeLocked =
+        isScheduled &&
+        scheduledDateTime != null &&
+        scheduledDateTime.isAfter(DateTime.now());
 
     Color iconColor = isLive ? Colors.red : const Color(0xFF1A73E8);
-    IconData icon = isLive ? Icons.live_tv_rounded : Icons.play_circle_outline_rounded;
+    IconData icon = isLive
+        ? Icons.live_tv_rounded
+        : Icons.play_circle_outline_rounded;
     if (type == 'video') icon = Icons.videocam_outlined;
-    if (type == 'document') { icon = Icons.description_outlined; iconColor = const Color(0xFF188038); }
-    if (type == 'quiz') { icon = Icons.quiz_outlined; iconColor = const Color(0xFF9334E6); }
+    if (type == 'document') {
+      icon = Icons.description_outlined;
+      iconColor = const Color(0xFF188038);
+    }
+    if (type == 'quiz') {
+      icon = Icons.quiz_outlined;
+      iconColor = const Color(0xFF9334E6);
+    }
     if (type == 'assignment') icon = Icons.assignment_outlined;
-    if (isTimeLocked) { icon = Icons.lock_rounded; iconColor = const Color(0xFF94A3B8); }
+    if (isTimeLocked) {
+      icon = Icons.lock_rounded;
+      iconColor = const Color(0xFF94A3B8);
+    }
     // GET /courses/:id already returns isCompleted per lesson (see
     // courses.js) but nothing here ever read it — the tile gave the student
     // no visual sign of which lessons they'd actually finished. For
@@ -2057,122 +2856,264 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final submissionStatus = lesson['submissionStatus']?.toString();
     if (type == 'assignment' && submissionStatus != null) {
       icon = Icons.assignment_turned_in_rounded;
-      iconColor = isLessonCompleted ? const Color(0xFF188038) : const Color(0xFF1A73E8);
+      iconColor = isLessonCompleted
+          ? const Color(0xFF188038)
+          : const Color(0xFF1A73E8);
     } else if (isLessonCompleted) {
-      icon = Icons.check_circle_rounded; iconColor = const Color(0xFF188038);
+      icon = Icons.check_circle_rounded;
+      iconColor = const Color(0xFF188038);
     }
 
     final recordingUrl = lesson['recordingUrl']?.toString() ?? '';
     final driveUrl = lesson['driveBackupUrl']?.toString() ?? '';
     final hasRecording = recordingUrl.isNotEmpty || driveUrl.isNotEmpty;
-    final isEndedSession = isLive && (status == 'ended' || status == 'completed');
+    final isEndedSession =
+        isLive && (status == 'ended' || status == 'completed');
     // Real elapsed minutes, set by the backend when the session ends (see
     // live-sessions.js) — distinct from the instructor's planned duration
     // shown before the session runs.
     final actualDuration = (lesson['duration'] as num?)?.toInt();
-    final durationLabel = (isEndedSession && actualDuration != null && actualDuration > 0)
-        ? ' · ${actualDuration}min' : '';
+    final durationLabel =
+        (isEndedSession && actualDuration != null && actualDuration > 0)
+        ? ' · ${actualDuration}min'
+        : '';
 
     String statusLabel = '';
     Color statusColor = const Color(0xFF94A3B8);
     if (isLive) {
-      if (status == 'live') { statusLabel = '● LIVE NOW'; statusColor = Colors.red; }
-      else if (isEndedSession) { statusLabel = (hasRecording ? 'Recording available' : 'Ended · no recording') + durationLabel; statusColor = hasRecording ? const Color(0xFF188038) : const Color(0xFF94A3B8); }
-      else if (isTimeLocked && dateLabel.isNotEmpty) { statusLabel = 'Locked · unlocks $dateLabel'; statusColor = const Color(0xFF94A3B8); }
-      else if (isTimeLocked) { statusLabel = 'Locked'; statusColor = const Color(0xFF94A3B8); }
-      else if (dateLabel.isNotEmpty) { statusLabel = 'Ready · waiting for instructor'; statusColor = const Color(0xFF188038); }
-      else { statusLabel = 'Scheduled'; statusColor = const Color(0xFF1A73E8); }
+      if (status == 'live') {
+        statusLabel = '● LIVE NOW';
+        statusColor = Colors.red;
+      } else if (isEndedSession) {
+        statusLabel =
+            (hasRecording ? 'Recording available' : 'Ended · no recording') +
+            durationLabel;
+        statusColor = hasRecording
+            ? const Color(0xFF188038)
+            : const Color(0xFF94A3B8);
+      } else if (isTimeLocked && dateLabel.isNotEmpty) {
+        statusLabel = 'Locked · unlocks $dateLabel';
+        statusColor = const Color(0xFF94A3B8);
+      } else if (isTimeLocked) {
+        statusLabel = 'Locked';
+        statusColor = const Color(0xFF94A3B8);
+      } else if (dateLabel.isNotEmpty) {
+        statusLabel = 'Ready · waiting for instructor';
+        statusColor = const Color(0xFF188038);
+      } else {
+        statusLabel = 'Scheduled';
+        statusColor = const Color(0xFF1A73E8);
+      }
     } else if (type == 'assignment') {
-      if (submissionStatus == 'graded') { statusLabel = 'Graded'; statusColor = const Color(0xFF188038); }
-      else if (submissionStatus == 'submitted' || submissionStatus == 'late') { statusLabel = 'Submitted'; statusColor = const Color(0xFF1A73E8); }
-      else { statusLabel = 'Not submitted'; statusColor = const Color(0xFF94A3B8); }
+      if (submissionStatus == 'graded') {
+        statusLabel = 'Graded';
+        statusColor = const Color(0xFF188038);
+      } else if (submissionStatus == 'submitted' ||
+          submissionStatus == 'late') {
+        statusLabel = 'Submitted';
+        statusColor = const Color(0xFF1A73E8);
+      } else {
+        statusLabel = 'Not submitted';
+        statusColor = const Color(0xFF94A3B8);
+      }
     } else if (type == 'quiz' && isLessonCompleted) {
-      statusLabel = 'Completed'; statusColor = const Color(0xFF188038);
+      statusLabel = 'Completed';
+      statusColor = const Color(0xFF188038);
     }
 
     return InkWell(
-      onTap: isTimeLocked ? () {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('This session unlocks $dateLabel'),
-          backgroundColor: const Color(0xFF1A73E8),
-        ));
-      } : () => _openLessonItem(lesson, moduleId: moduleId),
+      onTap: isTimeLocked
+          ? () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('This session unlocks $dateLabel'),
+                  backgroundColor: const Color(0xFF1A73E8),
+                ),
+              );
+            }
+          : () => _openLessonItem(lesson, moduleId: moduleId),
       borderRadius: BorderRadius.circular(8),
       child: Opacity(
         opacity: isTimeLocked ? 0.6 : 1,
         child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF202124))),
-              if (statusLabel.isNotEmpty)
-                Text(statusLabel, style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600)),
-            ])),
-            if (status == 'live')
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
-                child: const Text('JOIN', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
-              )
-            else if (isEndedSession && hasRecording)
-              // The "Start" affordance a live session showed before it ran
-              // is replaced by this once it's over — tapping opens the
-              // recording (in-app playback, or the Google Drive backup)
-              // via _showCompletedSessionOptions in _openLessonItem below.
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFF188038), borderRadius: BorderRadius.circular(6)),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 13),
-                  SizedBox(width: 2),
-                  Text('RECORDING', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-                ]),
-              )
-            else if (hasMeetLink && isScheduled && !isTimeLocked)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFF1A73E8), borderRadius: BorderRadius.circular(6)),
-                child: const Text('JOIN', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
-              )
-            else
-              Icon(isTimeLocked ? Icons.lock_rounded : Icons.chevron_right_rounded, size: 18, color: Colors.grey.shade400),
-          ]),
-          if (hasMeetLink && isScheduled && !isTimeLocked) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () async {
-                final uri = Uri.tryParse(meetingLink);
-                if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(left: 46),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F0FE),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF1A73E8).withValues(alpha: 0.3)),
-                ),
-                child: const Row(children: [
-                  Icon(Icons.video_call_rounded, color: Color(0xFF1A73E8), size: 16),
-                  SizedBox(width: 6),
-                  Text('Join via Google Meet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1A73E8))),
-                  Spacer(),
-                  Icon(Icons.open_in_new_rounded, color: Color(0xFF1A73E8), size: 14),
-                ]),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF202124),
+                          ),
+                        ),
+                        if (statusLabel.isNotEmpty)
+                          Text(
+                            statusLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (status == 'live')
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'JOIN',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    )
+                  else if (isEndedSession && hasRecording)
+                    // The "Start" affordance a live session showed before it ran
+                    // is replaced by this once it's over — tapping opens the
+                    // recording (in-app playback, or the Google Drive backup)
+                    // via _showCompletedSessionOptions in _openLessonItem below.
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF188038),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 13,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            'RECORDING',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (hasMeetLink && isScheduled && !isTimeLocked)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A73E8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'JOIN',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      isTimeLocked
+                          ? Icons.lock_rounded
+                          : Icons.chevron_right_rounded,
+                      size: 18,
+                      color: Colors.grey.shade400,
+                    ),
+                ],
               ),
-            ),
-          ],
-        ]),
+              if (hasMeetLink && isScheduled && !isTimeLocked) ...[
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    final uri = Uri.tryParse(meetingLink);
+                    if (uri != null)
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 46),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F0FE),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF1A73E8).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.video_call_rounded,
+                          color: Color(0xFF1A73E8),
+                          size: 16,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Join via Google Meet',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A73E8),
+                          ),
+                        ),
+                        Spacer(),
+                        Icon(
+                          Icons.open_in_new_rounded,
+                          color: Color(0xFF1A73E8),
+                          size: 14,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -2186,7 +3127,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     // liveSessionId') — lesson['_id'] is the module-lesson's own id, a
     // different document. Falling back to lesson['_id'] only matters
     // before the session has ever ended once (no liveSessionId yet).
-    final sessionId = lesson['liveSessionId']?.toString() ?? lesson['_id']?.toString() ?? '';
+    final sessionId =
+        lesson['liveSessionId']?.toString() ?? lesson['_id']?.toString() ?? '';
     final lessonId = lesson['_id']?.toString();
     final title = lesson['title']?.toString() ?? 'Session';
     final recordingUrl = lesson['recordingUrl']?.toString() ?? '';
@@ -2194,68 +3136,93 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
     if (type == 'live') {
       if (status == 'live') {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => LmsLiveSessionScreen(
-            sessionId: sessionId,
-            courseId: _courseId,
-            sessionTitle: title,
-            isInstructor: widget.isInstructor,
-            // Without these, endAndSaveSession never learns which module
-            // lesson to write status:'ended'/recordingUrl/driveBackupUrl
-            // onto, and falls back entirely to session.linkedLessonId —
-            // which is only ever set for sessions pre-scheduled via
-            // syncLiveSessions, not sessions joined straight from this
-            // module-lesson tile. That gap is why sessions started this way
-            // stayed stuck "Not started" in student/instructor progress no
-            // matter how long ago they'd actually ended.
-            lessonId: lessonId,
-            moduleId: moduleId,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LmsLiveSessionScreen(
+              sessionId: sessionId,
+              courseId: _courseId,
+              sessionTitle: title,
+              isInstructor: widget.isInstructor,
+              // Without these, endAndSaveSession never learns which module
+              // lesson to write status:'ended'/recordingUrl/driveBackupUrl
+              // onto, and falls back entirely to session.linkedLessonId —
+              // which is only ever set for sessions pre-scheduled via
+              // syncLiveSessions, not sessions joined straight from this
+              // module-lesson tile. That gap is why sessions started this way
+              // stayed stuck "Not started" in student/instructor progress no
+              // matter how long ago they'd actually ended.
+              lessonId: lessonId,
+              moduleId: moduleId,
+            ),
           ),
-        ));
+        );
       } else if (status == 'ended' || status == 'completed') {
         _showCompletedSessionOptions(sessionId, title, recordingUrl, driveUrl);
       } else {
         final meetLink = lesson['meetingLink']?.toString() ?? '';
         if (meetLink.isNotEmpty && meetLink.startsWith('http')) {
           final uri = Uri.tryParse(meetLink);
-          if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (uri != null)
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
           return;
         }
         final scheduledAt = lesson['scheduledAt']?.toString() ?? '';
         String dateLabel = scheduledAt;
         if (scheduledAt.isNotEmpty) {
-          try { dateLabel = DateFormat('EEEE, MMM d, yyyy – h:mm a').format(DateTime.parse(scheduledAt).toLocal()); } catch (_) {}
+          try {
+            dateLabel = DateFormat(
+              'EEEE, MMM d, yyyy – h:mm a',
+            ).format(DateTime.parse(scheduledAt).toLocal());
+          } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Session scheduled for $dateLabel'),
-          backgroundColor: const Color(0xFF1A73E8),
-          duration: const Duration(seconds: 3),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Session scheduled for $dateLabel'),
+            backgroundColor: const Color(0xFF1A73E8),
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } else if (type == 'assignment') {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => AssignmentSubmitScreen(
-          assignment: Map<String, dynamic>.from(lesson),
-          courseId: _courseId,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssignmentSubmitScreen(
+            assignment: Map<String, dynamic>.from(lesson),
+            courseId: _courseId,
+          ),
         ),
-      )).then((_) { _loadModules(); _loadStudentGrades(); });
+      ).then((_) {
+        _loadModules();
+        _loadStudentGrades();
+      });
     } else if (type == 'quiz') {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => QuizTakeScreen(
-          quiz: Map<String, dynamic>.from(lesson),
-          enrollmentId: widget.enrollmentId ?? '',
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizTakeScreen(
+            quiz: Map<String, dynamic>.from(lesson),
+            enrollmentId: widget.enrollmentId ?? '',
+          ),
         ),
-      )).then((_) { _loadModules(); _loadStudentGrades(); });
+      ).then((_) {
+        _loadModules();
+        _loadStudentGrades();
+      });
     } else {
       // Content lesson — open detail page
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => LessonDetailPage(
-          lesson: Map<String, dynamic>.from(lesson),
-          courseId: _courseId,
-          moduleId: lesson['moduleId']?.toString() ?? '',
-          enrollmentId: widget.enrollmentId ?? '',
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LessonDetailPage(
+            lesson: Map<String, dynamic>.from(lesson),
+            courseId: _courseId,
+            moduleId: lesson['moduleId']?.toString() ?? '',
+            enrollmentId: widget.enrollmentId ?? '',
+          ),
         ),
-      )).then((_) => _loadModules());
+      ).then((_) => _loadModules());
     }
   }
 
@@ -2283,7 +3250,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     ];
 
     // Also show live banner if _isSessionLive but no session in list yet
-    final showLiveBanner = !widget.isInstructor && _isSessionLive && liveSessions.isEmpty;
+    final showLiveBanner =
+        !widget.isInstructor && _isSessionLive && liveSessions.isEmpty;
 
     return RefreshIndicator(
       onRefresh: _loadClasswork,
@@ -2324,7 +3292,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           ),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
-            BoxShadow(color: Colors.red.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.red.withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
@@ -2336,18 +3308,30 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.live_tv_rounded, color: Colors.white, size: 22),
+              child: const Icon(
+                Icons.live_tv_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('🔴 LIVE SESSION IN PROGRESS',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                  Text(
+                    '🔴 LIVE SESSION IN PROGRESS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   SizedBox(height: 3),
-                  Text('Your instructor is live now — tap to join!',
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    'Your instructor is live now — tap to join!',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -2357,8 +3341,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text('JOIN NOW',
-                  style: TextStyle(color: Color(0xFFB91C1C), fontWeight: FontWeight.w900, fontSize: 12)),
+              child: const Text(
+                'JOIN NOW',
+                style: TextStyle(
+                  color: Color(0xFFB91C1C),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ],
         ),
@@ -2371,25 +3361,48 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       children: [
         _createBtn(Icons.assignment_add, 'Assignment', () {
           if (_courseId.isNotEmpty) {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (_) => InstructorCreateAssignmentScreen(courseId: _courseId),
-            )).then((_) => _loadClasswork());
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DeferredScreen(
+                  loader: i_assign.loadLibrary,
+                  builder: () => i_assign.InstructorCreateAssignmentScreen(
+                    courseId: _courseId,
+                  ),
+                ),
+              ),
+            ).then((_) => _loadClasswork());
           }
         }),
         const SizedBox(width: 10),
         _createBtn(Icons.quiz_outlined, 'Quiz', () {
           if (_courseId.isNotEmpty) {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (_) => InstructorCreateQuizScreen(courseId: _courseId),
-            )).then((_) => _loadClasswork());
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DeferredScreen(
+                  loader: i_quiz.loadLibrary,
+                  builder: () =>
+                      i_quiz.InstructorCreateQuizScreen(courseId: _courseId),
+                ),
+              ),
+            ).then((_) => _loadClasswork());
           }
         }),
         const SizedBox(width: 10),
         _createBtn(Icons.videocam_outlined, 'Session', () {
           if (_courseId.isNotEmpty) {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (_) => InstructorScheduleSessionScreen(courseId: _courseId),
-            )).then((_) => _loadClasswork());
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DeferredScreen(
+                  loader: i_session.loadLibrary,
+                  builder: () => i_session.InstructorScheduleSessionScreen(
+                    courseId: _courseId,
+                  ),
+                ),
+              ),
+            ).then((_) => _loadClasswork());
           }
         }),
       ],
@@ -2401,9 +3414,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       child: OutlinedButton.icon(
         onPressed: onTap,
         icon: Icon(icon, size: 16),
-        label: Text(label,
-            style:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF1A73E8),
           side: const BorderSide(color: Color(0xFFDADCE0)),
@@ -2418,10 +3432,18 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final type = item['type'] as String;
     final data = item['data'] as Map;
     final title =
-        data['title']?.toString() ?? (type == 'quiz' ? 'Quiz' : type == 'session' ? 'Session' : 'Assignment');
-    final dueStr = data['dueDate']?.toString() ?? data['scheduledAt']?.toString() ?? '';
+        data['title']?.toString() ??
+        (type == 'quiz'
+            ? 'Quiz'
+            : type == 'session'
+            ? 'Session'
+            : 'Assignment');
+    final dueStr =
+        data['dueDate']?.toString() ?? data['scheduledAt']?.toString() ?? '';
     final points = data['totalMarks']?.toString() ?? '';
-    final sessionStatus = type == 'session' ? (data['status']?.toString() ?? '') : '';
+    final sessionStatus = type == 'session'
+        ? (data['status']?.toString() ?? '')
+        : '';
     final isLiveSession = type == 'session' && sessionStatus == 'live';
 
     String dueLabel = '';
@@ -2460,7 +3482,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             ),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
-              BoxShadow(color: Colors.red.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.red.withValues(alpha: 0.35),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Row(
@@ -2472,44 +3498,76 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.live_tv_rounded, color: Colors.white, size: 22),
+                child: const Icon(
+                  Icons.live_tv_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '● LIVE',
+                            style: TextStyle(
+                              color: Color(0xFFB91C1C),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                        child: const Text('● LIVE',
-                            style: TextStyle(color: Color(0xFFB91C1C), fontSize: 10, fontWeight: FontWeight.w900)),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(title,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                    ]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 4),
-                    const Text('Your instructor is live now — tap to join!',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const Text(
+                      'Your instructor is live now — tap to join!',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('JOIN NOW',
-                    style: TextStyle(color: Color(0xFFB91C1C), fontWeight: FontWeight.w900, fontSize: 12)),
+                child: const Text(
+                  'JOIN NOW',
+                  style: TextStyle(
+                    color: Color(0xFFB91C1C),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
@@ -2517,9 +3575,13 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       );
     }
 
-    final sessionMeetLink = type == 'session' ? (data['meetingLink']?.toString() ?? '') : '';
-    final hasSessionMeetLink = sessionMeetLink.isNotEmpty && sessionMeetLink.startsWith('http');
-    final isScheduledSession = type == 'session' && sessionStatus == 'scheduled';
+    final sessionMeetLink = type == 'session'
+        ? (data['meetingLink']?.toString() ?? '')
+        : '';
+    final hasSessionMeetLink =
+        sessionMeetLink.isNotEmpty && sessionMeetLink.startsWith('http');
+    final isScheduledSession =
+        type == 'session' && sessionStatus == 'scheduled';
 
     return InkWell(
       onTap: () => _openItem(type, data),
@@ -2529,96 +3591,162 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
-            children: [
-              // Icon
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  shape: BoxShape.circle,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Icon
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 16),
                 ),
-                child: Icon(icon, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 14, color: Color(0xFF202124))),
-                    if (dueLabel.isNotEmpty || points.isNotEmpty)
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        [
-                          if (dueLabel.isNotEmpty) 'Due $dueLabel',
-                          if (points.isNotEmpty) '$points points',
-                        ].join('  ·  '),
+                        title,
                         style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF70757A)),
+                          fontSize: 14,
+                          color: Color(0xFF202124),
+                        ),
                       ),
-                    if (type == 'session' && sessionStatus.isNotEmpty && sessionStatus != 'live')
-                      Row(children: [
+                      if (dueLabel.isNotEmpty || points.isNotEmpty)
                         Text(
-                          sessionStatus == 'scheduled' ? 'Scheduled${dueLabel.isNotEmpty ? ' · $dueLabel' : ''}' :
-                          sessionStatus == 'ended' ? 'Session ended' :
-                          sessionStatus == 'completed' ? 'Completed' : sessionStatus,
-                          style: TextStyle(
+                          [
+                            if (dueLabel.isNotEmpty) 'Due $dueLabel',
+                            if (points.isNotEmpty) '$points points',
+                          ].join('  ·  '),
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: sessionStatus == 'scheduled' ? const Color(0xFF1A73E8) : const Color(0xFF70757A),
+                            color: Color(0xFF70757A),
                           ),
                         ),
-                      ]),
-                  ],
+                      if (type == 'session' &&
+                          sessionStatus.isNotEmpty &&
+                          sessionStatus != 'live')
+                        Row(
+                          children: [
+                            Text(
+                              sessionStatus == 'scheduled'
+                                  ? 'Scheduled${dueLabel.isNotEmpty ? ' · $dueLabel' : ''}'
+                                  : sessionStatus == 'ended'
+                                  ? 'Session ended'
+                                  : sessionStatus == 'completed'
+                                  ? 'Completed'
+                                  : sessionStatus,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: sessionStatus == 'scheduled'
+                                    ? const Color(0xFF1A73E8)
+                                    : const Color(0xFF70757A),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              if (widget.isInstructor)
-                IconButton(
-                  icon: const Icon(Icons.more_vert_rounded,
-                      size: 18, color: Color(0xFF70757A)),
-                  onPressed: () => _showClassworkMenu(type, data),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                )
-              else if (isScheduledSession && hasSessionMeetLink)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFF1A73E8), borderRadius: BorderRadius.circular(6)),
-                  child: const Text('JOIN', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
-                )
-              else
-                const Icon(Icons.chevron_right_rounded,
-                    size: 18, color: Color(0xFFDADCE0)),
-            ],
-          ),
-          if (!widget.isInstructor && isScheduledSession && hasSessionMeetLink) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () async {
-                final uri = Uri.tryParse(sessionMeetLink);
-                if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(left: 48),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F0FE),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF1A73E8).withValues(alpha: 0.3)),
-                ),
-                child: const Row(children: [
-                  Icon(Icons.video_call_rounded, color: Color(0xFF1A73E8), size: 16),
-                  SizedBox(width: 6),
-                  Text('Join via Google Meet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1A73E8))),
-                  Spacer(),
-                  Icon(Icons.open_in_new_rounded, color: Color(0xFF1A73E8), size: 14),
-                ]),
-              ),
+                if (widget.isInstructor)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      size: 18,
+                      color: Color(0xFF70757A),
+                    ),
+                    onPressed: () => _showClassworkMenu(type, data),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  )
+                else if (isScheduledSession && hasSessionMeetLink)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A73E8),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'JOIN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  )
+                else
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: Color(0xFFDADCE0),
+                  ),
+              ],
             ),
+            if (!widget.isInstructor &&
+                isScheduledSession &&
+                hasSessionMeetLink) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.tryParse(sessionMeetLink);
+                  if (uri != null)
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(left: 48),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F0FE),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF1A73E8).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.video_call_rounded,
+                        color: Color(0xFF1A73E8),
+                        size: 16,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Join via Google Meet',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A73E8),
+                        ),
+                      ),
+                      Spacer(),
+                      Icon(
+                        Icons.open_in_new_rounded,
+                        color: Color(0xFF1A73E8),
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -2630,15 +3758,19 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     // quiz/session for a locked student.
     if (!widget.isInstructor && _lockReason == 'installment_overdue') {
       final messenger = ScaffoldMessenger.of(context);
-      messenger.showSnackBar(SnackBar(
-        content: const Text('This course is locked due to an overdue installment. Pay now to unlock.'),
-        backgroundColor: const Color(0xFFDC2626),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () => messenger.hideCurrentSnackBar(),
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'This course is locked due to an overdue installment. Pay now to unlock.',
+          ),
+          backgroundColor: const Color(0xFFDC2626),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            textColor: Colors.white,
+            onPressed: () => messenger.hideCurrentSnackBar(),
+          ),
         ),
-      ));
+      );
       return;
     }
     if (type == 'assignment') {
@@ -2649,12 +3781,18 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         // clickable to anything useful.
         final assignmentId = data['_id']?.toString() ?? '';
         if (assignmentId.isNotEmpty) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => InstructorGradingScreen(
-              assignmentId: assignmentId,
-              assignmentTitle: data['title']?.toString() ?? 'Assignment',
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DeferredScreen(
+                loader: i_grading.loadLibrary,
+                builder: () => i_grading.InstructorGradingScreen(
+                  assignmentId: assignmentId,
+                  assignmentTitle: data['title']?.toString() ?? 'Assignment',
+                ),
+              ),
             ),
-          ));
+          );
         }
         return;
       }
@@ -2667,7 +3805,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             enrollmentId: widget.enrollmentId,
           ),
         ),
-      ).then((_) { _loadClasswork(); _loadStudentGrades(); });
+      ).then((_) {
+        _loadClasswork();
+        _loadStudentGrades();
+      });
     } else if (type == 'quiz') {
       if (widget.isInstructor) {
         _showClassworkMenu(type, data);
@@ -2683,7 +3824,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         ),
       );
     } else if (type == 'session') {
-      final sessionId = data['_id']?.toString() ?? widget.course['_id']?.toString() ?? '';
+      final sessionId =
+          data['_id']?.toString() ?? widget.course['_id']?.toString() ?? '';
       final sessionTitle = data['title']?.toString() ?? 'Live Session';
       final status = data['status']?.toString() ?? '';
       final recordingUrl = data['recordingUrl']?.toString() ?? '';
@@ -2691,7 +3833,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
       // Completed/ended sessions → show recording options (for all users)
       if (status == 'completed' || status == 'ended') {
-        _showCompletedSessionOptions(sessionId, sessionTitle, recordingUrl, driveUrl);
+        _showCompletedSessionOptions(
+          sessionId,
+          sessionTitle,
+          recordingUrl,
+          driveUrl,
+        );
         return;
       }
 
@@ -2700,14 +3847,17 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         final meetLink = data['meetingLink']?.toString() ?? '';
         if (meetLink.isNotEmpty && meetLink.startsWith('http')) {
           final uri = Uri.tryParse(meetLink);
-          if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (uri != null)
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('This session has not started yet.'),
-          backgroundColor: Color(0xFF64748B),
-          duration: Duration(seconds: 2),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This session has not started yet.'),
+            backgroundColor: Color(0xFF64748B),
+            duration: Duration(seconds: 2),
+          ),
+        );
         return;
       }
 
@@ -2725,7 +3875,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     }
   }
 
-  void _showCompletedSessionOptions(String sessionId, String title, String recordingUrl, [String driveUrl = '']) {
+  void _showCompletedSessionOptions(
+    String sessionId,
+    String title,
+    String recordingUrl, [
+    String driveUrl = '',
+  ]) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -2736,14 +3891,27 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 8),
-            Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF202124)),
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF202124),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(height: 4),
             const Divider(),
@@ -2754,17 +3922,35 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFFE6F4EA), shape: BoxShape.circle),
-                  child: const Icon(Icons.play_circle_outline_rounded, color: Color(0xFF188038), size: 22),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F4EA),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_circle_outline_rounded,
+                    color: Color(0xFF188038),
+                    size: 22,
+                  ),
                 ),
-                title: const Text('Recording', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                subtitle: const Text('Opens the recording in Google Drive', style: TextStyle(fontSize: 12)),
+                title: const Text(
+                  'Recording',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Opens the recording in Google Drive',
+                  style: TextStyle(fontSize: 12),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   final uri = Uri.tryParse(driveUrl);
                   // webOnlyWindowName forces a real new tab — externalApplication
                   // alone navigates the current tab away on Flutter Web.
-                  if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+                  if (uri != null)
+                    await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                      webOnlyWindowName: '_blank',
+                    );
                 },
               )
             else if (recordingUrl.isNotEmpty)
@@ -2776,21 +3962,42 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               // instead of firing it detached) can be stuck here permanently
               // with no automatic path to ever finish on their own.
               ListTile(
-                leading: const Icon(Icons.hourglass_top_rounded, color: Color(0xFF94A3B8), size: 22),
-                title: const Text('Recording is processing', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF64748B))),
-                subtitle: const Text('Uploading to Google Drive — check back shortly', style: TextStyle(fontSize: 12)),
+                leading: const Icon(
+                  Icons.hourglass_top_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 22,
+                ),
+                title: const Text(
+                  'Recording is processing',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                subtitle: const Text(
+                  'Uploading to Google Drive — check back shortly',
+                  style: TextStyle(fontSize: 12),
+                ),
                 trailing: widget.isInstructor
                     ? TextButton(
                         onPressed: () async {
                           Navigator.pop(context);
                           final result = await _lms.retryDriveBackup(sessionId);
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(result['success'] == true
-                                ? 'Drive backup complete — reopen to view'
-                                : (result['message']?.toString() ?? 'Retry failed, try again shortly')),
-                            backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-                          ));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result['success'] == true
+                                    ? 'Drive backup complete — reopen to view'
+                                    : (result['message']?.toString() ??
+                                          'Retry failed, try again shortly'),
+                              ),
+                              backgroundColor: result['success'] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
                           if (result['success'] == true) _loadClasswork();
                         },
                         child: const Text('Retry'),
@@ -2801,30 +4008,60 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFFFFEBEE), shape: BoxShape.circle),
-                  child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB3261E), size: 22),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Color(0xFFB3261E),
+                    size: 22,
+                  ),
                 ),
-                title: const Text('Delete Recording', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFFB3261E))),
-                subtitle: const Text('Permanently remove this recording', style: TextStyle(fontSize: 12)),
+                title: const Text(
+                  'Delete Recording',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Color(0xFFB3261E),
+                  ),
+                ),
+                subtitle: const Text(
+                  'Permanently remove this recording',
+                  style: TextStyle(fontSize: 12),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteRecording(sessionId, title);
                 },
               ),
             if (widget.isInstructor)
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFE6F4EA), shape: BoxShape.circle),
-                child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF188038), size: 22),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F4EA),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: Color(0xFF188038),
+                    size: 22,
+                  ),
+                ),
+                title: const Text(
+                  'View Chat Transcript',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'All messages from this session',
+                  style: TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _viewSessionTranscript(sessionId, title);
+                },
               ),
-              title: const Text('View Chat Transcript', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              subtitle: const Text('All messages from this session', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                _viewSessionTranscript(sessionId, title);
-              },
-            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -2837,11 +4074,19 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Recording?'),
-        content: Text('The recording for "$title" will be permanently removed.'),
+        content: Text(
+          'The recording for "$title" will be permanently removed.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -2850,11 +4095,17 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
     if (confirm != true) return;
     try {
-      await _lms.updateSession(sessionId, {'recordingUrl': '', 'recordingBlobUrl': ''});
+      await _lms.updateSession(sessionId, {
+        'recordingUrl': '',
+        'recordingBlobUrl': '',
+      });
       _loadClasswork();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recording deleted'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Recording deleted'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
@@ -2871,11 +4122,17 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       barrierDismissible: false,
       builder: (_) => const AlertDialog(
-        content: Row(children: [
-          SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-          SizedBox(width: 16),
-          Text('Loading transcript...'),
-        ]),
+        content: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Text('Loading transcript...'),
+          ],
+        ),
       ),
     );
 
@@ -2884,29 +4141,51 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       if (!mounted) return;
       Navigator.pop(context); // close loading
 
-      final transcript = result['transcript']?.toString() ?? 'No transcript available.';
+      final transcript =
+          result['transcript']?.toString() ?? 'No transcript available.';
 
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: Row(children: [
-            const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF188038), size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                overflow: TextOverflow.ellipsis)),
-          ]),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Color(0xFF188038),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
             height: 400,
             child: SingleChildScrollView(
               child: SelectableText(
                 transcript,
-                style: const TextStyle(fontSize: 13, height: 1.7, fontFamily: 'monospace'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.7,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ],
         ),
       );
@@ -2914,7 +4193,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not load transcript: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Could not load transcript: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -2925,9 +4207,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final meetingId = data['meetingId']?.toString() ?? '';
     final meetingPassword = data['meetingPassword']?.toString() ?? '';
     String platform = data['platform']?.toString() ?? 'zoom';
-    if (meetingLink.contains('meet.google.com')) platform = 'meet';
-    else if (meetingLink.contains('zoom.us')) platform = 'zoom';
-    else if (meetingLink.contains('teams.microsoft.com')) platform = 'teams';
+    if (meetingLink.contains('meet.google.com'))
+      platform = 'meet';
+    else if (meetingLink.contains('zoom.us'))
+      platform = 'zoom';
+    else if (meetingLink.contains('teams.microsoft.com'))
+      platform = 'teams';
     final title = data['title']?.toString() ?? 'Live Session';
 
     if (meetingLink.isEmpty) {
@@ -2944,27 +4229,61 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(children: [
-          Icon(Icons.live_tv_rounded, color: Colors.red, size: 24),
-          const SizedBox(width: 10),
-          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-        ]),
+        title: Row(
+          children: [
+            Icon(Icons.live_tv_rounded, color: Colors.red, size: 24),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _sessionInfoRow(Icons.videocam_rounded, 'Platform', _platformName(platform)),
-            if (meetingId.isNotEmpty) ...[const SizedBox(height: 8), _sessionInfoRow(Icons.tag_rounded, 'Meeting ID', meetingId)],
-            if (meetingPassword.isNotEmpty) ...[const SizedBox(height: 8), _sessionInfoRow(Icons.lock_outline_rounded, 'Password', meetingPassword)],
+            _sessionInfoRow(
+              Icons.videocam_rounded,
+              'Platform',
+              _platformName(platform),
+            ),
+            if (meetingId.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _sessionInfoRow(Icons.tag_rounded, 'Meeting ID', meetingId),
+            ],
+            if (meetingPassword.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _sessionInfoRow(
+                Icons.lock_outline_rounded,
+                'Password',
+                meetingPassword,
+              ),
+            ],
             const SizedBox(height: 8),
-            _sessionInfoRow(Icons.link_rounded, 'Link', meetingLink, overflow: true),
+            _sessionInfoRow(
+              Icons.link_rounded,
+              'Link',
+              meetingLink,
+              overflow: true,
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isInstructor ? Colors.red : const Color(0xFF1A73E8),
+              backgroundColor: isInstructor
+                  ? Colors.red
+                  : const Color(0xFF1A73E8),
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
@@ -2974,7 +4293,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             },
-            icon: Icon(isInstructor ? Icons.play_arrow_rounded : Icons.login_rounded, size: 18),
+            icon: Icon(
+              isInstructor ? Icons.play_arrow_rounded : Icons.login_rounded,
+              size: 18,
+            ),
             label: Text(isInstructor ? 'Start Session' : 'Join Session'),
           ),
         ],
@@ -2982,21 +4304,46 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
   }
 
-  Widget _sessionInfoRow(IconData icon, String label, String value, {bool overflow = false}) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, size: 16, color: const Color(0xFF70757A)),
-      const SizedBox(width: 6),
-      Text('$label: ', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF444746))),
-      Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF202124)), overflow: overflow ? TextOverflow.ellipsis : null)),
-    ]);
+  Widget _sessionInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool overflow = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF70757A)),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF444746),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF202124)),
+            overflow: overflow ? TextOverflow.ellipsis : null,
+          ),
+        ),
+      ],
+    );
   }
 
   String _platformName(String p) {
     switch (p.toLowerCase()) {
-      case 'zoom': return 'Zoom Meeting';
-      case 'meet': return 'Google Meet';
-      case 'teams': return 'Microsoft Teams';
-      default: return 'Custom Link';
+      case 'zoom':
+        return 'Zoom Meeting';
+      case 'meet':
+        return 'Google Meet';
+      case 'teams':
+        return 'Microsoft Teams';
+      default:
+        return 'Custom Link';
     }
   }
 
@@ -3004,7 +4351,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final id = data['_id']?.toString() ?? '';
     final title = data['title']?.toString() ?? type;
     final meetingLink = data['meetingLink']?.toString() ?? '';
-    final hasMeetLink = meetingLink.isNotEmpty && meetingLink.startsWith('http');
+    final hasMeetLink =
+        meetingLink.isNotEmpty && meetingLink.startsWith('http');
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -3014,44 +4362,81 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             // Session — Google Meet link (both instructor and student, if set)
             if (type == 'session' && hasMeetLink)
               ListTile(
-                leading: const Icon(Icons.video_call_rounded, color: Color(0xFF1A73E8)),
-                title: const Text('Join via Google Meet', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A73E8))),
-                subtitle: Text(meetingLink, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                leading: const Icon(
+                  Icons.video_call_rounded,
+                  color: Color(0xFF1A73E8),
+                ),
+                title: const Text(
+                  'Join via Google Meet',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A73E8),
+                  ),
+                ),
+                subtitle: Text(
+                  meetingLink,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   final uri = Uri.tryParse(meetingLink);
-                  if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  if (uri != null)
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                 },
               ),
             // Session — Start button (instructor)
             if (type == 'session')
               ListTile(
-                leading: const Icon(Icons.play_circle_rounded, color: Colors.red),
-                title: const Text('Start Session', style: TextStyle(fontWeight: FontWeight.w700)),
+                leading: const Icon(
+                  Icons.play_circle_rounded,
+                  color: Colors.red,
+                ),
+                title: const Text(
+                  'Start Session',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
                 subtitle: const Text('Launch iCare live video session'),
                 onTap: () {
                   Navigator.pop(context);
-                  final sessionId = data['_id']?.toString() ?? widget.course['_id']?.toString() ?? '';
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => LmsLiveSessionScreen(
-                      sessionId: sessionId,
-                      courseId: widget.course['_id']?.toString() ?? '',
-                      sessionTitle: data['title']?.toString() ?? 'Live Session',
-                      isInstructor: widget.isInstructor,
-                      lessonId: data['_id']?.toString(),
+                  final sessionId =
+                      data['_id']?.toString() ??
+                      widget.course['_id']?.toString() ??
+                      '';
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => LmsLiveSessionScreen(
+                        sessionId: sessionId,
+                        courseId: widget.course['_id']?.toString() ?? '',
+                        sessionTitle:
+                            data['title']?.toString() ?? 'Live Session',
+                        isInstructor: widget.isInstructor,
+                        lessonId: data['_id']?.toString(),
+                      ),
                     ),
-                  ));
+                  );
                 },
               ),
             // Recordings now archive to Google Drive only — no in-app
             // "Watch Recording" option here anymore.
             // Session — Delete Recording (instructor only)
-            if (type == 'session' && widget.isInstructor &&
+            if (type == 'session' &&
+                widget.isInstructor &&
                 (data['status'] == 'completed' || data['status'] == 'ended') &&
                 (data['recordingUrl']?.toString() ?? '').isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB3261E)),
-                title: const Text('Delete Recording', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFB3261E))),
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFB3261E),
+                ),
+                title: const Text(
+                  'Delete Recording',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFB3261E),
+                  ),
+                ),
                 subtitle: const Text('Permanently remove this recording'),
                 onTap: () {
                   Navigator.pop(context);
@@ -3063,69 +4448,131 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 (data['status'] == 'completed' || data['status'] == 'ended') &&
                 id.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF188038)),
-                title: const Text('View Chat Transcript', style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: Color(0xFF188038),
+                ),
+                title: const Text(
+                  'View Chat Transcript',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Messages from this session'),
                 onTap: () {
                   Navigator.pop(context);
-                  _viewSessionTranscript(id, data['title']?.toString() ?? 'Session Transcript');
+                  _viewSessionTranscript(
+                    id,
+                    data['title']?.toString() ?? 'Session Transcript',
+                  );
                 },
               ),
             // Assignment — grade
             if (type == 'assignment' && id.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.grade_outlined, color: Color(0xFF1A73E8)),
+                leading: const Icon(
+                  Icons.grade_outlined,
+                  color: Color(0xFF1A73E8),
+                ),
                 title: const Text('Grade submissions'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => InstructorGradingScreen(
-                      assignmentId: id,
-                      assignmentTitle: title,
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeferredScreen(
+                        loader: i_grading.loadLibrary,
+                        builder: () => i_grading.InstructorGradingScreen(
+                          assignmentId: id,
+                          assignmentTitle: title,
+                        ),
+                      ),
                     ),
-                  ));
+                  );
                 },
               ),
             // Session — Reschedule (instructor only, upcoming sessions)
-            if (type == 'session' && widget.isInstructor &&
-                data['status']?.toString() != 'completed' && data['status']?.toString() != 'ended')
+            if (type == 'session' &&
+                widget.isInstructor &&
+                data['status']?.toString() != 'completed' &&
+                data['status']?.toString() != 'ended')
               ListTile(
-                leading: const Icon(Icons.calendar_month_rounded, color: Color(0xFF6366F1)),
-                title: const Text('Reschedule', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF6366F1))),
+                leading: const Icon(
+                  Icons.calendar_month_rounded,
+                  color: Color(0xFF6366F1),
+                ),
+                title: const Text(
+                  'Reschedule',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6366F1),
+                  ),
+                ),
                 subtitle: const Text('Change session date with announcement'),
                 onTap: () async {
                   Navigator.pop(context);
-                  await _rescheduleSession(id, data['title']?.toString() ?? 'Session');
+                  await _rescheduleSession(
+                    id,
+                    data['title']?.toString() ?? 'Session',
+                  );
                 },
               ),
             // Session — Cancel (instructor only)
-            if (type == 'session' && widget.isInstructor &&
-                data['status']?.toString() != 'completed' && data['status']?.toString() != 'ended' && data['status']?.toString() != 'cancelled')
+            if (type == 'session' &&
+                widget.isInstructor &&
+                data['status']?.toString() != 'completed' &&
+                data['status']?.toString() != 'ended' &&
+                data['status']?.toString() != 'cancelled')
               ListTile(
-                leading: const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444)),
-                title: const Text('Cancel Session', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
+                leading: const Icon(
+                  Icons.cancel_rounded,
+                  color: Color(0xFFEF4444),
+                ),
+                title: const Text(
+                  'Cancel Session',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFEF4444),
+                  ),
+                ),
                 subtitle: const Text('Notify students and log cancellation'),
                 onTap: () async {
                   Navigator.pop(context);
-                  await _cancelSession(id, data['title']?.toString() ?? 'Session');
+                  await _cancelSession(
+                    id,
+                    data['title']?.toString() ?? 'Session',
+                  );
                 },
               ),
             if (type == 'assignment' || type == 'quiz')
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB3261E)),
-                title: Text('Delete $type'.replaceFirst('a', 'A').replaceFirst('q', 'Q'),
-                    style: const TextStyle(color: Color(0xFFB3261E))),
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFB3261E),
+                ),
+                title: Text(
+                  'Delete $type'.replaceFirst('a', 'A').replaceFirst('q', 'Q'),
+                  style: const TextStyle(color: Color(0xFFB3261E)),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: Text('Delete ${type == 'quiz' ? 'Quiz' : 'Assignment'}?'),
-                      content: Text('"$title" will be permanently deleted.${type == 'assignment' ? ' All submissions will also be removed.' : ''}'),
+                      title: Text(
+                        'Delete ${type == 'quiz' ? 'Quiz' : 'Assignment'}?',
+                      ),
+                      content: Text(
+                        '"$title" will be permanently deleted.${type == 'assignment' ? ' All submissions will also be removed.' : ''}',
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
                           onPressed: () => Navigator.pop(context, true),
                           child: const Text('Delete'),
                         ),
@@ -3141,17 +4588,23 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                       }
                       _loadClasswork();
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('${type == 'quiz' ? 'Quiz' : 'Assignment'} deleted'),
-                          backgroundColor: Colors.green,
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${type == 'quiz' ? 'Quiz' : 'Assignment'} deleted',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                       }
                     } catch (e) {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Delete failed: $e'),
-                          backgroundColor: Colors.red,
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Delete failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
                       }
                     }
                   }
@@ -3173,55 +4626,115 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Reschedule "$sessionTitle"', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Reschedule "$sessionTitle"',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.calendar_today_rounded, color: Color(0xFF6366F1)),
-                title: Text(newDate == null ? 'Pick new date' : '${newDate!.day}/${newDate!.month}/${newDate!.year}'),
+                leading: const Icon(
+                  Icons.calendar_today_rounded,
+                  color: Color(0xFF6366F1),
+                ),
+                title: Text(
+                  newDate == null
+                      ? 'Pick new date'
+                      : '${newDate!.day}/${newDate!.month}/${newDate!.year}',
+                ),
                 onTap: () async {
-                  final d = await showDatePicker(context: ctx, initialDate: DateTime.now().add(const Duration(days: 1)),
-                    firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
+                  final d = await showDatePicker(
+                    context: ctx,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
                   if (d != null) setS(() => newDate = d);
                 },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.access_time_rounded, color: Color(0xFF6366F1)),
-                title: Text(newTime == null ? 'Pick new time' : newTime!.format(ctx)),
+                leading: const Icon(
+                  Icons.access_time_rounded,
+                  color: Color(0xFF6366F1),
+                ),
+                title: Text(
+                  newTime == null ? 'Pick new time' : newTime!.format(ctx),
+                ),
                 onTap: () async {
-                  final t = await showTimePicker(context: ctx, initialTime: TimeOfDay.now());
+                  final t = await showTimePicker(
+                    context: ctx,
+                    initialTime: TimeOfDay.now(),
+                  );
                   if (t != null) setS(() => newTime = t);
                 },
               ),
               const SizedBox(height: 8),
               TextField(
+                maxLength: 500,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                 controller: reasonCtrl,
-                decoration: const InputDecoration(labelText: 'Reason (optional)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Reason (optional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1), foregroundColor: Colors.white, elevation: 0),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
               onPressed: () async {
                 if (newDate == null) return;
-                final dt = DateTime(newDate!.year, newDate!.month, newDate!.day,
-                    newTime?.hour ?? 9, newTime?.minute ?? 0);
+                final dt = DateTime(
+                  newDate!.year,
+                  newDate!.month,
+                  newDate!.day,
+                  newTime?.hour ?? 9,
+                  newTime?.minute ?? 0,
+                );
                 Navigator.pop(ctx);
                 try {
-                  await _lms.rescheduleSession(sessionId, newDate: dt.toIso8601String(), reason: reasonCtrl.text.trim().isNotEmpty ? reasonCtrl.text.trim() : null);
+                  await _lms.rescheduleSession(
+                    sessionId,
+                    newDate: dt.toIso8601String(),
+                    reason: reasonCtrl.text.trim().isNotEmpty
+                        ? reasonCtrl.text.trim()
+                        : null,
+                  );
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session rescheduled! Students notified.'), backgroundColor: Colors.green));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Session rescheduled! Students notified.',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                     _loadClasswork();
                   }
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+                  if (mounted)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                 }
               },
               child: const Text('Reschedule'),
@@ -3239,22 +4752,40 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Cancel "$sessionTitle"?', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: Text(
+          'Cancel "$sessionTitle"?',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Students will be notified about the cancellation.', style: TextStyle(color: Color(0xFF64748B))),
+            const Text(
+              'Students will be notified about the cancellation.',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
             const SizedBox(height: 12),
             TextField(
+              maxLength: 500,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
               controller: reasonCtrl,
-              decoration: const InputDecoration(labelText: 'Reason (optional)', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Reason (optional)',
+                border: OutlineInputBorder(),
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Back')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Back'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white, elevation: 0),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Cancel Session'),
           ),
@@ -3263,13 +4794,26 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
     if (ok != true) return;
     try {
-      await _lms.cancelSession(sessionId, reason: reasonCtrl.text.trim().isNotEmpty ? reasonCtrl.text.trim() : null);
+      await _lms.cancelSession(
+        sessionId,
+        reason: reasonCtrl.text.trim().isNotEmpty
+            ? reasonCtrl.text.trim()
+            : null,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session cancelled. Students notified.'), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Session cancelled. Students notified.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
         _loadClasswork();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+        );
     }
   }
 
@@ -3278,14 +4822,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_outlined,
-              size: 64, color: Colors.grey.shade300),
+          Icon(
+            Icons.assignment_outlined,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
-          const Text('No classwork yet',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF5F6368))),
+          const Text(
+            'No classwork yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF5F6368),
+            ),
+          ),
           if (widget.isInstructor) ...[
             const SizedBox(height: 24),
             _buildInstructorCreateBar(),
@@ -3306,16 +4856,27 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE8F0FE),
-                child: Icon(Icons.view_module_rounded, color: Color(0xFF1A73E8), size: 20),
+                child: Icon(
+                  Icons.view_module_rounded,
+                  color: Color(0xFF1A73E8),
+                  size: 20,
+                ),
               ),
-              title: const Text('Add Module', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text(
+                'Add Module',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: const Text('Add a new module to Course Content'),
               onTap: () {
                 Navigator.pop(context);
@@ -3326,48 +4887,95 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE8F0FE),
-                child: Icon(Icons.assignment_outlined, color: Color(0xFF1A73E8), size: 20),
+                child: Icon(
+                  Icons.assignment_outlined,
+                  color: Color(0xFF1A73E8),
+                  size: 20,
+                ),
               ),
-              title: const Text('Assignment', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text(
+                'Assignment',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: const Text('Create an assignment for students'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => InstructorCreateAssignmentScreen(courseId: _courseId),
-                  )).then((_) => _loadClasswork());
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeferredScreen(
+                        loader: i_assign.loadLibrary,
+                        builder: () =>
+                            i_assign.InstructorCreateAssignmentScreen(
+                              courseId: _courseId,
+                            ),
+                      ),
+                    ),
+                  ).then((_) => _loadClasswork());
                 }
               },
             ),
             ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFF3E8FF),
-                child: Icon(Icons.quiz_outlined, color: Color(0xFF9334E6), size: 20),
+                child: Icon(
+                  Icons.quiz_outlined,
+                  color: Color(0xFF9334E6),
+                  size: 20,
+                ),
               ),
-              title: const Text('Quiz', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text(
+                'Quiz',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: const Text('Create a quiz for students'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => InstructorCreateQuizScreen(courseId: _courseId),
-                  )).then((_) => _loadClasswork());
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeferredScreen(
+                        loader: i_quiz.loadLibrary,
+                        builder: () => i_quiz.InstructorCreateQuizScreen(
+                          courseId: _courseId,
+                        ),
+                      ),
+                    ),
+                  ).then((_) => _loadClasswork());
                 }
               },
             ),
             ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE6F4EA),
-                child: Icon(Icons.videocam_outlined, color: Color(0xFF188038), size: 20),
+                child: Icon(
+                  Icons.videocam_outlined,
+                  color: Color(0xFF188038),
+                  size: 20,
+                ),
               ),
-              title: const Text('Live Session', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text(
+                'Live Session',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: const Text('Schedule a live class session'),
               onTap: () {
                 Navigator.pop(context);
                 if (_courseId.isNotEmpty) {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => InstructorScheduleSessionScreen(courseId: _courseId),
-                  )).then((_) => _loadClasswork());
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeferredScreen(
+                        loader: i_session.loadLibrary,
+                        builder: () =>
+                            i_session.InstructorScheduleSessionScreen(
+                              courseId: _courseId,
+                            ),
+                      ),
+                    ),
+                  ).then((_) => _loadClasswork());
                 }
               },
             ),
@@ -3387,136 +4995,208 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     final roleCtrl = TextEditingController(text: 'Co-Instructor');
     await showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setDlg) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.person_add_outlined, color: Color(0xFF1A73E8)),
-          SizedBox(width: 10),
-          Text('Invite Co-Teacher', style: TextStyle(fontWeight: FontWeight.w700)),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text(
-            'Enter the email address of the teacher you want to invite. They\'ll get a notification and email, and will need to accept before joining this course.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: emailCtrl,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Teacher Email Address',
-              hintText: 'teacher@example.com',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.email_outlined),
+          title: const Row(
+            children: [
+              Icon(Icons.person_add_outlined, color: Color(0xFF1A73E8)),
+              SizedBox(width: 10),
+              Text(
+                'Invite Co-Teacher',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter the email address of the teacher you want to invite. They\'ll get a notification and email, and will need to accept before joining this course.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                maxLength: 120,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Teacher Email Address',
+                  hintText: 'teacher@example.com',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                maxLength: 200,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                controller: roleCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Role',
+                  hintText: 'e.g. Co-Instructor, Coordinator, Lead Instructor',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.amber.shade700,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Co-teachers can manage content, grade assignments, and run live sessions. Only a "Lead Instructor" role can issue certificates — type that exact role to grant it.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF78350F),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: roleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Role',
-              hintText: 'e.g. Co-Instructor, Coordinator, Lead Instructor',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.badge_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade200),
-            ),
-            child: Row(children: [
-              Icon(Icons.info_outline, color: Colors.amber.shade700, size: 16),
-              const SizedBox(width: 8),
-              const Expanded(child: Text(
-                'Co-teachers can manage content, grade assignments, and run live sessions. Only a "Lead Instructor" role can issue certificates — type that exact role to grant it.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF78350F)),
-              )),
-            ]),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A73E8), foregroundColor: Colors.white),
-            onPressed: () async {
-              final email = emailCtrl.text.trim();
-              final role = roleCtrl.text.trim();
-              if (email.isEmpty || !email.contains('@')) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid email'), backgroundColor: Colors.red),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              try {
-                await _lms.inviteTeacher(courseId: _courseId, email: email, role: role.isEmpty ? 'normal' : role);
-                if (mounted) {
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A73E8),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final email = emailCtrl.text.trim();
+                final role = roleCtrl.text.trim();
+                if (email.isEmpty || !email.contains('@')) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Invitation sent to $email'),
-                      backgroundColor: Colors.green,
+                    const SnackBar(
+                      content: Text('Please enter a valid email'),
+                      backgroundColor: Colors.red,
                     ),
                   );
+                  return;
                 }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+                Navigator.pop(ctx);
+                try {
+                  await _lms.inviteTeacher(
+                    courseId: _courseId,
+                    email: email,
+                    role: role.isEmpty ? 'normal' : role,
                   );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Invitation sent to $email'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
-              }
-            },
-            icon: const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Send Invite'),
-          ),
-        ],
-      )),
+              },
+              icon: const Icon(Icons.send_rounded, size: 16),
+              label: const Text('Send Invite'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Future<void> _showChangeRoleDialog(String userId, String name, String currentRole) async {
-    final roleCtrl = TextEditingController(text: currentRole == 'normal' ? '' : currentRole);
+  Future<void> _showChangeRoleDialog(
+    String userId,
+    String name,
+    String currentRole,
+  ) async {
+    final roleCtrl = TextEditingController(
+      text: currentRole == 'normal' ? '' : currentRole,
+    );
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Change Role — $name'),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          TextField(
-            controller: roleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Role',
-              hintText: 'e.g. Co-Instructor, Coordinator, Lead Instructor',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.badge_outlined),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              maxLength: 200,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+              controller: roleCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Role',
+                hintText: 'e.g. Co-Instructor, Coordinator, Lead Instructor',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.badge_outlined),
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Only a "Lead Instructor" role can issue certificates and manage other co-teachers.',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-          ),
-        ]),
+            const SizedBox(height: 10),
+            const Text(
+              'Only a "Lead Instructor" role can issue certificates and manage other co-teachers.',
+              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A73E8), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A73E8),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               final role = roleCtrl.text.trim();
               if (role.isEmpty) return;
               Navigator.pop(ctx);
               final result = await _lms.updateCoTeacherRole(
-                courseId: _courseId, userId: userId, role: role,
+                courseId: _courseId,
+                userId: userId,
+                role: role,
               );
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(result['success'] == true ? 'Role updated' : (result['message'] ?? 'Failed')),
-                  backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result['success'] == true
+                          ? 'Role updated'
+                          : (result['message'] ?? 'Failed'),
+                    ),
+                    backgroundColor: result['success'] == true
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                );
                 if (result['success'] == true) _loadPeople();
               }
             },
@@ -3529,7 +5209,8 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
   Widget _buildPeopleTab(bool isWide) {
     final instructor = widget.course['instructor'] as Map?;
-    final instructorName = instructor?['name']?.toString() ??
+    final instructorName =
+        instructor?['name']?.toString() ??
         instructor?['username']?.toString() ??
         'iCare Instructor';
     final coTeachers = (widget.course['coTeachers'] as List?) ?? [];
@@ -3546,18 +5227,23 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               const Text(
                 'Teachers',
                 style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF1A73E8)),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1A73E8),
+                ),
               ),
               if (widget.isInstructor)
                 TextButton.icon(
                   onPressed: _showInviteTeacherDialog,
-                  icon: const Icon(Icons.person_add_outlined,
-                      size: 16, color: Color(0xFF1A73E8)),
-                  label: const Text('Invite Teacher',
-                      style: TextStyle(
-                          fontSize: 13, color: Color(0xFF1A73E8))),
+                  icon: const Icon(
+                    Icons.person_add_outlined,
+                    size: 16,
+                    color: Color(0xFF1A73E8),
+                  ),
+                  label: const Text(
+                    'Invite Teacher',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF1A73E8)),
+                  ),
                 ),
             ],
           ),
@@ -3568,47 +5254,86 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           // let it default to false, so the course owner was labelled
           // "Lead Instructor" underneath but chipped "Co-Teacher", making it
           // look like the course had two co-teachers and no lead.
-          _personRow(instructorName, isTeacher: true, roleLabel: 'Lead Instructor', isLead: true),
+          _personRow(
+            instructorName,
+            isTeacher: true,
+            roleLabel: 'Lead Instructor',
+            isLead: true,
+          ),
           // Co-teachers
           ...coTeachers.map((ct) {
-            final ctName = ct['name']?.toString() ?? ct['email']?.toString() ?? 'Co-Teacher';
+            final ctName =
+                ct['name']?.toString() ??
+                ct['email']?.toString() ??
+                'Co-Teacher';
             final ctRole = ct['role']?.toString() ?? 'normal';
             final ctId = ct['userId']?.toString() ?? '';
             final ctStatus = ct['status']?.toString() ?? 'accepted';
-            final isLeadRole = ctRole.toLowerCase() == 'lead' || ctRole.toLowerCase() == 'lead instructor';
-            final baseLabel = isLeadRole ? 'Lead Instructor' : (ctRole == 'normal' ? 'Co-Instructor' : ctRole);
-            final roleLabel = ctStatus == 'pending' ? '$baseLabel · Pending' : baseLabel;
-            return _personRow(ctName, isTeacher: true, roleLabel: roleLabel, isLead: isLeadRole,
-              onRemove: widget.isInstructor && ctId.isNotEmpty ? () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Remove Co-Teacher'),
-                    content: Text('Remove $ctName from this course?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Remove'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true && mounted) {
-                  final lms = LmsService();
-                  final courseId = widget.course['_id']?.toString() ?? '';
-                  final result = await lms.removeCoTeacher(courseId: courseId, userId: ctId);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(result['success'] == true ? '$ctName removed' : (result['message'] ?? 'Failed')),
-                      backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-                    ));
-                    if (result['success'] == true) _loadPeople();
-                  }
-                }
-              } : null,
-              onChangeRole: widget.isInstructor && ctId.isNotEmpty ? (_) => _showChangeRoleDialog(ctId, ctName, ctRole) : null,
+            final isLeadRole =
+                ctRole.toLowerCase() == 'lead' ||
+                ctRole.toLowerCase() == 'lead instructor';
+            final baseLabel = isLeadRole
+                ? 'Lead Instructor'
+                : (ctRole == 'normal' ? 'Co-Instructor' : ctRole);
+            final roleLabel = ctStatus == 'pending'
+                ? '$baseLabel · Pending'
+                : baseLabel;
+            return _personRow(
+              ctName,
+              isTeacher: true,
+              roleLabel: roleLabel,
+              isLead: isLeadRole,
+              onRemove: widget.isInstructor && ctId.isNotEmpty
+                  ? () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Remove Co-Teacher'),
+                          content: Text('Remove $ctName from this course?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Remove'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true && mounted) {
+                        final lms = LmsService();
+                        final courseId = widget.course['_id']?.toString() ?? '';
+                        final result = await lms.removeCoTeacher(
+                          courseId: courseId,
+                          userId: ctId,
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result['success'] == true
+                                    ? '$ctName removed'
+                                    : (result['message'] ?? 'Failed'),
+                              ),
+                              backgroundColor: result['success'] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+                          if (result['success'] == true) _loadPeople();
+                        }
+                      }
+                    }
+                  : null,
+              onChangeRole: widget.isInstructor && ctId.isNotEmpty
+                  ? (_) => _showChangeRoleDialog(ctId, ctName, ctRole)
+                  : null,
             );
           }),
           const SizedBox(height: 24),
@@ -3619,16 +5344,19 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               const Text(
                 'Students',
                 style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF1A73E8)),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1A73E8),
+                ),
               ),
               const SizedBox(width: 8),
               if (_students.isNotEmpty)
                 Text(
                   '(${_students.length})',
                   style: const TextStyle(
-                      fontSize: 16, color: Color(0xFF70757A)),
+                    fontSize: 16,
+                    color: Color(0xFF70757A),
+                  ),
                 ),
             ],
           ),
@@ -3636,9 +5364,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           const SizedBox(height: 8),
           if (_loadingPeople)
             const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(strokeWidth: 2)))
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
           else if (_students.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
@@ -3649,10 +5379,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             )
           else
             ..._students.map((s) {
-              final name = (s['user'] as Map?)?['name']?.toString() ??
+              final name =
+                  (s['user'] as Map?)?['name']?.toString() ??
                   s['name']?.toString() ??
                   'Student';
-              final studentId = ((s['user'] as Map?)?['_id'] ?? s['_id'])?.toString() ?? '';
+              final studentId =
+                  ((s['user'] as Map?)?['_id'] ?? s['_id'])?.toString() ?? '';
               return _personRow(
                 name,
                 isTeacher: false,
@@ -3673,11 +5405,19 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Remove Student'),
-        content: Text('Remove "$name" from this course? They will lose access to the course content and their enrollment will be deleted.'),
+        content: Text(
+          'Remove "$name" from this course? They will lose access to the course content and their enrollment will be deleted.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Remove'),
           ),
@@ -3686,27 +5426,49 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
     if (ok != true || !mounted) return;
     try {
-      await _lms.removeStudentFromCourse(courseId: _courseId, studentId: studentId);
+      await _lms.removeStudentFromCourse(
+        courseId: _courseId,
+        studentId: studentId,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('"$name" removed from the course'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('"$name" removed from the course'),
+            backgroundColor: Colors.green,
+          ),
         );
         _loadPeople();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not remove student: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Could not remove student: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
-  Widget _personRow(String name, {required bool isTeacher, String? roleLabel, bool isLead = false, VoidCallback? onRemove, String? studentId, VoidCallback? onRemoveStudent, ValueChanged<String>? onChangeRole}) {
+  Widget _personRow(
+    String name, {
+    required bool isTeacher,
+    String? roleLabel,
+    bool isLead = false,
+    VoidCallback? onRemove,
+    String? studentId,
+    VoidCallback? onRemoveStudent,
+    ValueChanged<String>? onChangeRole,
+  }) {
     final avatarColor = isTeacher
         ? (isLead ? const Color(0xFF9334E6) : const Color(0xFF1A73E8))
         : Colors.grey.shade300;
-    final canViewProgress = widget.isInstructor && !isTeacher && studentId != null && studentId.isNotEmpty;
+    final canViewProgress =
+        widget.isInstructor &&
+        !isTeacher &&
+        studentId != null &&
+        studentId.isNotEmpty;
     final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -3728,9 +5490,21 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontSize: 14, color: Color(0xFF202124))),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF202124),
+                  ),
+                ),
                 if (roleLabel != null)
-                  Text(roleLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
+                  Text(
+                    roleLabel,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF70757A),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -3738,7 +5512,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isLead ? const Color(0xFFF3E8FF) : const Color(0xFFE8F0FE),
+                color: isLead
+                    ? const Color(0xFFF3E8FF)
+                    : const Color(0xFFE8F0FE),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -3746,33 +5522,54 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: isLead ? const Color(0xFF7C3AED) : const Color(0xFF1A73E8),
+                  color: isLead
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFF1A73E8),
                 ),
               ),
             ),
             if (onRemove != null || onChangeRole != null)
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF70757A)),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  size: 18,
+                  color: Color(0xFF70757A),
+                ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 itemBuilder: (_) => [
                   if (onChangeRole != null)
                     const PopupMenuItem(
                       value: 'role',
-                      child: Row(children: [
-                        Icon(Icons.badge_outlined, size: 18, color: Color(0xFF1A73E8)),
-                        SizedBox(width: 10),
-                        Text('Change role / permission'),
-                      ]),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.badge_outlined,
+                            size: 18,
+                            color: Color(0xFF1A73E8),
+                          ),
+                          SizedBox(width: 10),
+                          Text('Change role / permission'),
+                        ],
+                      ),
                     ),
                   if (onRemove != null)
                     const PopupMenuItem(
                       value: 'remove',
-                      child: Row(children: [
-                        Icon(Icons.person_remove_outlined, size: 18, color: Colors.red),
-                        SizedBox(width: 10),
-                        Text('Remove co-teacher', style: TextStyle(color: Colors.red)),
-                      ]),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_remove_outlined,
+                            size: 18,
+                            color: Colors.red,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Remove co-teacher',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
                 onSelected: (v) {
@@ -3782,19 +5579,31 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               ),
           ] else if (!isTeacher)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded,
-                  size: 18, color: Color(0xFF70757A)),
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                size: 18,
+                color: Color(0xFF70757A),
+              ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               itemBuilder: (_) => [
                 if (onRemoveStudent != null)
                   const PopupMenuItem(
                     value: 'remove',
-                    child: Row(children: [
-                      Icon(Icons.person_remove_outlined, size: 18, color: Colors.red),
-                      SizedBox(width: 10),
-                      Text('Remove from course', style: TextStyle(color: Colors.red)),
-                    ]),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.person_remove_outlined,
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Remove from course',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
                   )
                 else
                   const PopupMenuItem(
@@ -3816,12 +5625,20 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
   }
 
-  Future<void> _showStudentProgressDialog(String studentId, String studentName) async {
+  Future<void> _showStudentProgressDialog(
+    String studentId,
+    String studentName,
+  ) async {
     final courseId = widget.course['_id']?.toString() ?? '';
     if (courseId.isEmpty) return;
     showDialog(
       context: context,
-      builder: (_) => _StudentProgressDialog(lms: _lms, courseId: courseId, studentId: studentId, studentName: studentName),
+      builder: (_) => _StudentProgressDialog(
+        lms: _lms,
+        courseId: courseId,
+        studentId: studentId,
+        studentName: studentName,
+      ),
     );
   }
 
@@ -3835,7 +5652,9 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     }
 
     final totalAssignments = _assignments.length;
-    final gradedCount = _myGrades.where((g) => g['submission']?['status'] == 'graded').length;
+    final gradedCount = _myGrades
+        .where((g) => g['submission']?['status'] == 'graded')
+        .length;
     final attendedSessions = (_myAttendance?['present'] ?? 0) as num;
     final totalSessions = (_myAttendance?['total'] ?? 0) as num;
     final attendancePct = totalSessions > 0
@@ -3851,34 +5670,51 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
         children: [
           // ── Summary cards row ──────────────────────────────
-          Row(children: [
-            Expanded(child: _gradeSummaryCard(
-              'Assignments',
-              '$gradedCount / $totalAssignments graded',
-              Icons.assignment_turned_in_outlined,
-              const Color(0xFF1A73E8),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _gradeSummaryCard(
-              'Attendance',
-              '$attendancePct%',
-              Icons.how_to_reg_outlined,
-              attendancePct >= 75 ? const Color(0xFF188038) : const Color(0xFFE37400),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _gradeSummaryCard(
-              'Quizzes',
-              '${_myQuizAttempts.length} taken',
-              Icons.quiz_outlined,
-              const Color(0xFF9334E6),
-            )),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: _gradeSummaryCard(
+                  'Assignments',
+                  '$gradedCount / $totalAssignments graded',
+                  Icons.assignment_turned_in_outlined,
+                  const Color(0xFF1A73E8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _gradeSummaryCard(
+                  'Attendance',
+                  '$attendancePct%',
+                  Icons.how_to_reg_outlined,
+                  attendancePct >= 75
+                      ? const Color(0xFF188038)
+                      : const Color(0xFFE37400),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _gradeSummaryCard(
+                  'Quizzes',
+                  '${_myQuizAttempts.length} taken',
+                  Icons.quiz_outlined,
+                  const Color(0xFF9334E6),
+                ),
+              ),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
           // ── Assignments grades ─────────────────────────────
           if (_assignments.isNotEmpty) ...[
-            const Text('Assignments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+            const Text(
+              'Assignments',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF202124),
+              ),
+            ),
             const SizedBox(height: 8),
             ..._assignments.map((a) {
               final assignId = a['_id']?.toString() ?? '';
@@ -3893,8 +5729,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               final submissionStatus = submission?['status']?.toString();
               final status = submission == null
                   ? 'Pending'
-                  : submissionStatus == 'graded' ? 'Graded'
-                  : (submissionStatus == 'submitted' || submissionStatus == 'late') ? 'Submitted'
+                  : submissionStatus == 'graded'
+                  ? 'Graded'
+                  : (submissionStatus == 'submitted' ||
+                        submissionStatus == 'late')
+                  ? 'Submitted'
                   : 'Pending';
               final feedback = submission?['feedback']?.toString() ?? '';
               final stars = submission?['stars'];
@@ -3912,45 +5751,93 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                   submission: submission is Map ? submission : null,
                 ),
                 child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFDADCE0)),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    const Icon(Icons.assignment_outlined, size: 18, color: Color(0xFF1A73E8)),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF202124), fontWeight: FontWeight.w500))),
-                    _gradeChip(status, obtained, totalMarks),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9AA0A6)),
-                  ]),
-                  if (starCount > 0) ...[
-                    const SizedBox(height: 8),
-                    Row(children: List.generate(5, (i) => Icon(
-                      i < starCount ? Icons.star_rounded : Icons.star_outline_rounded,
-                      size: 18,
-                      color: i < starCount ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
-                    ))),
-                  ],
-                  if (feedback.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE2E8F0))),
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Icon(Icons.comment_outlined, size: 14, color: Color(0xFF70757A)),
-                        const SizedBox(width: 6),
-                        Expanded(child: Text('Feedback: $feedback',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF5F6368)))),
-                      ]),
-                    ),
-                  ],
-                ]),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFDADCE0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.assignment_outlined,
+                            size: 18,
+                            color: Color(0xFF1A73E8),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF202124),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          _gradeChip(status, obtained, totalMarks),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: Color(0xFF9AA0A6),
+                          ),
+                        ],
+                      ),
+                      if (starCount > 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: List.generate(
+                            5,
+                            (i) => Icon(
+                              i < starCount
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              size: 18,
+                              color: i < starCount
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (feedback.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.comment_outlined,
+                                size: 14,
+                                color: Color(0xFF70757A),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Feedback: $feedback',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF5F6368),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               );
             }),
@@ -3959,45 +5846,87 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
           // ── Quiz scores ────────────────────────────────────
           if (_myQuizAttempts.isNotEmpty) ...[
-            const Text('Quizzes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+            const Text(
+              'Quizzes',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF202124),
+              ),
+            ),
             const SizedBox(height: 8),
             ..._myQuizAttempts.map((attempt) {
-              final quizTitle = attempt['quizTitle']?.toString()
-                  ?? attempt['quiz']?['title']?.toString()
-                  ?? 'Quiz';
-              final score = attempt['score']?.toString() ?? attempt['obtainedMarks']?.toString() ?? '--';
-              final total = attempt['totalMarks']?.toString() ?? attempt['quiz']?['totalMarks']?.toString() ?? '--';
+              final quizTitle =
+                  attempt['quizTitle']?.toString() ??
+                  attempt['quiz']?['title']?.toString() ??
+                  'Quiz';
+              final score =
+                  attempt['score']?.toString() ??
+                  attempt['obtainedMarks']?.toString() ??
+                  '--';
+              final total =
+                  attempt['totalMarks']?.toString() ??
+                  attempt['quiz']?['totalMarks']?.toString() ??
+                  '--';
               final passed = attempt['passed'] == true;
               return InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: () => _showQuizAttemptDetail(attempt as Map),
                 child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFDADCE0)),
-                ),
-                child: Row(children: [
-                  const Icon(Icons.quiz_outlined, size: 18, color: Color(0xFF9334E6)),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(quizTitle, style: const TextStyle(fontSize: 14, color: Color(0xFF202124)))),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: passed ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$score / $total',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
-                          color: passed ? const Color(0xFF188038) : const Color(0xFFD93025)),
-                    ),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFDADCE0)),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF9AA0A6)),
-                ]),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.quiz_outlined,
+                        size: 18,
+                        color: Color(0xFF9334E6),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          quizTitle,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF202124),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: passed
+                              ? const Color(0xFFE6F4EA)
+                              : const Color(0xFFFCE8E6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$score / $total',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: passed
+                                ? const Color(0xFF188038)
+                                : const Color(0xFFD93025),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: Color(0xFF9AA0A6),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
@@ -4006,7 +5935,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
           // ── Attendance detail ──────────────────────────────
           if (_myAttendance != null) ...[
-            const Text('Attendance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+            const Text(
+              'Attendance',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF202124),
+              ),
+            ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(16),
@@ -4015,112 +5951,252 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFDADCE0)),
               ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  const Icon(Icons.how_to_reg_outlined, size: 20, color: Color(0xFF188038)),
-                  const SizedBox(width: 8),
-                  Text('${attendedSessions.toInt()} of ${totalSessions.toInt()} sessions attended',
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF202124))),
-                  const Spacer(),
-                  Text('$attendancePct%', style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800,
-                      color: attendancePct >= 75 ? const Color(0xFF188038) : const Color(0xFFE37400))),
-                ]),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: totalSessions > 0 ? attendedSessions / totalSessions : 0,
-                    backgroundColor: const Color(0xFFE8F0FE),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        attendancePct >= 75 ? const Color(0xFF188038) : const Color(0xFFE37400)),
-                    minHeight: 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.how_to_reg_outlined,
+                        size: 20,
+                        color: Color(0xFF188038),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${attendedSessions.toInt()} of ${totalSessions.toInt()} sessions attended',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF202124),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$attendancePct%',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: attendancePct >= 75
+                              ? const Color(0xFF188038)
+                              : const Color(0xFFE37400),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                if (attendancePct < 75) ...[
-                  const SizedBox(height: 8),
-                  const Text('⚠️ Attendance below 75% may affect course completion.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFD93025))),
-                ],
-                () {
-                  final sessions = List<dynamic>.from(_myAttendance?['attendance'] ?? []);
-                  if (sessions.isEmpty) return const SizedBox.shrink();
-                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 10),
-                    const Text('Session Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF70757A))),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: totalSessions > 0
+                          ? attendedSessions / totalSessions
+                          : 0,
+                      backgroundColor: const Color(0xFFE8F0FE),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        attendancePct >= 75
+                            ? const Color(0xFF188038)
+                            : const Color(0xFFE37400),
+                      ),
+                      minHeight: 8,
+                    ),
+                  ),
+                  if (attendancePct < 75) ...[
                     const SizedBox(height: 8),
-                    ...sessions.map((s) {
-                      final st = s['status']?.toString() ?? 'absent';
-                      final dateStr = s['sessionDate']?.toString() ?? '';
-                      DateTime? date;
-                      try { date = DateTime.parse(dateStr); } catch (_) {}
-                      final stColor = st == 'present' ? const Color(0xFF188038) : st == 'late' ? const Color(0xFFE37400) : const Color(0xFFD93025);
-                      final stBg = st == 'present' ? const Color(0xFFE6F4EA) : st == 'late' ? const Color(0xFFFFF3E0) : const Color(0xFFFCE8E6);
-                      // getMyAttendance (/course/:courseId/my) already returns
-                      // joinedAt/leftAt/durationMinutes per session — this row
-                      // just never rendered them, only status + date.
-                      String? fmtTime(dynamic iso) {
-                        if (iso == null) return null;
-                        try {
-                          final dt = DateTime.parse(iso.toString()).toLocal();
-                          final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-                          final m = dt.minute.toString().padLeft(2, '0');
-                          final period = dt.hour < 12 ? 'AM' : 'PM';
-                          return '$h:$m $period';
-                        } catch (_) { return null; }
-                      }
-                      final joined = fmtTime(s['joinedAt']);
-                      final left = fmtTime(s['leftAt']);
-                      final mins = s['durationMinutes'];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [
-                            Container(width: 8, height: 8, decoration: BoxDecoration(color: stColor, shape: BoxShape.circle)),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(s['sessionTitle']?.toString() ?? 'Session', style: const TextStyle(fontSize: 12, color: Color(0xFF202124)))),
-                            if (date != null) Text(DateFormat('MMM d').format(date), style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(color: stBg, borderRadius: BorderRadius.circular(8)),
-                              child: Text(st[0].toUpperCase() + st.substring(1), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
+                    const Text(
+                      '⚠️ Attendance below 75% may affect course completion.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFD93025)),
+                    ),
+                  ],
+                  () {
+                    final sessions = List<dynamic>.from(
+                      _myAttendance?['attendance'] ?? [],
+                    );
+                    if (sessions.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Session Details',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF70757A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...sessions.map((s) {
+                          final st = s['status']?.toString() ?? 'absent';
+                          final dateStr = s['sessionDate']?.toString() ?? '';
+                          DateTime? date;
+                          try {
+                            date = DateTime.parse(dateStr);
+                          } catch (_) {}
+                          final stColor = st == 'present'
+                              ? const Color(0xFF188038)
+                              : st == 'late'
+                              ? const Color(0xFFE37400)
+                              : const Color(0xFFD93025);
+                          final stBg = st == 'present'
+                              ? const Color(0xFFE6F4EA)
+                              : st == 'late'
+                              ? const Color(0xFFFFF3E0)
+                              : const Color(0xFFFCE8E6);
+                          // getMyAttendance (/course/:courseId/my) already returns
+                          // joinedAt/leftAt/durationMinutes per session — this row
+                          // just never rendered them, only status + date.
+                          String? fmtTime(dynamic iso) {
+                            if (iso == null) return null;
+                            try {
+                              final dt = DateTime.parse(
+                                iso.toString(),
+                              ).toLocal();
+                              final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+                              final m = dt.minute.toString().padLeft(2, '0');
+                              final period = dt.hour < 12 ? 'AM' : 'PM';
+                              return '$h:$m $period';
+                            } catch (_) {
+                              return null;
+                            }
+                          }
+
+                          final joined = fmtTime(s['joinedAt']);
+                          final left = fmtTime(s['leftAt']);
+                          final mins = s['durationMinutes'];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: stColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        s['sessionTitle']?.toString() ??
+                                            'Session',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF202124),
+                                        ),
+                                      ),
+                                    ),
+                                    if (date != null)
+                                      Text(
+                                        DateFormat('MMM d').format(date),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF70757A),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: stBg,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        st[0].toUpperCase() + st.substring(1),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: stColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (joined != null ||
+                                    left != null ||
+                                    mins != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 16,
+                                      top: 3,
+                                    ),
+                                    child: Wrap(
+                                      spacing: 12,
+                                      runSpacing: 2,
+                                      children: [
+                                        if (joined != null)
+                                          Text(
+                                            'Joined: $joined',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF70757A),
+                                            ),
+                                          ),
+                                        if (left != null)
+                                          Text(
+                                            'Left: $left',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF70757A),
+                                            ),
+                                          ),
+                                        if (mins != null)
+                                          Text(
+                                            'Duration: $mins min',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF70757A),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ]),
-                          if (joined != null || left != null || mins != null)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 16, top: 3),
-                              child: Wrap(spacing: 12, runSpacing: 2, children: [
-                                if (joined != null) Text('Joined: $joined', style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-                                if (left != null) Text('Left: $left', style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-                                if (mins != null) Text('Duration: $mins min', style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-                              ]),
-                            ),
-                        ]),
-                      );
-                    }),
-                  ]);
-                }(),
-              ]),
+                          );
+                        }),
+                      ],
+                    );
+                  }(),
+                ],
+              ),
             ),
           ],
 
           // Empty state
-          if (_assignments.isEmpty && _myQuizAttempts.isEmpty && _myAttendance == null)
+          if (_assignments.isEmpty &&
+              _myQuizAttempts.isEmpty &&
+              _myAttendance == null)
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.grade_outlined, size: 56, color: Colors.grey.shade300),
-                  const SizedBox(height: 12),
-                  const Text('No grades yet', style: TextStyle(fontSize: 15, color: Color(0xFF5F6368))),
-                  const SizedBox(height: 4),
-                  const Text('Complete assignments and quizzes to see your grades here.',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.grade_outlined,
+                      size: 56,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No grades yet',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF5F6368)),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Complete assignments and quizzes to see your grades here.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Color(0xFF70757A))),
-                ]),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF70757A)),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -4128,7 +6204,12 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     );
   }
 
-  Widget _gradeSummaryCard(String label, String value, IconData icon, Color color) {
+  Widget _gradeSummaryCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -4136,13 +6217,26 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: color)),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF70757A)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4165,8 +6259,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-      child: Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
+      ),
     );
   }
 
@@ -4179,19 +6279,28 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
   Widget _detailRow(String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-          width: 120,
-          child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF70757A))),
-        ),
-        Expanded(
-          child: Text(value,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF70757A)),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? const Color(0xFF202124))),
-        ),
-      ]),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? const Color(0xFF202124),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4217,93 +6326,85 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(children: [
-          const Icon(Icons.assignment_outlined, color: Color(0xFF1A73E8), size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
-        ]),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.assignment_outlined,
+              color: Color(0xFF1A73E8),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
         content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _detailRow('Status', status,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailRow(
+                'Status',
+                status,
                 valueColor: status == 'Graded'
                     ? const Color(0xFF188038)
                     : status == 'Submitted'
-                        ? const Color(0xFFE37400)
-                        : const Color(0xFF70757A)),
-            _detailRow('Marks', obtained != null ? '$obtained / $totalMarks' : 'Not graded yet'),
-            if (starCount > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  const SizedBox(
-                      width: 120,
-                      child: Text('Rating', style: TextStyle(fontSize: 13, color: Color(0xFF70757A)))),
-                  ...List.generate(5, (i) => Icon(
-                        i < starCount ? Icons.star_rounded : Icons.star_outline_rounded,
-                        size: 18,
-                        color: i < starCount ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
-                      )),
-                ]),
+                    ? const Color(0xFFE37400)
+                    : const Color(0xFF70757A),
               ),
-            _detailRow('Submitted on', _fmtWhen(submission?['submittedAt'])),
-            if (submission?['gradedAt'] != null)
-              _detailRow('Graded on', _fmtWhen(submission?['gradedAt'])),
-            const SizedBox(height: 10),
-            const Text('Instructor remarks',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF202124))),
-            const SizedBox(height: 6),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+              _detailRow(
+                'Marks',
+                obtained != null ? '$obtained / $totalMarks' : 'Not graded yet',
               ),
-              child: Text(
-                feedback.isNotEmpty ? feedback : 'No remarks from the instructor yet.',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: feedback.isNotEmpty ? const Color(0xFF5F6368) : const Color(0xFF9AA0A6),
-                    fontStyle: feedback.isNotEmpty ? FontStyle.normal : FontStyle.italic),
-              ),
-            ),
-          ]),
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
-      ),
-    );
-  }
-
-  void _showQuizAttemptDetail(Map attempt) {
-    final quizTitle = attempt['quizTitle']?.toString() ?? attempt['quiz']?['title']?.toString() ?? 'Quiz';
-    final score = attempt['score']?.toString() ?? attempt['obtainedMarks']?.toString() ?? '--';
-    final total = attempt['totalMarks']?.toString() ?? attempt['quiz']?['totalMarks']?.toString() ?? '--';
-    final passed = attempt['passed'] == true;
-    final pct = attempt['percentage'];
-    final feedback = attempt['feedback']?.toString() ?? '';
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(children: [
-          const Icon(Icons.quiz_outlined, color: Color(0xFF9334E6), size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text(quizTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
-        ]),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _detailRow('Result', passed ? 'Passed' : 'Not passed',
-                valueColor: passed ? const Color(0xFF188038) : const Color(0xFFD93025)),
-            _detailRow('Score', '$score / $total'),
-            if (pct != null) _detailRow('Percentage', '${(pct as num).toStringAsFixed(0)}%'),
-            if (attempt['attemptNumber'] != null)
-              _detailRow('Attempt', attempt['attemptNumber'].toString()),
-            _detailRow('Taken on', _fmtWhen(attempt['submittedAt'] ?? attempt['createdAt'])),
-            if (feedback.isNotEmpty) ...[
+              if (starCount > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        width: 120,
+                        child: Text(
+                          'Rating',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF70757A),
+                          ),
+                        ),
+                      ),
+                      ...List.generate(
+                        5,
+                        (i) => Icon(
+                          i < starCount
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          size: 18,
+                          color: i < starCount
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              _detailRow('Submitted on', _fmtWhen(submission?['submittedAt'])),
+              if (submission?['gradedAt'] != null)
+                _detailRow('Graded on', _fmtWhen(submission?['gradedAt'])),
               const SizedBox(height: 10),
-              const Text('Instructor remarks',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF202124))),
+              const Text(
+                'Instructor remarks',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF202124),
+                ),
+              ),
               const SizedBox(height: 6),
               Container(
                 width: double.infinity,
@@ -4313,12 +6414,127 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Text(feedback, style: const TextStyle(fontSize: 13, color: Color(0xFF5F6368))),
+                child: Text(
+                  feedback.isNotEmpty
+                      ? feedback
+                      : 'No remarks from the instructor yet.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: feedback.isNotEmpty
+                        ? const Color(0xFF5F6368)
+                        : const Color(0xFF9AA0A6),
+                    fontStyle: feedback.isNotEmpty
+                        ? FontStyle.normal
+                        : FontStyle.italic,
+                  ),
+                ),
               ),
             ],
-          ]),
+          ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQuizAttemptDetail(Map attempt) {
+    final quizTitle =
+        attempt['quizTitle']?.toString() ??
+        attempt['quiz']?['title']?.toString() ??
+        'Quiz';
+    final score =
+        attempt['score']?.toString() ??
+        attempt['obtainedMarks']?.toString() ??
+        '--';
+    final total =
+        attempt['totalMarks']?.toString() ??
+        attempt['quiz']?['totalMarks']?.toString() ??
+        '--';
+    final passed = attempt['passed'] == true;
+    final pct = attempt['percentage'];
+    final feedback = attempt['feedback']?.toString() ?? '';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.quiz_outlined, color: Color(0xFF9334E6), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                quizTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailRow(
+                'Result',
+                passed ? 'Passed' : 'Not passed',
+                valueColor: passed
+                    ? const Color(0xFF188038)
+                    : const Color(0xFFD93025),
+              ),
+              _detailRow('Score', '$score / $total'),
+              if (pct != null)
+                _detailRow('Percentage', '${(pct as num).toStringAsFixed(0)}%'),
+              if (attempt['attemptNumber'] != null)
+                _detailRow('Attempt', attempt['attemptNumber'].toString()),
+              _detailRow(
+                'Taken on',
+                _fmtWhen(attempt['submittedAt'] ?? attempt['createdAt']),
+              ),
+              if (feedback.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  'Instructor remarks',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF202124),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    feedback,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF5F6368),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -4359,36 +6575,87 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               decoration: BoxDecoration(
                 color: const Color(0xFFECFDF5),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                ),
               ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  const Icon(Icons.workspace_premium_rounded, color: Color(0xFF10B981), size: 18),
-                  const SizedBox(width: 8),
-                  Text('Ready to Certify (${_readyForCert.length})',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                ]),
-                const SizedBox(height: 10),
-                ..._readyForCert.map((r) {
-                  final name = r['studentName']?.toString() ?? 'Student';
-                  final enrollmentId = r['enrollmentId']?.toString() ?? '';
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(children: [
-                      CircleAvatar(radius: 16, backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
-                        child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700))),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                      ElevatedButton(
-                        onPressed: (_certLoading || enrollmentId.isEmpty) ? null : () => _issueCertificate(enrollmentId, name),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
-                        child: const Text('Issue Certificate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: Color(0xFF10B981),
+                        size: 18,
                       ),
-                    ]),
-                  );
-                }),
-              ]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Ready to Certify (${_readyForCert.length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ..._readyForCert.map((r) {
+                    final name = r['studentName']?.toString() ?? 'Student';
+                    final enrollmentId = r['enrollmentId']?.toString() ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.1),
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                color: Color(0xFF10B981),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: (_certLoading || enrollmentId.isEmpty)
+                                ? null
+                                : () => _issueCertificate(enrollmentId, name),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: const Text(
+                              'Issue Certificate',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
           ],
 
@@ -4402,40 +6669,99 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.amber.shade300),
               ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 18),
-                  const SizedBox(width: 8),
-                  Text('Pending Certificate Approvals (${_pendingCerts.length})',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                ]),
-                const SizedBox(height: 10),
-                ..._pendingCerts.map((c) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(children: [
-                    CircleAvatar(radius: 16, backgroundColor: const Color(0xFF1A73E8).withValues(alpha: 0.1),
-                      child: Text(((c['studentName'] ?? 'S') as String)[0].toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF1A73E8)))),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(c['studentName'] ?? 'Student',
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                    TextButton(
-                      onPressed: () => _approveCert(c['_id'].toString(), c['studentName'] ?? 'Student', 'reject'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red, minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 8)),
-                      child: const Text('Reject', style: TextStyle(fontSize: 12)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _approveCert(c['_id'].toString(), c['studentName'] ?? 'Student', 'approve'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green, foregroundColor: Colors.white,
-                        minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: Colors.amber,
+                        size: 18,
                       ),
-                      child: const Text('Approve'),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Pending Certificate Approvals (${_pendingCerts.length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ..._pendingCerts.map(
+                    (c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(
+                              0xFF1A73E8,
+                            ).withValues(alpha: 0.1),
+                            child: Text(
+                              ((c['studentName'] ?? 'S') as String)[0]
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: Color(0xFF1A73E8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              c['studentName'] ?? 'Student',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _approveCert(
+                              c['_id'].toString(),
+                              c['studentName'] ?? 'Student',
+                              'reject',
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                            ),
+                            child: const Text(
+                              'Reject',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _approveCert(
+                              c['_id'].toString(),
+                              c['studentName'] ?? 'Student',
+                              'approve',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              textStyle: const TextStyle(fontSize: 12),
+                            ),
+                            child: const Text('Approve'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ]),
-                )),
-              ]),
+                  ),
+                ],
+              ),
             ),
           ],
 
@@ -4444,31 +6770,67 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           // client's grade-report-card requirement (9.2) needs visible here
           // directly instead of buried behind another tab. ──
           if (widget.isInstructor) ...[
-            const Text('Student Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+            const Text(
+              'Student Progress',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF202124),
+              ),
+            ),
             const SizedBox(height: 8),
             if (_loadingPeople)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
             else if (_students.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('No students enrolled yet.', style: TextStyle(fontSize: 13, color: Color(0xFF70757A))),
+                child: Text(
+                  'No students enrolled yet.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF70757A)),
+                ),
               )
             else
               ..._students.map((s) {
-                final name = (s['user'] as Map?)?['name']?.toString() ?? s['name']?.toString() ?? 'Student';
-                final studentId = ((s['user'] as Map?)?['_id'] ?? s['_id'])?.toString() ?? '';
+                final name =
+                    (s['user'] as Map?)?['name']?.toString() ??
+                    s['name']?.toString() ??
+                    'Student';
+                final studentId =
+                    ((s['user'] as Map?)?['_id'] ?? s['_id'])?.toString() ?? '';
                 if (studentId.isEmpty) return const SizedBox.shrink();
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor: const Color(0xFF1A73E8).withValues(alpha: 0.1),
-                    child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Color(0xFF1A73E8), fontWeight: FontWeight.w700)),
+                    backgroundColor: const Color(
+                      0xFF1A73E8,
+                    ).withValues(alpha: 0.1),
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: Color(0xFF1A73E8),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                  title: Text(name, style: const TextStyle(fontSize: 14, color: Color(0xFF202124))),
-                  subtitle: const Text('Tap to view module/lesson/quiz progress', style: TextStyle(fontSize: 12, color: Color(0xFF70757A))),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                  title: Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF202124),
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Tap to view module/lesson/quiz progress',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF70757A)),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF94A3B8),
+                  ),
                   onTap: () => _showStudentProgressDialog(studentId, name),
                 );
               }),
@@ -4477,7 +6839,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
           // ── Assignments section ──
           if (_assignments.isNotEmpty) ...[
-            const Text('Assignments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+            const Text(
+              'Assignments',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF202124),
+              ),
+            ),
             const SizedBox(height: 8),
             ..._assignments.map((a) {
               final id = a['_id']?.toString() ?? '';
@@ -4487,24 +6856,61 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
-                  width: 36, height: 36,
-                  decoration: const BoxDecoration(color: Color(0xFF1A73E8), shape: BoxShape.circle),
-                  child: const Icon(Icons.assignment_outlined, color: Colors.white, size: 18),
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1A73E8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.assignment_outlined,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
-                title: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF202124))),
-                subtitle: Text('$count submitted  ·  $total pts', style: const TextStyle(fontSize: 12, color: Color(0xFF70757A))),
+                title: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF202124),
+                  ),
+                ),
+                subtitle: Text(
+                  '$count submitted  ·  $total pts',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF70757A),
+                  ),
+                ),
                 trailing: id.isNotEmpty
                     ? OutlinedButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => InstructorGradingScreen(assignmentId: id, assignmentTitle: title),
-                        )),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DeferredScreen(
+                              loader: i_grading.loadLibrary,
+                              builder: () => i_grading.InstructorGradingScreen(
+                                assignmentId: id,
+                                assignmentTitle: title,
+                              ),
+                            ),
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF1A73E8),
                           side: const BorderSide(color: Color(0xFFDADCE0)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
-                        child: const Text('View grades', style: TextStyle(fontSize: 13)),
+                        child: const Text(
+                          'View grades',
+                          style: TextStyle(fontSize: 13),
+                        ),
                       )
                     : null,
               );
@@ -4512,15 +6918,27 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
             const SizedBox(height: 24),
           ],
 
-          if (_assignments.isEmpty && _readyForCert.isEmpty && _pendingCerts.isEmpty)
+          if (_assignments.isEmpty &&
+              _readyForCert.isEmpty &&
+              _pendingCerts.isEmpty)
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.grade_outlined, size: 56, color: Colors.grey.shade300),
-                  const SizedBox(height: 12),
-                  const Text('No grades yet', style: TextStyle(fontSize: 15, color: Color(0xFF5F6368))),
-                ]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.grade_outlined,
+                      size: 56,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No grades yet',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF5F6368)),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -4538,7 +6956,14 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Attendance Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
+              const Text(
+                'Attendance Report',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF202124),
+                ),
+              ),
               TextButton.icon(
                 onPressed: _loadAttendanceReport,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -4548,18 +6973,34 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
           ),
           const SizedBox(height: 8),
           if (_loadingAttendanceReport)
-            const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator(strokeWidth: 2)))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
           else
             _buildAttendanceReportTable(),
-          if ((_attendanceReport['students'] as List? ?? []).isEmpty && !_loadingAttendanceReport)
+          if ((_attendanceReport['students'] as List? ?? []).isEmpty &&
+              !_loadingAttendanceReport)
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.how_to_reg_outlined, size: 56, color: Colors.grey.shade300),
-                  const SizedBox(height: 12),
-                  const Text('No attendance data yet', style: TextStyle(fontSize: 15, color: Color(0xFF5F6368))),
-                ]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.how_to_reg_outlined,
+                      size: 56,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No attendance data yet',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF5F6368)),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -4573,8 +7014,10 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
     if (students.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
-        child: Text('No attendance data yet. Sessions will appear here after live classes.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF70757A))),
+        child: Text(
+          'No attendance data yet. Sessions will appear here after live classes.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF70757A)),
+        ),
       );
     }
 
@@ -4585,12 +7028,17 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         final present = (s['present'] as num? ?? 0).toInt();
         final total = (s['total'] as num? ?? 0).toInt();
         final late = (s['late'] as num? ?? 0).toInt();
-        final pctColor = pct >= 75 ? const Color(0xFF188038) : pct >= 50 ? const Color(0xFFE37400) : const Color(0xFFD93025);
+        final pctColor = pct >= 75
+            ? const Color(0xFF188038)
+            : pct >= 50
+            ? const Color(0xFFE37400)
+            : const Color(0xFFD93025);
         // Per-session join/leave/duration — already returned by the /report
         // endpoint (sessionRows) but never rendered here before, so the
         // instructor only ever saw the present/late/absent tallies, never
         // the actual timestamps.
-        final sessions = (s['sessions'] as List?)
+        final sessions =
+            (s['sessions'] as List?)
                 ?.where((sess) => sess is Map && sess['status'] == 'present')
                 .toList() ??
             const [];
@@ -4610,33 +7058,78 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
               leading: CircleAvatar(
                 radius: 16,
                 backgroundColor: pctColor.withValues(alpha: 0.12),
-                child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                    style: TextStyle(color: pctColor, fontWeight: FontWeight.w700, fontSize: 13)),
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                  style: TextStyle(
+                    color: pctColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
               ),
-              title: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF202124))),
-              subtitle: Text('$present present · $late late · ${total - present - late} absent (of $total) · tap to see timestamps',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF202124),
+                ),
+              ),
+              subtitle: Text(
+                '$present present · $late late · ${total - present - late} absent (of $total) · tap to see timestamps',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF70757A)),
+              ),
               // ExpansionTile's trailing slot replaces its default chevron
               // entirely — putting the % badge there with nothing else made
               // this look like a plain, non-interactive row. The instructor
               // could still tap it, but had no visual cue it expanded.
-              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: pctColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: pctColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$pct%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: pctColor,
+                      ),
+                    ),
                   ),
-                  child: Text('$pct%', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: pctColor)),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.expand_more_rounded, color: Color(0xFF70757A)),
-              ]),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    color: Color(0xFF70757A),
+                  ),
+                ],
+              ),
               children: sessions.isEmpty
-                  ? [const Align(alignment: Alignment.centerLeft,
-                      child: Padding(padding: EdgeInsets.only(bottom: 8),
-                        child: Text('No timestamped sessions yet', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)))))]
-                  : sessions.map((sess) => _attendanceSessionTimestampRow(sess)).toList(),
+                  ? [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'No timestamped sessions yet',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ]
+                  : sessions
+                        .map((sess) => _attendanceSessionTimestampRow(sess))
+                        .toList(),
             ),
           ),
         );
@@ -4653,8 +7146,11 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
         final m = dt.minute.toString().padLeft(2, '0');
         final period = dt.hour < 12 ? 'AM' : 'PM';
         return '$h:$m $period';
-      } catch (_) { return null; }
+      } catch (_) {
+        return null;
+      }
     }
+
     final title = sess['sessionTitle']?.toString() ?? 'Session';
     final joined = fmtTime(sess['joinedAt']);
     final left = fmtTime(sess['leftAt']);
@@ -4662,20 +7158,62 @@ class _ClassroomCourseViewState extends State<ClassroomCourseView>
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF10B981)),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF202124))),
-            Wrap(spacing: 12, runSpacing: 2, children: [
-              if (joined != null) Text('Joined: $joined', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-              if (left != null) Text('Left: $left', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-              if (mins != null) Text('Duration: $mins min', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-            ]),
-          ]),
-        ),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 12,
+            color: Color(0xFF10B981),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF202124),
+                  ),
+                ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 2,
+                  children: [
+                    if (joined != null)
+                      Text(
+                        'Joined: $joined',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    if (left != null)
+                      Text(
+                        'Left: $left',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    if (mins != null)
+                      Text(
+                        'Duration: $mins min',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -4740,7 +7278,11 @@ class _EmbeddedCourseContentState extends State<_EmbeddedCourseContent> {
 
   @override
   Widget build(BuildContext context) {
-    return InstructorCourseContentScreen(key: _screenKey, courseId: widget.courseId, embedded: true);
+    return InstructorCourseContentScreen(
+      key: _screenKey,
+      courseId: widget.courseId,
+      embedded: true,
+    );
   }
 }
 
@@ -4755,7 +7297,8 @@ class _RecordingPlaybackDialog extends StatefulWidget {
   const _RecordingPlaybackDialog({required this.title, required this.url});
 
   @override
-  State<_RecordingPlaybackDialog> createState() => _RecordingPlaybackDialogState();
+  State<_RecordingPlaybackDialog> createState() =>
+      _RecordingPlaybackDialogState();
 }
 
 class _RecordingPlaybackDialogState extends State<_RecordingPlaybackDialog> {
@@ -4773,38 +7316,62 @@ class _RecordingPlaybackDialogState extends State<_RecordingPlaybackDialog> {
       child: SizedBox(
         width: _expanded ? screenSize.width - 32 : compactWidth,
         height: _expanded ? screenSize.height - 32 : null,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
-            child: Row(children: [
-              const Icon(Icons.play_circle_rounded, color: Color(0xFF10B981), size: 22),
-              const SizedBox(width: 10),
-              Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-              IconButton(
-                icon: Icon(_expanded ? Icons.close_fullscreen_rounded : Icons.open_in_full_rounded),
-                tooltip: _expanded ? 'Shrink' : 'Enlarge',
-                onPressed: () => setState(() => _expanded = !_expanded),
-              ),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-            ]),
-          ),
-          if (_expanded)
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: VideoPlayerWidget(videoUrl: widget.url),
-              ),
-            )
-          else
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: VideoPlayerWidget(videoUrl: widget.url),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.play_circle_rounded,
+                    color: Color(0xFF10B981),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _expanded
+                          ? Icons.close_fullscreen_rounded
+                          : Icons.open_in_full_rounded,
+                    ),
+                    tooltip: _expanded ? 'Shrink' : 'Enlarge',
+                    onPressed: () => setState(() => _expanded = !_expanded),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ),
-          const SizedBox(height: 12),
-        ]),
+            if (_expanded)
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: VideoPlayerWidget(videoUrl: widget.url),
+                ),
+              )
+            else
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: VideoPlayerWidget(videoUrl: widget.url),
+                ),
+              ),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -4842,7 +7409,10 @@ class _StudentProgressDialogState extends State<_StudentProgressDialog> {
   }
 
   Future<void> _load() async {
-    final result = await widget.lms.getStudentProgress(widget.courseId, widget.studentId);
+    final result = await widget.lms.getStudentProgress(
+      widget.courseId,
+      widget.studentId,
+    );
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -4873,20 +7443,29 @@ class _StudentProgressDialogState extends State<_StudentProgressDialog> {
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'completed': return 'Completed';
-      case 'graded': return 'Graded';
-      case 'submitted': return 'Submitted';
-      case 'not_attended': return 'Not Attended';
-      default: return 'Not started';
+      case 'completed':
+        return 'Completed';
+      case 'graded':
+        return 'Graded';
+      case 'submitted':
+        return 'Submitted';
+      case 'not_attended':
+        return 'Not Attended';
+      default:
+        return 'Not started';
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'assignment': return Icons.assignment_outlined;
-      case 'quiz': return Icons.quiz_outlined;
-      case 'live': return Icons.live_tv_rounded;
-      default: return Icons.play_circle_outline_rounded;
+      case 'assignment':
+        return Icons.assignment_outlined;
+      case 'quiz':
+        return Icons.quiz_outlined;
+      case 'live':
+        return Icons.live_tv_rounded;
+      default:
+        return Icons.play_circle_outline_rounded;
     }
   }
 
@@ -4899,37 +7478,62 @@ class _StudentProgressDialogState extends State<_StudentProgressDialog> {
       child: SizedBox(
         width: screenSize.width < 700 ? screenSize.width - 48 : 640,
         height: screenSize.height * 0.75,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 8, 12),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFF1A73E8),
-                child: Text(
-                  widget.studentName.isNotEmpty ? widget.studentName[0].toUpperCase() : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 8, 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: const Color(0xFF1A73E8),
+                    child: Text(
+                      widget.studentName.isNotEmpty
+                          ? widget.studentName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.studentName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(widget.studentName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-              ),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-            ]),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                : _error != null
-                    ? Center(child: Padding(
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : _error != null
+                  ? Center(
+                      child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                      ))
-                    : _buildBody(),
-          ),
-        ]),
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    )
+                  : _buildBody(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4948,54 +7552,132 @@ class _StudentProgressDialogState extends State<_StudentProgressDialog> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        Row(children: [
-          Expanded(child: _statCard('Modules', '$completedModules / $totalModules', Icons.folder_outlined, const Color(0xFF1A73E8))),
-          const SizedBox(width: 10),
-          Expanded(child: _statCard('Attendance', totalSessions > 0 ? '$attended / $totalSessions' : '—', Icons.how_to_reg_outlined, const Color(0xFF9334E6))),
-          const SizedBox(width: 10),
-          Expanded(child: _statCard('Course', isCourseCompleted ? 'Completed' : 'In progress', Icons.emoji_events_outlined, isCourseCompleted ? const Color(0xFF188038) : const Color(0xFFE37400))),
-        ]),
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                'Modules',
+                '$completedModules / $totalModules',
+                Icons.folder_outlined,
+                const Color(0xFF1A73E8),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                'Attendance',
+                totalSessions > 0 ? '$attended / $totalSessions' : '—',
+                Icons.how_to_reg_outlined,
+                const Color(0xFF9334E6),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                'Course',
+                isCourseCompleted ? 'Completed' : 'In progress',
+                Icons.emoji_events_outlined,
+                isCourseCompleted
+                    ? const Color(0xFF188038)
+                    : const Color(0xFFE37400),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 20),
         for (final mod in modules) ...[
-          Row(children: [
-            Icon(
-              (mod as Map)['isCompleted'] == true ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              size: 18,
-              color: mod['isCompleted'] == true ? const Color(0xFF188038) : const Color(0xFF94A3B8),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(mod['title']?.toString() ?? 'Module', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
-          ]),
+          Row(
+            children: [
+              Icon(
+                (mod as Map)['isCompleted'] == true
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 18,
+                color: mod['isCompleted'] == true
+                    ? const Color(0xFF188038)
+                    : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  mod['title']?.toString() ?? 'Module',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
           ...((mod['lessons'] as List?) ?? []).map((l) {
             final lesson = l as Map;
             final status = lesson['status']?.toString() ?? 'not_started';
             return Padding(
               padding: const EdgeInsets.only(left: 26, bottom: 6),
-              child: Row(children: [
-                Icon(_typeIcon(lesson['type']?.toString() ?? ''), size: 15, color: const Color(0xFF70757A)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(lesson['title']?.toString() ?? 'Item', style: const TextStyle(fontSize: 13))),
-                Text(_statusLabel(status), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor(status))),
-              ]),
+              child: Row(
+                children: [
+                  Icon(
+                    _typeIcon(lesson['type']?.toString() ?? ''),
+                    size: 15,
+                    color: const Color(0xFF70757A),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      lesson['title']?.toString() ?? 'Item',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  Text(
+                    _statusLabel(status),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor(status),
+                    ),
+                  ),
+                ],
+              ),
             );
           }),
           const SizedBox(height: 12),
         ],
         if (extraAssignments.isNotEmpty) ...[
-          const Text('Other Assignments', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+          const Text(
+            'Other Assignments',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
           const SizedBox(height: 6),
           ...extraAssignments.map((a) {
             final assignment = a as Map;
             final status = assignment['status']?.toString() ?? 'not_started';
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Row(children: [
-                const Icon(Icons.assignment_outlined, size: 15, color: Color(0xFF70757A)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(assignment['title']?.toString() ?? 'Assignment', style: const TextStyle(fontSize: 13))),
-                Text(_statusLabel(status), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor(status))),
-              ]),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.assignment_outlined,
+                    size: 15,
+                    color: Color(0xFF70757A),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      assignment['title']?.toString() ?? 'Assignment',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  Text(
+                    _statusLabel(status),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor(status),
+                    ),
+                  ),
+                ],
+              ),
             );
           }),
         ],
@@ -5010,12 +7692,25 @@ class _StudentProgressDialogState extends State<_StudentProgressDialog> {
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(height: 6),
-        Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: color)),
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF70757A))),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF70757A)),
+          ),
+        ],
+      ),
     );
   }
 }

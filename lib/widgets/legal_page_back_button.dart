@@ -7,6 +7,12 @@ import 'package:icare/widgets/tap_area.dart';
 /// falls back to the home route when there's nothing left to pop, so it
 /// can't no-op or crash on a hard refresh / direct link where the
 /// navigation stack only contains this one page.
+///
+/// Navigate to these pages with `context.push`, never `context.go`: `go`
+/// replaces the stack, so `canPop()` is false and this button drops the user
+/// on /home. That is what made "back" from Settings lose Settings entirely -
+/// the client's consistency complaint. With `push`, back returns wherever the
+/// user came from, and the /home fallback is left for genuine direct links.
 class LegalPageBackButton extends StatelessWidget {
   const LegalPageBackButton({super.key, this.margin, this.color});
   final EdgeInsets? margin;

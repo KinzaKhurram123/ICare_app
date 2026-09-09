@@ -1066,13 +1066,13 @@ const CourseCategory = require('../models/CourseCategory');
 async function seedDefaultCategories() {
   const count = await CourseCategory.countDocuments();
   if (count === 0) {
+    // Two only, per the client: "Category mein yeh 'Health Programs' aur
+    // 'Medical Training' wale DO thay na." The rest (FCPS Part 1, Wellness,
+    // Nutrition, Mental Health) were seeded here originally; an admin can still
+    // add categories back through the admin panel if they are ever wanted.
     await CourseCategory.insertMany([
       { name: 'Health Program',        value: 'HealthProgram',     order: 1 },
-      { name: 'FCPS Part 1',           value: 'FCPSPart1',         order: 2 },
-      { name: 'Medical Training',      value: 'Medical Training',  order: 3 },
-      { name: 'Wellness',              value: 'Wellness',          order: 4 },
-      { name: 'Nutrition',             value: 'Nutrition',         order: 5 },
-      { name: 'Mental Health',         value: 'Mental Health',     order: 6 },
+      { name: 'Medical Training',      value: 'Medical Training',  order: 2 },
     ]);
   }
 }

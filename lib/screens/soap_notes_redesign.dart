@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/course_service.dart';
@@ -352,120 +353,128 @@ class _SoapNotesRedesignState extends State<SoapNotesRedesign> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isFinalized) _buildLockIndicator(),
-              _buildSectionTitle('S - Subjective'),
-              _buildTextField(
-                _subjectiveController,
-                'Symptoms & Complaints',
-                4,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('O - Objective'),
-              _buildTextField(_objectiveController, 'Examination Findings', 4),
-              const SizedBox(height: 20),
-              _buildSectionTitle('A - Assessment'),
-              _buildTextField(_assessmentController, 'Diagnosis', 4),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Standardized Diagnosis (ICD-10)'),
-              _buildIcdSelector(),
-              const SizedBox(height: 20),
-              _buildSectionTitle('P - Plan'),
-              _buildTextField(_planController, 'Treatment Plan', 4),
-
-              const SizedBox(height: 20),
-              _buildSectionTitle('Health Program Assignment'),
-              _buildProgramSelector(),
-
-              if (_attachments.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Attachments',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isFinalized) _buildLockIndicator(),
+                _buildSectionTitle('S - Subjective'),
+                _buildTextField(
+                  _subjectiveController,
+                  'Symptoms & Complaints',
+                  4,
                 ),
-                Wrap(
-                  spacing: 8,
-                  children: _attachments
-                      .map(
-                        (a) => Chip(
-                          label: Text(a, style: const TextStyle(fontSize: 10)),
-                          onDeleted: _isFinalized
-                              ? null
-                              : () => setState(() => _attachments.remove(a)),
-                        ),
-                      )
-                      .toList(),
+                const SizedBox(height: 20),
+                _buildSectionTitle('O - Objective'),
+                _buildTextField(
+                  _objectiveController,
+                  'Examination Findings',
+                  4,
                 ),
-              ],
+                const SizedBox(height: 20),
+                _buildSectionTitle('A - Assessment'),
+                _buildTextField(_assessmentController, 'Diagnosis', 4),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Standardized Diagnosis (ICD-10)'),
+                _buildIcdSelector(),
+                const SizedBox(height: 20),
+                _buildSectionTitle('P - Plan'),
+                _buildTextField(_planController, 'Treatment Plan', 4),
 
-              if (_isFinalized) ...[
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Signed Addendums',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: _addAddendum,
-                      icon: const Icon(Icons.add_comment_rounded, size: 16),
-                      label: const Text(
-                        'Add Addendum',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_addendums.isEmpty)
+                const SizedBox(height: 20),
+                _buildSectionTitle('Health Program Assignment'),
+                _buildProgramSelector(),
+
+                if (_attachments.isNotEmpty) ...[
+                  const SizedBox(height: 24),
                   const Text(
-                    'No addendums added yet.',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  )
-                else
-                  ..._addendums
-                      .map(
-                        (a) => _buildAddendumTile(
-                          a['text'] ?? '',
-                          a['createdAt']?.toString().substring(0, 16) ?? '',
-                        ),
-                      )
-                      ,
-              ],
+                    'Attachments',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children: _attachments
+                        .map(
+                          (a) => Chip(
+                            label: Text(
+                              a,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            onDeleted: _isFinalized
+                                ? null
+                                : () => setState(() => _attachments.remove(a)),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
 
-              const SizedBox(height: 40),
-              if (!_isFinalized) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _saveNotes(finalize: false),
-                    child: const Text('Save Draft'),
+                if (_isFinalized) ...[
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Signed Addendums',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _addAddendum,
+                        icon: const Icon(Icons.add_comment_rounded, size: 16),
+                        label: const Text(
+                          'Add Addendum',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _saveNotes(finalize: true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
+                  const SizedBox(height: 12),
+                  if (_addendums.isEmpty)
+                    const Text(
+                      'No addendums added yet.',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    )
+                  else
+                    ..._addendums.map(
+                      (a) => _buildAddendumTile(
+                        a['text'] ?? '',
+                        a['createdAt']?.toString().substring(0, 16) ?? '',
+                      ),
                     ),
-                    child: const Text('Finalize SOAP Note'),
+                ],
+
+                const SizedBox(height: 40),
+                if (!_isFinalized) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _saveNotes(finalize: false),
+                      child: const Text('Save Draft'),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _saveNotes(finalize: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                      ),
+                      child: const Text('Finalize SOAP Note'),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

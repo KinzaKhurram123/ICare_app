@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -87,95 +88,98 @@ class _FiltersScreenState extends State<FiltersScreen> {
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomDropdown<String>(
-                title: "Speciality",
-                selectedItem: _selectedSpeciality,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                CustomDropdown<String>(
+                  title: "Speciality",
+                  selectedItem: _selectedSpeciality,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: specialityArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSpeciality = value!;
+                    });
+                  },
                 ),
-                items: specialityArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSpeciality = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Availablity",
-                selectedItem: _selectedAvailablity,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Availablity",
+                  selectedItem: _selectedAvailablity,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: availabilityArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedAvailablity = value!;
+                    });
+                  },
                 ),
-                items: availabilityArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedAvailablity = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Consultation Type",
-                selectedItem: _selectedConsultationType,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Consultation Type",
+                  selectedItem: _selectedConsultationType,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: consultationTypeArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedConsultationType = value!;
+                    });
+                  },
                 ),
-                items: consultationTypeArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedConsultationType = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Reviews",
-                selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Reviews",
+                  selectedItem: _selectedReviews,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: reviewsArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedReviews = value!;
+                    });
+                  },
                 ),
-                items: reviewsArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedReviews = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Location",
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Location",
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  selectedItem: _selectedLocation,
+                  items: locationArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLocation = value!;
+                    });
+                  },
                 ),
-                selectedItem: _selectedLocation,
-                items: locationArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedLocation = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Language",
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Language",
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  selectedItem: _selectedLanguage,
+                  items: languageArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLanguage = value!;
+                    });
+                  },
                 ),
-                selectedItem: _selectedLanguage,
-                items: languageArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedLanguage = value!;
-                  });
-                },
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomButton(
-                label: "Search",
-                borderRadius: 30,
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-            ],
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomButton(
+                  label: "Search",
+                  borderRadius: 30,
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -339,7 +343,9 @@ class _FiltersScreenState extends State<FiltersScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 10,
-                          shadowColor: AppColors.primaryColor.withValues(alpha: 0.4),
+                          shadowColor: AppColors.primaryColor.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                         child: const Text(
                           "Apply Filters",

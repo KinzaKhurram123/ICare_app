@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/screens/lab_test_template_screen.dart';
 import 'package:icare/screens/soap_notes_redesign.dart';
@@ -29,51 +28,97 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
   // Diagnosis state
   bool _diagnosisCompleted = false;
   final List<Map<String, dynamic>> _selectedICDCodes = [];
-  final TextEditingController _diagnosisNotesController = TextEditingController();
+  final TextEditingController _diagnosisNotesController =
+      TextEditingController();
 
   // Common medicines list for autocomplete
   static const List<String> _commonMedicines = [
-    'Paracetamol 500mg', 'Paracetamol 1000mg',
-    'Amoxicillin 250mg', 'Amoxicillin 500mg',
-    'Ibuprofen 200mg', 'Ibuprofen 400mg', 'Ibuprofen 600mg',
-    'Aspirin 75mg', 'Aspirin 300mg',
-    'Metformin 500mg', 'Metformin 850mg', 'Metformin 1000mg',
-    'Atorvastatin 10mg', 'Atorvastatin 20mg', 'Atorvastatin 40mg',
-    'Omeprazole 20mg', 'Omeprazole 40mg',
-    'Pantoprazole 20mg', 'Pantoprazole 40mg',
-    'Ciprofloxacin 250mg', 'Ciprofloxacin 500mg',
-    'Azithromycin 250mg', 'Azithromycin 500mg',
+    'Paracetamol 500mg',
+    'Paracetamol 1000mg',
+    'Amoxicillin 250mg',
+    'Amoxicillin 500mg',
+    'Ibuprofen 200mg',
+    'Ibuprofen 400mg',
+    'Ibuprofen 600mg',
+    'Aspirin 75mg',
+    'Aspirin 300mg',
+    'Metformin 500mg',
+    'Metformin 850mg',
+    'Metformin 1000mg',
+    'Atorvastatin 10mg',
+    'Atorvastatin 20mg',
+    'Atorvastatin 40mg',
+    'Omeprazole 20mg',
+    'Omeprazole 40mg',
+    'Pantoprazole 20mg',
+    'Pantoprazole 40mg',
+    'Ciprofloxacin 250mg',
+    'Ciprofloxacin 500mg',
+    'Azithromycin 250mg',
+    'Azithromycin 500mg',
     'Doxycycline 100mg',
-    'Metronidazole 200mg', 'Metronidazole 400mg',
-    'Cetirizine 10mg', 'Loratadine 10mg',
-    'Salbutamol 2mg', 'Salbutamol 4mg',
-    'Prednisolone 5mg', 'Prednisolone 10mg',
-    'Diclofenac 50mg', 'Diclofenac 75mg',
-    'Tramadol 50mg', 'Tramadol 100mg',
+    'Metronidazole 200mg',
+    'Metronidazole 400mg',
+    'Cetirizine 10mg',
+    'Loratadine 10mg',
+    'Salbutamol 2mg',
+    'Salbutamol 4mg',
+    'Prednisolone 5mg',
+    'Prednisolone 10mg',
+    'Diclofenac 50mg',
+    'Diclofenac 75mg',
+    'Tramadol 50mg',
+    'Tramadol 100mg',
     'Codeine 30mg',
-    'Lisinopril 5mg', 'Lisinopril 10mg',
-    'Amlodipine 5mg', 'Amlodipine 10mg',
-    'Losartan 25mg', 'Losartan 50mg',
-    'Bisoprolol 2.5mg', 'Bisoprolol 5mg',
-    'Furosemide 20mg', 'Furosemide 40mg',
-    'Spironolactone 25mg', 'Spironolactone 50mg',
-    'Warfarin 1mg', 'Warfarin 5mg',
+    'Lisinopril 5mg',
+    'Lisinopril 10mg',
+    'Amlodipine 5mg',
+    'Amlodipine 10mg',
+    'Losartan 25mg',
+    'Losartan 50mg',
+    'Bisoprolol 2.5mg',
+    'Bisoprolol 5mg',
+    'Furosemide 20mg',
+    'Furosemide 40mg',
+    'Spironolactone 25mg',
+    'Spironolactone 50mg',
+    'Warfarin 1mg',
+    'Warfarin 5mg',
     'Clopidogrel 75mg',
-    'Insulin Regular', 'Insulin NPH', 'Insulin Glargine',
-    'Levothyroxine 25mcg', 'Levothyroxine 50mcg', 'Levothyroxine 100mcg',
-    'Sertraline 50mg', 'Sertraline 100mg',
-    'Fluoxetine 20mg', 'Fluoxetine 40mg',
-    'Diazepam 2mg', 'Diazepam 5mg',
-    'Vitamin C 500mg', 'Vitamin D3 1000IU', 'Vitamin B Complex',
-    'Zinc 20mg', 'Iron 65mg', 'Folic Acid 5mg',
-    'Calcium 500mg', 'Calcium + Vitamin D3',
-    'ORS Sachet', 'Oral Rehydration Salts',
-    'Antacid Syrup', 'Gaviscon',
-    'Cough Syrup', 'Dextromethorphan',
-    'Nasal Drops', 'Xylometazoline',
-    'Eye Drops Chloramphenicol', 'Artificial Tears',
-    'Hydrocortisone Cream 1%', 'Betamethasone Cream',
-    'Clotrimazole Cream', 'Fluconazole 150mg',
+    'Insulin Regular',
+    'Insulin NPH',
+    'Insulin Glargine',
+    'Levothyroxine 25mcg',
+    'Levothyroxine 50mcg',
+    'Levothyroxine 100mcg',
+    'Sertraline 50mg',
+    'Sertraline 100mg',
+    'Fluoxetine 20mg',
+    'Fluoxetine 40mg',
+    'Diazepam 2mg',
+    'Diazepam 5mg',
+    'Vitamin C 500mg',
+    'Vitamin D3 1000IU',
+    'Vitamin B Complex',
+    'Zinc 20mg',
+    'Iron 65mg',
+    'Folic Acid 5mg',
+    'Calcium 500mg',
+    'Calcium + Vitamin D3',
+    'ORS Sachet',
+    'Oral Rehydration Salts',
+    'Antacid Syrup',
+    'Gaviscon',
+    'Cough Syrup',
+    'Dextromethorphan',
+    'Nasal Drops',
+    'Xylometazoline',
+    'Eye Drops Chloramphenicol',
+    'Artificial Tears',
+    'Hydrocortisone Cream 1%',
+    'Betamethasone Cream',
+    'Clotrimazole Cream',
+    'Fluconazole 150mg',
   ];
 
   // Prescription state
@@ -127,7 +172,8 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
         widget.appointment.id,
       );
       if (soapResult['success'] == true) {
-        final hasContent = (soapResult['subjective']?.toString().isNotEmpty ?? false) ||
+        final hasContent =
+            (soapResult['subjective']?.toString().isNotEmpty ?? false) ||
             (soapResult['objective']?.toString().isNotEmpty ?? false) ||
             (soapResult['assessment']?.toString().isNotEmpty ?? false) ||
             (soapResult['plan']?.toString().isNotEmpty ?? false);
@@ -140,8 +186,12 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
 
   bool get _canEndConsultation {
     final diagnosisOk = _diagnosisCompleted;
-    final prescriptionOk = _prescriptionCompleted || (_noPrescription && _noPrescriptionReason.trim().isNotEmpty);
-    final labTestsOk = _labTestsCompleted || (_noLabTests && _noLabTestsReason.trim().isNotEmpty);
+    final prescriptionOk =
+        _prescriptionCompleted ||
+        (_noPrescription && _noPrescriptionReason.trim().isNotEmpty);
+    final labTestsOk =
+        _labTestsCompleted ||
+        (_noLabTests && _noLabTestsReason.trim().isNotEmpty);
     final soapOk = _soapNotesCompleted;
     return diagnosisOk && prescriptionOk && labTestsOk && soapOk;
   }
@@ -150,7 +200,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
     if (!_canEndConsultation) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please complete all mandatory sections before ending consultation'),
+          content: Text(
+            'Please complete all mandatory sections before ending consultation',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -165,78 +217,95 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
 
       // 1. Save SOAP notes with diagnosis + ICD codes (non-blocking)
       if (_diagnosisCompleted && _selectedICDCodes.isNotEmpty) {
-        _clinicalService.saveSoapNotes(appointmentId, {
-          'assessment': _diagnosisNotesController.text,
-          'icdCodes': _selectedICDCodes,
-        }).catchError((_) {});
+        _clinicalService
+            .saveSoapNotes(appointmentId, {
+              'assessment': _diagnosisNotesController.text,
+              'icdCodes': _selectedICDCodes,
+            })
+            .catchError((_) {});
       }
 
       // 2. Build prescription medicines list with Day/Noon/Night dosage
-      final List<Map<String, dynamic>> medicines = _prescriptionMedicines.map((m) => {
-        'name': m['name'] ?? '',
-        'dosage': [
-          if ((m['day'] ?? '').isNotEmpty) 'Day: ${m['day']}',
-          if ((m['noon'] ?? '').isNotEmpty) 'Noon: ${m['noon']}',
-          if ((m['night'] ?? '').isNotEmpty) 'Night: ${m['night']}',
-        ].join(' | '),
-        'day': m['day'] ?? '',
-        'noon': m['noon'] ?? '',
-        'night': m['night'] ?? '',
-        'duration': m['duration'] ?? '',
-        'notes': m['notes'] ?? '',
-      }).toList();
+      final List<Map<String, dynamic>> medicines = _prescriptionMedicines
+          .map(
+            (m) => {
+              'name': m['name'] ?? '',
+              'dosage': [
+                if ((m['day'] ?? '').isNotEmpty) 'Day: ${m['day']}',
+                if ((m['noon'] ?? '').isNotEmpty) 'Noon: ${m['noon']}',
+                if ((m['night'] ?? '').isNotEmpty) 'Night: ${m['night']}',
+              ].join(' | '),
+              'day': m['day'] ?? '',
+              'noon': m['noon'] ?? '',
+              'night': m['night'] ?? '',
+              'duration': m['duration'] ?? '',
+              'notes': m['notes'] ?? '',
+            },
+          )
+          .toList();
 
       // 3. Build lab tests list from selected template
       final List<String> labTests = _selectedLabTemplate != null
           ? (_selectedLabTemplate!['tests'] as List)
-              .map((t) => t['name']?.toString() ?? '')
-              .where((n) => n.isNotEmpty)
-              .toList()
+                .map((t) => t['name']?.toString() ?? '')
+                .where((n) => n.isNotEmpty)
+                .toList()
           : [];
 
       // 4. Build diagnosis string from ICD codes + notes
       final diagnosisText = _selectedICDCodes.isNotEmpty
           ? '${_selectedICDCodes.map((c) => '${c['code']} - ${c['description']}').join(', ')}'
-              '${_diagnosisNotesController.text.trim().isNotEmpty ? '\n${_diagnosisNotesController.text.trim()}' : ''}'
+                '${_diagnosisNotesController.text.trim().isNotEmpty ? '\n${_diagnosisNotesController.text.trim()}' : ''}'
           : _diagnosisNotesController.text.trim();
 
       // 5. Create medical record — fire and forget, don't block navigation
       if (patientId.isNotEmpty) {
-        _medicalRecordService.createMedicalRecord({
-          'patientId': patientId,
-          'appointmentId': appointmentId,
-          'diagnosis': diagnosisText.isNotEmpty ? diagnosisText : 'Consultation completed',
-          'symptoms': [],
-          'prescription': {
-            'medicines': medicines,
-            'labTests': labTests,
-            'noPrescriptionReason': _noPrescription ? _noPrescriptionReason : '',
-            'noLabTestsReason': _noLabTests ? _noLabTestsReason : '',
-          },
-          'labTests': labTests,
-          'notes': _noPrescription
-              ? 'No prescription: $_noPrescriptionReason'
-              : (_noLabTests ? 'No lab tests: $_noLabTestsReason' : ''),
-        }).catchError((_) {});
+        _medicalRecordService
+            .createMedicalRecord({
+              'patientId': patientId,
+              'appointmentId': appointmentId,
+              'diagnosis': diagnosisText.isNotEmpty
+                  ? diagnosisText
+                  : 'Consultation completed',
+              'symptoms': [],
+              'prescription': {
+                'medicines': medicines,
+                'labTests': labTests,
+                'noPrescriptionReason': _noPrescription
+                    ? _noPrescriptionReason
+                    : '',
+                'noLabTestsReason': _noLabTests ? _noLabTestsReason : '',
+              },
+              'labTests': labTests,
+              'notes': _noPrescription
+                  ? 'No prescription: $_noPrescriptionReason'
+                  : (_noLabTests ? 'No lab tests: $_noLabTestsReason' : ''),
+            })
+            .catchError((_) {});
       }
 
       // 6. Complete prescription via backend API — triggers email to patient
       if (_prescriptionCompleted && medicines.isNotEmpty) {
         final api = ApiService();
-        api.post('/consultations/$appointmentId/prescription/complete', {
-          'medicines': medicines,
-          'diagnoses': _selectedICDCodes.map((d) => {'code': d['code'], 'name': d['description']}).toList(),
-          'labTests': labTests,
-          'doctorNotes': _diagnosisNotesController.text.trim(),
-        }).catchError((_) {});
+        api
+            .post('/consultations/$appointmentId/prescription/complete', {
+              'medicines': medicines,
+              'diagnoses': _selectedICDCodes
+                  .map((d) => {'code': d['code'], 'name': d['description']})
+                  .toList(),
+              'labTests': labTests,
+              'doctorNotes': _diagnosisNotesController.text.trim(),
+            })
+            .catchError((_) {});
       }
 
       // 7. Mark appointment as completed — fire and forget
-      AppointmentService().updateAppointmentStatus(
-        appointmentId: appointmentId,
-        status: 'completed',
-      ).catchError((_) {});
-
+      AppointmentService()
+          .updateAppointmentStatus(
+            appointmentId: appointmentId,
+            status: 'completed',
+          )
+          .catchError((_) {});
     } catch (_) {
       // Even if something fails, still show success and navigate
     } finally {
@@ -259,12 +328,20 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                 color: Colors.green.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.green,
+                size: 56,
+              ),
             ),
             const SizedBox(height: 20),
             const Text(
               'Consultation Ended',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -279,15 +356,20 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                 onPressed: () {
                   Navigator.pop(ctx);
                   // Use browser navigation — guaranteed to work on Flutter Web
-                  html.window.location.href = '/dashboard';
+                  web.window.location.href = '/dashboard';
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Go to Dashboard', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text(
+                  'Go to Dashboard',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ],
@@ -329,7 +411,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.primaryColor.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
@@ -415,7 +499,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                             builder: (context) => ICDCodeSelector(
                               onCodeSelected: (code) {
                                 setState(() {
-                                  if (!_selectedICDCodes.any((c) => c['code'] == code['code'])) {
+                                  if (!_selectedICDCodes.any(
+                                    (c) => c['code'] == code['code'],
+                                  )) {
                                     _selectedICDCodes.add(code);
                                   }
                                 });
@@ -423,7 +509,10 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 18,
+                        ),
                         label: const Text('Add Code'),
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.primaryColor,
@@ -468,19 +557,31 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       runSpacing: 8,
                       children: _selectedICDCodes.map((code) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEF2F2),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: const Color(
+                                0xFFEF4444,
+                              ).withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                                  color: const Color(
+                                    0xFFEF4444,
+                                  ).withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -494,7 +595,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                               ),
                               const SizedBox(width: 8),
                               ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 180),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 180,
+                                ),
                                 child: Text(
                                   code['description'] ?? '',
                                   style: const TextStyle(
@@ -508,7 +611,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                               InkWell(
                                 onTap: () {
                                   setState(() {
-                                    _selectedICDCodes.removeWhere((c) => c['code'] == code['code']);
+                                    _selectedICDCodes.removeWhere(
+                                      (c) => c['code'] == code['code'],
+                                    );
                                   });
                                 },
                                 child: const Icon(
@@ -539,7 +644,8 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     controller: _diagnosisNotesController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'Enter clinical impression and diagnosis details...',
+                      hintText:
+                          'Enter clinical impression and diagnosis details...',
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -552,7 +658,10 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryColor,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -566,10 +675,14 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                           ? null
                           : () {
                               // Diagnosis Notes mandatory
-                              if (_diagnosisNotesController.text.trim().isEmpty) {
+                              if (_diagnosisNotesController.text
+                                  .trim()
+                                  .isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Please enter Diagnosis Notes'),
+                                    content: Text(
+                                      'Please enter Diagnosis Notes',
+                                    ),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -598,7 +711,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
 
                   if (_diagnosisCompleted) ...[
                     const SizedBox(height: 12),
-                    _buildCompletedIndicator('Diagnosis completed with ${_selectedICDCodes.length} ICD code(s)'),
+                    _buildCompletedIndicator(
+                      'Diagnosis completed with ${_selectedICDCodes.length} ICD code(s)',
+                    ),
                   ],
                 ],
               ),
@@ -611,7 +726,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
               title: '2. Prescription',
               icon: Icons.medication_rounded,
               color: Colors.green,
-              isCompleted: _prescriptionCompleted || (_noPrescription && _noPrescriptionReason.isNotEmpty),
+              isCompleted:
+                  _prescriptionCompleted ||
+                  (_noPrescription && _noPrescriptionReason.isNotEmpty),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -628,7 +745,8 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => setState(() => _showPrescriptionForm = true),
+                        onPressed: () =>
+                            setState(() => _showPrescriptionForm = true),
                         icon: const Icon(Icons.add_rounded, size: 20),
                         label: const Text('Create Prescription'),
                         style: ElevatedButton.styleFrom(
@@ -668,7 +786,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0FDF4),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,48 +804,67 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                           const SizedBox(height: 12),
                           // Medicine Name with autocomplete
                           Autocomplete<String>(
-                            optionsBuilder: (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text.isEmpty) {
-                                return _commonMedicines;
-                              }
-                              final query = textEditingValue.text.toLowerCase();
-                              return _commonMedicines.where(
-                                (m) => m.toLowerCase().contains(query),
-                              );
-                            },
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text.isEmpty) {
+                                    return _commonMedicines;
+                                  }
+                                  final query = textEditingValue.text
+                                      .toLowerCase();
+                                  return _commonMedicines.where(
+                                    (m) => m.toLowerCase().contains(query),
+                                  );
+                                },
                             onSelected: (String selection) {
                               _medNameController.text = selection;
                             },
-                            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                              // Sync with _medNameController
-                              controller.text = _medNameController.text;
-                              controller.addListener(() {
-                                _medNameController.text = controller.text;
-                              });
-                              return TextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                decoration: InputDecoration(
-                                  labelText: 'Medicine Name *',
-                                  hintText: 'Type to search medicines...',
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  prefixIcon: const Icon(Icons.medication_rounded, color: Color(0xFF3B82F6), size: 20),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-                                  ),
-                                ),
-                              );
-                            },
+                            fieldViewBuilder:
+                                (
+                                  context,
+                                  controller,
+                                  focusNode,
+                                  onFieldSubmitted,
+                                ) {
+                                  // Sync with _medNameController
+                                  controller.text = _medNameController.text;
+                                  controller.addListener(() {
+                                    _medNameController.text = controller.text;
+                                  });
+                                  return TextField(
+                                    controller: controller,
+                                    focusNode: focusNode,
+                                    decoration: InputDecoration(
+                                      labelText: 'Medicine Name *',
+                                      hintText: 'Type to search medicines...',
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      prefixIcon: const Icon(
+                                        Icons.medication_rounded,
+                                        color: Color(0xFF3B82F6),
+                                        size: 20,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE2E8F0),
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE2E8F0),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF3B82F6),
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                             optionsViewBuilder: (context, onSelected, options) {
                               return Align(
                                 alignment: Alignment.topLeft,
@@ -733,7 +872,10 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                   elevation: 8,
                                   borderRadius: BorderRadius.circular(12),
                                   child: ConstrainedBox(
-                                    constraints: const BoxConstraints(maxHeight: 220, maxWidth: 500),
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 220,
+                                      maxWidth: 500,
+                                    ),
                                     child: ListView.builder(
                                       padding: EdgeInsets.zero,
                                       shrinkWrap: true,
@@ -743,12 +885,24 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                         return InkWell(
                                           onTap: () => onSelected(option),
                                           child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
+                                            ),
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.medication_outlined, size: 16, color: Color(0xFF3B82F6)),
+                                                const Icon(
+                                                  Icons.medication_outlined,
+                                                  size: 16,
+                                                  color: Color(0xFF3B82F6),
+                                                ),
                                                 const SizedBox(width: 10),
-                                                Text(option, style: const TextStyle(fontSize: 14)),
+                                                Text(
+                                                  option,
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -814,11 +968,15 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                     fillColor: Colors.white,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -834,11 +992,15 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                     fillColor: Colors.white,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -852,7 +1014,11 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                               onPressed: () {
                                 if (_medNameController.text.trim().isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Please enter medicine name')),
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please enter medicine name',
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
@@ -862,7 +1028,8 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                     'day': _medDayController.text.trim(),
                                     'noon': _medNoonController.text.trim(),
                                     'night': _medNightController.text.trim(),
-                                    'duration': _medDurationController.text.trim(),
+                                    'duration': _medDurationController.text
+                                        .trim(),
                                     'notes': _medNotesController.text.trim(),
                                   });
                                   _medNameController.clear();
@@ -874,7 +1041,11 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                 });
                               },
                               icon: const Icon(Icons.add_rounded, size: 18),
-                              label: Text(_prescriptionMedicines.isEmpty ? 'Add Medicine' : 'Add More Medicines'),
+                              label: Text(
+                                _prescriptionMedicines.isEmpty
+                                    ? 'Add Medicine'
+                                    : 'Add More Medicines',
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 foregroundColor: Colors.white,
@@ -928,14 +1099,24 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                     Row(
                                       children: [
                                         if ((med['day'] ?? '').isNotEmpty)
-                                          _buildDosageBadge('Day: ${med['day']}', const Color(0xFFF59E0B)),
+                                          _buildDosageBadge(
+                                            'Day: ${med['day']}',
+                                            const Color(0xFFF59E0B),
+                                          ),
                                         if ((med['noon'] ?? '').isNotEmpty) ...[
                                           const SizedBox(width: 4),
-                                          _buildDosageBadge('Noon: ${med['noon']}', const Color(0xFFEF4444)),
+                                          _buildDosageBadge(
+                                            'Noon: ${med['noon']}',
+                                            const Color(0xFFEF4444),
+                                          ),
                                         ],
-                                        if ((med['night'] ?? '').isNotEmpty) ...[
+                                        if ((med['night'] ?? '')
+                                            .isNotEmpty) ...[
                                           const SizedBox(width: 4),
-                                          _buildDosageBadge('Night: ${med['night']}', const Color(0xFF6366F1)),
+                                          _buildDosageBadge(
+                                            'Night: ${med['night']}',
+                                            const Color(0xFF6366F1),
+                                          ),
                                         ],
                                       ],
                                     ),
@@ -944,15 +1125,26 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                                         padding: const EdgeInsets.only(top: 4),
                                         child: Text(
                                           'Duration: ${med['duration']}${(med['notes'] ?? '').isNotEmpty ? ' • ${med['notes']}' : ''}',
-                                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF64748B),
+                                          ),
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                onPressed: () => setState(() => _prescriptionMedicines.removeAt(entry.key)),
-                                icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                                onPressed: () => setState(
+                                  () => _prescriptionMedicines.removeAt(
+                                    entry.key,
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.remove_circle_outline,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
                               ),
                             ],
                           ),
@@ -989,7 +1181,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     ],
                   ],
 
-                  if (_noPrescription && !_prescriptionCompleted && _noPrescriptionReason.isEmpty) ...[
+                  if (_noPrescription &&
+                      !_prescriptionCompleted &&
+                      _noPrescriptionReason.isEmpty) ...[
                     const SizedBox(height: 16),
                     const Text(
                       'Please provide a reason:',
@@ -1003,16 +1197,21 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     TextField(
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'e.g., Patient needs specialist referral, no medication required, etc.',
+                        hintText:
+                            'e.g., Patient needs specialist referral, no medication required, etc.',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                       ),
                       onChanged: (value) {
@@ -1029,16 +1228,24 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                             onPressed: () {
                               if (_noPrescriptionReason.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter a reason first')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please enter a reason first',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
-                              setState(() {}); // now refresh to show completed state
+                              setState(
+                                () {},
+                              ); // now refresh to show completed state
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             child: const Text('Confirm'),
                           ),
@@ -1055,7 +1262,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     ),
                   ],
                   if (_prescriptionCompleted) ...[
-                    _buildCompletedIndicator('Prescription created with ${_prescriptionMedicines.length} medicine(s)'),
+                    _buildCompletedIndicator(
+                      'Prescription created with ${_prescriptionMedicines.length} medicine(s)',
+                    ),
                     const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: () => setState(() {
@@ -1064,11 +1273,15 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       }),
                       icon: const Icon(Icons.edit_rounded, size: 16),
                       label: const Text('Edit Prescription'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.green),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.green,
+                      ),
                     ),
                   ],
                   if (_noPrescription && _noPrescriptionReason.isNotEmpty) ...[
-                    _buildCompletedIndicator('No prescription - Reason provided'),
+                    _buildCompletedIndicator(
+                      'No prescription - Reason provided',
+                    ),
                   ],
                 ],
               ),
@@ -1081,7 +1294,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
               title: '3. Suggest Lab Test',
               icon: Icons.biotech_rounded,
               color: const Color(0xFF8B5CF6),
-              isCompleted: _labTestsCompleted || (_noLabTests && _noLabTestsReason.isNotEmpty),
+              isCompleted:
+                  _labTestsCompleted ||
+                  (_noLabTests && _noLabTestsReason.isNotEmpty),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1144,7 +1359,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       ),
                     ),
                   ],
-                  if (_noLabTests && !_labTestsCompleted && _noLabTestsReason.isEmpty) ...[
+                  if (_noLabTests &&
+                      !_labTestsCompleted &&
+                      _noLabTestsReason.isEmpty) ...[
                     const SizedBox(height: 16),
                     const Text(
                       'Please provide a reason:',
@@ -1158,16 +1375,21 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                     TextField(
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'e.g., No tests required for this condition, recent tests available, etc.',
+                        hintText:
+                            'e.g., No tests required for this condition, recent tests available, etc.',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                       ),
                       onChanged: (value) {
@@ -1183,16 +1405,24 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                             onPressed: () {
                               if (_noLabTestsReason.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter a reason first')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please enter a reason first',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
-                              setState(() {}); // refresh to show completed state
+                              setState(
+                                () {},
+                              ); // refresh to show completed state
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF8B5CF6),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             child: const Text('Confirm'),
                           ),
@@ -1232,7 +1462,9 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
                       },
                       icon: const Icon(Icons.swap_horiz_rounded, size: 16),
                       label: const Text('Change Template'),
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF8B5CF6)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF8B5CF6),
+                      ),
                     ),
                   ],
                   if (_labTestsCompleted && _selectedLabTemplate == null) ...[
@@ -1462,7 +1694,11 @@ class _EndConsultationWorkflowState extends State<EndConsultationWorkflow> {
       textAlign: TextAlign.center,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+        labelStyle: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
         prefixIcon: Icon(icon, color: color, size: 16),
         filled: true,
         fillColor: color.withValues(alpha: 0.05),

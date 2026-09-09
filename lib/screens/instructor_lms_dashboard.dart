@@ -1,4 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
+import 'package:icare/screens/lms_public_catalog.dart';
+import 'package:icare/utils/utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,6 +44,9 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
   bool _isLoading = true;
   String _userName = '';
   String _userEmail = '';
+  // The header avatar only ever drew the first letter, so an instructor who had
+  // uploaded a photo still saw a plain "P" next to the bell.
+  String? _userPhoto;
   _NavPage _activePage = _NavPage.home;
   bool _taughtExpanded = true;
   List<String> _availableRoles = [];
@@ -302,6 +308,7 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
       setState(() {
         _userName = user.name.isNotEmpty ? user.name : user.email.split('@').first;
         _userEmail = user.email;
+        _userPhoto = user.profilePicture;
       });
     }
   }
@@ -447,13 +454,30 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
             padding: const EdgeInsets.only(right: 8),
             child: PopupMenuButton<String>(
               offset: const Offset(0, 48),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFF1A73E8),
-                child: Text(
-                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'I',
-                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+              child: Builder(
+                builder: (_) {
+                  // buildProfileImageProvider handles both shapes the API
+                  // returns: a base64 data: URI and a server-relative path.
+                  final img = buildProfileImageProvider(_userPhoto);
+                  return CircleAvatar(
+                    radius: 18,
+                    backgroundColor: const Color(0xFF1A73E8),
+                    backgroundImage: img,
+                    // Keep the initial as the fallback for anyone who has not
+                    // uploaded a photo yet.
+                    child: img == null
+                        ? Text(
+                            _userName.isNotEmpty
+                                ? _userName[0].toUpperCase()
+                                : 'I',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600),
+                          )
+                        : null,
+                  );
+                },
               ),
               itemBuilder: (_) => [
                 PopupMenuItem(
@@ -544,18 +568,35 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
 
           // ── Scrollable nav + courses ─────────────
           Expanded(
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
+            // Same fix as the main sidebar: a Scrollbar with no controller on
+            // it or on the scroll view gets no drag recognisers, so the bar
+            // was decorative only.
+            child: DragScroll(
+              builder: (context, lmsSidebarCtrl) => SingleChildScrollView(
+                controller: lmsSidebarCtrl,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _navItem(Icons.home_rounded, 'Home', _NavPage.home),
                     _navItem(Icons.calendar_today_rounded, 'Calendar', _NavPage.calendar),
                     _navItem(Icons.check_circle_outline_rounded, 'To do', _NavPage.todo),
-                    _navItemExternal(Icons.menu_book_rounded, 'All Courses', () {
+                    // "All Courses" opened the instructor's OWN course list,
+                    // which is what the Taught section below already shows.
+                    // The client wanted the whole academy here - every
+                    // instructor's courses - so a teacher can find a course and
+                    // ask to join it as a co-instructor. Renamed to match.
+                    // The instructor's own course list - the only place that
+                    // shows their DRAFTS - was replaced by Browse Courses and
+                    // went missing. Both belong here: one is their own work,
+                    // the other is the whole academy.
+                    _navItemExternal(Icons.menu_book_rounded, 'My Courses', () {
                       if (isDrawer) Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const InstructorLmsCoursesScreen()))
+                          .then((_) => _loadCourses());
+                    }),
+                    _navItemExternal(Icons.explore_outlined, 'Browse Courses', () {
+                      if (isDrawer) Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LmsPublicCatalog()))
                           .then((_) => _loadCourses());
                     }),
                     _navItemExternal(Icons.rate_review_outlined, 'Student Feedback', () {
@@ -682,6 +723,13 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
     );
   }
 
+  /// Sidebar entry for a destination outside the LMS shell.
+  ///
+  /// This used to show a trailing "open in new window" arrow, which was a lie:
+  /// the target opens in the same tab like every other sidebar item. The client
+  /// tried it and nothing new opened — "jab click karti hoon to 'Open New
+  /// Window' mein to hota nahi hai, to aise hi open ho rahe hain" — so the
+  /// arrow is gone and these rows now look like the rest of the sidebar.
   Widget _navItemExternal(IconData icon, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -693,8 +741,6 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
             Icon(icon, size: 20, color: const Color(0xFF444746)),
             const SizedBox(width: 16),
             Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
-            const Spacer(),
-            const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF9AA0A6)),
           ],
         ),
       ),
@@ -712,7 +758,8 @@ class _InstructorLmsDashboardState extends ConsumerState<InstructorLmsDashboard>
       case _NavPage.todo:     return _TodoPage(courses: _courses, lms: _lms);
       case _NavPage.settings:
         return _SettingsPage(
-          userName: _userName, userEmail: _userEmail, onLogout: _logout,
+          userName: _userName, userEmail: _userEmail,
+          userPhoto: _userPhoto, onLogout: _logout,
           onManageCourses: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const InstructorLmsCoursesScreen()))
               .then((_) => _loadCourses()),
@@ -1068,6 +1115,9 @@ class _CalendarPageState extends State<_CalendarPage> {
             events.putIfAbsent(key, () => []).add({
               'title': s['title'] ?? 'Live Session',
               'course': name,
+              // "kis course ka hai, KAB hai, kiska hai" - a live session has a
+              // real start time, so show it. Assignments only carry a due date.
+              'time': DateFormat('h:mm a').format(dt),
               'type': 'session',
               'color': const Color(0xFF188038),
             });
@@ -1188,9 +1238,35 @@ class _CalendarPageState extends State<_CalendarPage> {
                               borderRadius: BorderRadius.circular(3),
                               border: Border(left: BorderSide(color: e['color'] as Color, width: 3)),
                             ),
-                            child: Text(e['title'] as String,
-                                style: TextStyle(fontSize: 11, color: e['color'] as Color, fontWeight: FontWeight.w500),
-                                maxLines: 2, overflow: TextOverflow.ellipsis),
+                            // The course name was already carried on every
+                            // event but never rendered, so a week of entries
+                            // gave no clue which course they belonged to -
+                            // "iska NAAM hona chahiye na - COURSE ka naam.
+                            // Kis course ka hai, kab hai, kiska hai?"
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(e['title'] as String,
+                                    style: TextStyle(fontSize: 11, color: e['color'] as Color, fontWeight: FontWeight.w600),
+                                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                                if ((e['course'] as String?)?.trim().isNotEmpty ?? false) ...[
+                                  const SizedBox(height: 1),
+                                  Text(e['course'] as String,
+                                      style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: (e['color'] as Color).withValues(alpha: 0.8),
+                                          fontWeight: FontWeight.w400),
+                                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ],
+                                if ((e['time'] as String?)?.trim().isNotEmpty ?? false)
+                                  Text(e['time'] as String,
+                                      style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: (e['color'] as Color).withValues(alpha: 0.7)),
+                                      maxLines: 1),
+                              ],
+                            ),
                           )).toList(),
                         ),
                       ),
@@ -1417,10 +1493,14 @@ class _TodoPageState extends State<_TodoPage> with SingleTickerProviderStateMixi
 class _SettingsPage extends StatefulWidget {
   final String userName;
   final String userEmail;
+  // The header avatar shows the instructor's photo; this page was still
+  // drawing an initial because the photo was never passed down to it.
+  final String? userPhoto;
   final VoidCallback onLogout;
   final VoidCallback onManageCourses;
   final VoidCallback onCreateCourse;
-  const _SettingsPage({required this.userName, required this.userEmail, required this.onLogout,
+  const _SettingsPage({required this.userName, required this.userEmail,
+      this.userPhoto, required this.onLogout,
       required this.onManageCourses, required this.onCreateCourse});
   @override
   State<_SettingsPage> createState() => _SettingsPageState();
@@ -1440,11 +1520,24 @@ class _SettingsPageState extends State<_SettingsPage> {
         const SizedBox(height: 20),
         Row(
           children: [
-            CircleAvatar(
-              radius: 32, backgroundColor: const Color(0xFF1A73E8),
-              child: Text(widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'I',
-                  style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w400)),
-            ),
+            Builder(builder: (_) {
+              final img = buildProfileImageProvider(widget.userPhoto);
+              return CircleAvatar(
+                radius: 32,
+                backgroundColor: const Color(0xFF1A73E8),
+                backgroundImage: img,
+                child: img == null
+                    ? Text(
+                        widget.userName.isNotEmpty
+                            ? widget.userName[0].toUpperCase()
+                            : 'I',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w400))
+                    : null,
+              );
+            }),
             const SizedBox(width: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -12,6 +12,8 @@ const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 const { sendEmail } = require('../utils/email');
 const LiveSession = require('../models/LiveSession');
+const User = require('../models/User');
+const InstructorProfile = require('../models/InstructorProfile');
 const Attendance = require('../models/Attendance');
 const CourseReview = require('../models/CourseReview');
 const { Voucher, applyVoucherDiscount } = require('./vouchers');
@@ -87,6 +89,47 @@ router.get('/public', async (req, res) => {
     res.json({ success: true, courses, count: courses.length });
   } catch (e) {
     res.json({ success: true, courses: [], count: 0 });
+  }
+});
+
+// GET /api/courses/public/:id — one course for the public detail page.
+//
+// The list route above deliberately strips modules to keep the catalogue
+// payload small, which left the detail page's Curriculum tab permanently
+// showing "No curriculum available". This route returns the single course WITH
+// its modules, plus the instructor's real name and bio so the Instructor tab
+// can stop displaying a hardcoded "Instructor Name".
+router.get('/public/:id', async (req, res) => {
+  try {
+    await connectMongoDB();
+    const id = toId(req.params.id);
+    if (!id) return res.status(400).json({ success: false, message: 'Invalid course id' });
+
+    const course = await Course.findOne({ _id: id, is_active: true }).lean();
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+
+    let instructor = null;
+    if (course.instructor_id) {
+      const u = await User.findById(course.instructor_id)
+        .select('name username profilePicture').lean();
+      const profile = await InstructorProfile
+        .findOne({ user_id: course.instructor_id })
+        .select('bio designation qualification experience').lean();
+      if (u || profile) {
+        instructor = {
+          name: u?.name || u?.username || '',
+          profilePicture: u?.profilePicture || null,
+          bio: profile?.bio || '',
+          designation: profile?.designation || '',
+          qualification: profile?.qualification || '',
+          experience: profile?.experience || '',
+        };
+      }
+    }
+
+    res.json({ success: true, course: { ...course, instructor } });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
   }
 });
 
@@ -1031,6 +1074,11 @@ router.post('/', authMiddleware, async (req, res) => {
     await syncLiveSessions(course._id, req.user.id, course.modules);
     res.status(201).json({ success: true, course });
   } catch (e) {
+    console.error('CREATE COURSE FAILED:', e && e.name, '|', e && e.message);
+    if (e && e.errors) {
+      Object.keys(e.errors).forEach(k => console.error('  field:', k, '->', e.errors[k].message));
+    }
+    console.error(e && e.stack);
     res.status(500).json({ success: false, message: e.message });
   }
 });
@@ -1068,6 +1116,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
     await syncLiveSessions(course._id, req.user.id, course.modules);
     res.json({ success: true, course });
   } catch (e) {
+    console.error('UPDATE COURSE FAILED:', e && e.name, '|', e && e.message);
+    if (e && e.errors) {
+      Object.keys(e.errors).forEach(k => console.error('  field:', k, '->', e.errors[k].message));
+    }
+    console.error(e && e.stack);
     res.status(500).json({ success: false, message: e.message });
   }
 });

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:icare/navigators/deferred_route.dart';
 import 'package:flutter/material.dart';
-import 'package:icare/screens/classroom_course_view.dart';
+import 'package:icare/screens/classroom_course_view.dart'
+    deferred as classroom_view;
 import 'package:icare/screens/lms_live_session_screen.dart';
 import 'package:icare/screens/lms_public_catalog.dart';
 import 'package:icare/screens/quiz_take_screen.dart';
@@ -51,7 +53,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Three tabs: the client asked for Classes, To-do and Browse Courses
+    // to live inside "My Courses" ("is hi mein sab aa jayega - classes bhi,
+    // to-do bhi aur browse courses bhi").
+    _tabController = TabController(length: 3, vsync: this);
     _loadUserName();
     _loadEnrollments();
     _startGlobalLivePolling();
@@ -68,7 +73,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     // Don't check immediately — enrollments won't be loaded yet.
     // The check will be triggered inside _loadEnrollments() once data arrives,
     // and then polled every 5 seconds.
-    _globalLivePoller = Timer.periodic(const Duration(seconds: 5), (_) => _checkAllCoursesForLive());
+    _globalLivePoller = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkAllCoursesForLive(),
+    );
   }
 
   Future<void> _checkAllCoursesForLive() async {
@@ -80,9 +88,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
       final Map course = (rawCourseId is Map)
           ? rawCourseId
           : (rawCourse is Map)
-              ? rawCourse
-              : <String, dynamic>{};
-      final courseId = course['_id']?.toString() ??
+          ? rawCourse
+          : <String, dynamic>{};
+      final courseId =
+          course['_id']?.toString() ??
           (rawCourseId is String ? rawCourseId : null) ??
           '';
       if (courseId.isEmpty) continue;
@@ -93,11 +102,19 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
           final courseTitle = course['title']?.toString() ?? 'Your Course';
           final sessionData = result['session'] as Map? ?? {};
           final sessionId = sessionData['_id']?.toString() ?? courseId;
-          debugPrint('🔴 LIVE DETECTED for $courseTitle ($courseId), sessionId=$sessionId');
+          debugPrint(
+            '🔴 LIVE DETECTED for $courseTitle ($courseId), sessionId=$sessionId',
+          );
           // Only update the banner state — dialog is handled by tabs.dart global poller
           // to avoid duplicate popups when both pollers run simultaneously.
           if (mounted) {
-            setState(() => _activeLiveSession = {'courseId': courseId, 'courseTitle': courseTitle, 'sessionId': sessionId});
+            setState(
+              () => _activeLiveSession = {
+                'courseId': courseId,
+                'courseTitle': courseTitle,
+                'sessionId': sessionId,
+              },
+            );
           }
           return;
         }
@@ -110,7 +127,12 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     }
   }
 
-  void _showLiveAlert(String sessionId, String courseId, String courseTitle, Map course) {
+  void _showLiveAlert(
+    String sessionId,
+    String courseId,
+    String courseTitle,
+    Map course,
+  ) {
     if (!mounted) return;
     showDialog(
       context: context,
@@ -118,17 +140,28 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: const Color(0xFF1C2333),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.live_tv_rounded, color: Colors.red, size: 56),
-          const SizedBox(height: 12),
-          const Text('🔴 LIVE SESSION STARTED!',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.live_tv_rounded, color: Colors.red, size: 56),
+            const SizedBox(height: 12),
+            const Text(
+              '🔴 LIVE SESSION STARTED!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 8),
-          Text('$courseTitle\nis now live. Join now!',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$courseTitle\nis now live. Join now!',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        ]),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+        ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
@@ -143,17 +176,23 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
             ),
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.push(context, MaterialPageRoute(
-                builder: (_) => LmsLiveSessionScreen(
-                  sessionId: sessionId,
-                  courseId: courseId,
-                  sessionTitle: courseTitle,
-                  isInstructor: false,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LmsLiveSessionScreen(
+                    sessionId: sessionId,
+                    courseId: courseId,
+                    sessionTitle: courseTitle,
+                    isInstructor: false,
+                  ),
                 ),
-              ));
+              );
             },
             icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('JOIN NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            label: const Text(
+              'JOIN NOW',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
           ),
         ],
       ),
@@ -164,7 +203,9 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     final user = await SharedPref().getUserData();
     if (mounted && user != null) {
       setState(() {
-        _userName = user.name.isNotEmpty ? user.name : user.email.split('@').first;
+        _userName = user.name.isNotEmpty
+            ? user.name
+            : user.email.split('@').first;
       });
     }
   }
@@ -203,8 +244,9 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     final List<Map<String, dynamic>> items = [];
     for (final enrollment in enrollments) {
       final rawTodoCourse = enrollment['course'];
-      final Map<String, dynamic> course =
-          (rawTodoCourse is Map) ? Map<String, dynamic>.from(rawTodoCourse) : {};
+      final Map<String, dynamic> course = (rawTodoCourse is Map)
+          ? Map<String, dynamic>.from(rawTodoCourse)
+          : {};
       final courseId = course['_id']?.toString() ?? '';
       final courseName = course['title'] ?? course['name'] ?? 'Unknown Course';
       if (courseId.isEmpty) continue;
@@ -291,11 +333,18 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 color: AppColors.primaryColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.school_rounded, color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.school_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 10),
             const Text(
-              'iCare Academy',
+              // This page is the classroom, which the client named
+              // "My Courses". "iCare Academy" is the catalogue at
+              // /student/courses - both screens were showing the same title.
+              'My Courses',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -304,37 +353,20 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LmsPublicCatalog()),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-              child: Text(
-                _userName.isNotEmpty ? _userName[0].toUpperCase() : 'S',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-            ),
-          ),
-        ],
+        // The search icon and the avatar used to sit here too, duplicating
+        // the ones the surrounding shell already shows in its own top bar.
+        // Browse Courses is reachable from the sidebar and from the tab below.
+        actions: const [],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primaryColor,
           unselectedLabelColor: const Color(0xFF64748B),
           indicatorColor: AppColors.primaryColor,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
           tabs: [
             Tab(
               child: Row(
@@ -356,7 +388,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                   if (_allTodoItems.isNotEmpty) ...[
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryColor,
                         borderRadius: BorderRadius.circular(10),
@@ -371,6 +406,16 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                       ),
                     ),
                   ],
+                ],
+              ),
+            ),
+            const Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.travel_explore_rounded, size: 16),
+                  SizedBox(width: 6),
+                  Text('Browse Courses'),
                 ],
               ),
             ),
@@ -391,6 +436,7 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
         children: [
           _buildClassesTab(isWide),
           _buildTodoTab(),
+          const LmsPublicCatalog(embedded: true),
         ],
       ),
     );
@@ -430,7 +476,9 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 childCount: _enrollments.length,
               ),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: isWide ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
+                crossAxisCount: isWide
+                    ? 3
+                    : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 childAspectRatio: isWide ? 1.1 : 1.0,
@@ -447,19 +495,24 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     final courseId = session['courseId']?.toString() ?? '';
     final courseTitle = session['courseTitle']?.toString() ?? 'Your Course';
     final sessionId = session['sessionId']?.toString() ?? '';
-    final validSessionId = sessionId.isNotEmpty && sessionId != courseId ? sessionId : courseId;
+    final validSessionId = sessionId.isNotEmpty && sessionId != courseId
+        ? sessionId
+        : courseId;
 
     return GestureDetector(
       onTap: () {
         if (validSessionId.isEmpty) return;
-        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => LmsLiveSessionScreen(
-            sessionId: validSessionId,
-            courseId: courseId,
-            sessionTitle: courseTitle,
-            isInstructor: false,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LmsLiveSessionScreen(
+              sessionId: validSessionId,
+              courseId: courseId,
+              sessionTitle: courseTitle,
+              isInstructor: false,
+            ),
           ),
-        ));
+        );
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -471,47 +524,94 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.circle, color: Colors.red, size: 8),
-              SizedBox(width: 4),
-              Text('LIVE', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w900)),
-            ]),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              const Text('Instructor is LIVE now!',
-                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-              Text(courseTitle, style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  overflow: TextOverflow.ellipsis),
-            ]),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-            child: const Text('JOIN NOW',
-                style: TextStyle(color: Color(0xFFB91C1C), fontSize: 13, fontWeight: FontWeight.w900)),
-          ),
-        ]),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.circle, color: Colors.red, size: 8),
+                  SizedBox(width: 4),
+                  Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Instructor is LIVE now!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    courseTitle,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'JOIN NOW',
+                style: TextStyle(
+                  color: Color(0xFFB91C1C),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildClassCard(dynamic enrollment, int index) {
     final rawCourse = enrollment['course'];
-    final Map<String, dynamic> course =
-        (rawCourse is Map) ? Map<String, dynamic>.from(rawCourse) : {};
+    final Map<String, dynamic> course = (rawCourse is Map)
+        ? Map<String, dynamic>.from(rawCourse)
+        : {};
     final title = course['title'] ?? course['name'] ?? 'Untitled Course';
     final rawInstructor = course['instructor'];
     final instructor = (rawInstructor is Map)
-        ? (rawInstructor['name'] ?? rawInstructor['username'] ?? 'iCare Instructor').toString()
+        ? (rawInstructor['name'] ??
+                  rawInstructor['username'] ??
+                  'iCare Instructor')
+              .toString()
         : 'iCare Instructor';
     final section = course['category'] ?? course['section'] ?? '';
     final progressData = enrollment['progress'];
@@ -522,42 +622,68 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
       progress = (progressData['percent'] ?? 0).toInt();
     }
     final color = _cardColor(index);
-    final thumbnail = course['thumbnail']?.toString() ?? course['thumbnail_url']?.toString();
+    final thumbnail =
+        course['thumbnail']?.toString() ?? course['thumbnail_url']?.toString();
     final enrollmentId = enrollment['_id']?.toString();
     final courseId = course['_id']?.toString() ?? '';
     final isLive = _activeLiveSession?['courseId'] == courseId;
-    final liveSessionId = _activeLiveSession?['sessionId']?.toString() ?? courseId;
+    final liveSessionId =
+        _activeLiveSession?['sessionId']?.toString() ?? courseId;
 
     return GestureDetector(
       onTap: () {
         if (isLive) {
           // Go directly to live session if this course is live
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => LmsLiveSessionScreen(
-              sessionId: liveSessionId,
-              courseId: courseId,
-              sessionTitle: title,
-              isInstructor: false,
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LmsLiveSessionScreen(
+                sessionId: liveSessionId,
+                courseId: courseId,
+                sessionTitle: title,
+                isInstructor: false,
+              ),
             ),
-          ));
+          );
         } else {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => ClassroomCourseView(
-              course: course,
-              enrollmentId: enrollmentId,
-              isInstructor: false,
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DeferredScreen(
+                loader: classroom_view.loadLibrary,
+                builder: () => classroom_view.ClassroomCourseView(
+                  course: course,
+                  enrollmentId: enrollmentId,
+                  isInstructor: false,
+                ),
+              ),
             ),
-          ));
+          );
         }
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isLive ? Colors.red : const Color(0xFFE2E8F0), width: isLive ? 2 : 1),
+          border: Border.all(
+            color: isLive ? Colors.red : const Color(0xFFE2E8F0),
+            width: isLive ? 2 : 1,
+          ),
           boxShadow: isLive
-              ? [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2))],
+              ? [
+                  BoxShadow(
+                    color: Colors.red.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,10 +706,8 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                         height: 96,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          height: 96,
-                          color: color,
-                        ),
+                        errorBuilder: (_, _, _) =>
+                            Container(height: 96, color: color),
                       ),
                     )
                   else
@@ -596,8 +720,12 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: thumbnail != null ? 0.45 : 0.0),
-                          Colors.black.withValues(alpha: thumbnail != null ? 0.65 : 0.0),
+                          Colors.black.withValues(
+                            alpha: thumbnail != null ? 0.45 : 0.0,
+                          ),
+                          Colors.black.withValues(
+                            alpha: thumbnail != null ? 0.65 : 0.0,
+                          ),
                         ],
                       ),
                     ),
@@ -614,13 +742,33 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                             children: [
                               if (isLive) ...[
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
-                                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                                    Icon(Icons.circle, color: Colors.white, size: 8),
-                                    SizedBox(width: 4),
-                                    Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-                                  ]),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.circle,
+                                        color: Colors.white,
+                                        size: 8,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'LIVE',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                               ],
@@ -632,7 +780,12 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
                                     height: 1.2,
-                                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black54,
+                                        blurRadius: 4,
+                                      ),
+                                    ],
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -644,8 +797,11 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                                   color: Colors.white.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.menu_book_rounded,
-                                    color: Colors.white, size: 16),
+                                child: const Icon(
+                                  Icons.menu_book_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ],
                           ),
@@ -654,9 +810,12 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                             Text(
                               section,
                               style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                  shadows: [Shadow(color: Colors.black54, blurRadius: 4)]),
+                                color: Colors.white70,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(color: Colors.black54, blurRadius: 4),
+                                ],
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -678,9 +837,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                     child: Text(
                       instructor.isNotEmpty ? instructor[0].toUpperCase() : 'I',
                       style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: color),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -688,9 +848,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                     child: Text(
                       instructor,
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF0F172A),
-                          fontWeight: FontWeight.w600),
+                        fontSize: 12,
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.w600,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -710,14 +871,17 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                       Text(
                         'Progress',
                         style: const TextStyle(
-                            fontSize: 11, color: Color(0xFF94A3B8)),
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                        ),
                       ),
                       Text(
                         '$progress%',
                         style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: color),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
                       ),
                     ],
                   ),
@@ -748,10 +912,13 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                     () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ClassroomCourseView(
-                          course: course,
-                          enrollmentId: enrollmentId,
-                          isInstructor: false,
+                        builder: (_) => DeferredScreen(
+                          loader: classroom_view.loadLibrary,
+                          builder: () => classroom_view.ClassroomCourseView(
+                            course: course,
+                            enrollmentId: enrollmentId,
+                            isInstructor: false,
+                          ),
                         ),
                       ),
                     ),
@@ -763,11 +930,14 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                     () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ClassroomCourseView(
-                          course: course,
-                          enrollmentId: enrollmentId,
-                          isInstructor: false,
-                          initialTab: 1,
+                        builder: (_) => DeferredScreen(
+                          loader: classroom_view.loadLibrary,
+                          builder: () => classroom_view.ClassroomCourseView(
+                            course: course,
+                            enrollmentId: enrollmentId,
+                            isInstructor: false,
+                            initialTab: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -788,7 +958,11 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
   }
 
   Widget _cardIconBtn(
-      IconData icon, String tooltip, Color color, VoidCallback onTap) {
+    IconData icon,
+    String tooltip,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -815,23 +989,31 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 color: const Color(0xFFEFF6FF),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.class_rounded,
-                  size: 64, color: AppColors.primaryColor),
+              child: Icon(
+                Icons.class_rounded,
+                size: 64,
+                color: AppColors.primaryColor,
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
               'You have not enrolled in any course yet',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A)),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Browse the catalog and enroll in a course to get started.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.5),
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
@@ -840,15 +1022,20 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 MaterialPageRoute(builder: (_) => const LmsPublicCatalog()),
               ),
               icon: const Icon(Icons.explore_rounded, size: 18),
-              label: const Text('Browse Courses',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              label: const Text(
+                'Browse Courses',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 elevation: 0,
               ),
             ),
@@ -880,17 +1067,21 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                   color: Color(0xFFEFF6FF),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.checklist_rounded,
-                    size: 64, color: AppColors.primaryColor),
+                child: Icon(
+                  Icons.checklist_rounded,
+                  size: 64,
+                  color: AppColors.primaryColor,
+                ),
               ),
               const SizedBox(height: 24),
               const Text(
                 'You have not enrolled in any course yet',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A)),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
               ),
               const SizedBox(height: 28),
               ElevatedButton.icon(
@@ -899,15 +1090,20 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                   MaterialPageRoute(builder: (_) => const LmsPublicCatalog()),
                 ),
                 icon: const Icon(Icons.explore_rounded, size: 18),
-                label: const Text('Browse Courses',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                label: const Text(
+                  'Browse Courses',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -919,15 +1115,19 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_rounded,
-                size: 64, color: Color(0xFF10B981)),
+            const Icon(
+              Icons.check_circle_rounded,
+              size: 64,
+              color: Color(0xFF10B981),
+            ),
             const SizedBox(height: 16),
             const Text(
               'You are all caught up!',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A)),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -972,7 +1172,7 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
       'Due tomorrow',
       'Due this week',
       'Upcoming',
-      'No due date'
+      'No due date',
     ];
 
     return RefreshIndicator(
@@ -1024,7 +1224,9 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
     final courseId = item['_courseId'] ?? '';
     final enrollmentId = item['_enrollmentId'] ?? '';
 
-    final color = isAssignment ? const Color(0xFF0EA5E9) : const Color(0xFF8B5CF6);
+    final color = isAssignment
+        ? const Color(0xFF0EA5E9)
+        : const Color(0xFF8B5CF6);
 
     return GestureDetector(
       onTap: () {
@@ -1043,10 +1245,8 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => QuizTakeScreen(
-                quiz: item,
-                enrollmentId: enrollmentId,
-              ),
+              builder: (_) =>
+                  QuizTakeScreen(quiz: item, enrollmentId: enrollmentId),
             ),
           );
         }
@@ -1068,9 +1268,7 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isAssignment
-                    ? Icons.assignment_outlined
-                    : Icons.quiz_outlined,
+                isAssignment ? Icons.assignment_outlined : Icons.quiz_outlined,
                 color: color,
                 size: 18,
               ),
@@ -1083,15 +1281,18 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                   Text(
                     title,
                     style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A)),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     courseName,
                     style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF64748B)),
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                   if (due != null) ...[
                     const SizedBox(height: 2),
@@ -1109,8 +1310,11 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: const Color(0xFFCBD5E1), size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: const Color(0xFFCBD5E1),
+              size: 20,
+            ),
           ],
         ),
       ),

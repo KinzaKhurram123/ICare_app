@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -13,46 +14,62 @@ import 'package:icare/widgets/back_button.dart';
 /// Student name auto-fills when viewing/downloading
 
 enum CertificateTemplate {
-  classic,   // Blue & gold, formal
-  modern,    // Purple gradient, minimal
-  elegant,   // Dark, professional
+  classic, // Blue & gold, formal
+  modern, // Purple gradient, minimal
+  elegant, // Dark, professional
   achievement, // Green, vibrant
 }
 
 extension CertificateTemplateExt on CertificateTemplate {
   String get name {
     switch (this) {
-      case CertificateTemplate.classic:     return 'Classic';
-      case CertificateTemplate.modern:      return 'Modern';
-      case CertificateTemplate.elegant:     return 'Elegant';
-      case CertificateTemplate.achievement: return 'Achievement';
+      case CertificateTemplate.classic:
+        return 'Classic';
+      case CertificateTemplate.modern:
+        return 'Modern';
+      case CertificateTemplate.elegant:
+        return 'Elegant';
+      case CertificateTemplate.achievement:
+        return 'Achievement';
     }
   }
 
   Color get primaryColor {
     switch (this) {
-      case CertificateTemplate.classic:     return const Color(0xFF1A3A8F);
-      case CertificateTemplate.modern:      return const Color(0xFF7C3AED);
-      case CertificateTemplate.elegant:     return const Color(0xFF1E293B);
-      case CertificateTemplate.achievement: return const Color(0xFF059669);
+      case CertificateTemplate.classic:
+        return const Color(0xFF1A3A8F);
+      case CertificateTemplate.modern:
+        return const Color(0xFF7C3AED);
+      case CertificateTemplate.elegant:
+        return const Color(0xFF1E293B);
+      case CertificateTemplate.achievement:
+        return const Color(0xFF059669);
     }
   }
 
   Color get accentColor {
     switch (this) {
-      case CertificateTemplate.classic:     return const Color(0xFFD4AF37);
-      case CertificateTemplate.modern:      return const Color(0xFFEC4899);
-      case CertificateTemplate.elegant:     return const Color(0xFFD4AF37);
-      case CertificateTemplate.achievement: return const Color(0xFFF59E0B);
+      case CertificateTemplate.classic:
+        return const Color(0xFFD4AF37);
+      case CertificateTemplate.modern:
+        return const Color(0xFFEC4899);
+      case CertificateTemplate.elegant:
+        return const Color(0xFFD4AF37);
+      case CertificateTemplate.achievement:
+        return const Color(0xFFF59E0B);
     }
   }
 
   IconData get icon {
     switch (this) {
-      case CertificateTemplate.classic:     return Icons.workspace_premium_rounded;
-      case CertificateTemplate.modern:      return Icons.star_rounded;
-      case CertificateTemplate.elegant:     return Icons.military_tech_rounded;
-      case CertificateTemplate.achievement: return Icons.emoji_events_rounded;
+      case CertificateTemplate.classic:
+        return Icons.workspace_premium_rounded;
+      case CertificateTemplate.modern:
+        return Icons.star_rounded;
+      case CertificateTemplate.elegant:
+        return Icons.military_tech_rounded;
+      case CertificateTemplate.achievement:
+        return Icons.emoji_events_rounded;
     }
   }
 }
@@ -80,10 +97,12 @@ class CertificateTemplateSelectorScreen extends StatefulWidget {
   });
 
   @override
-  State<CertificateTemplateSelectorScreen> createState() => _CertificateTemplateSelectorScreenState();
+  State<CertificateTemplateSelectorScreen> createState() =>
+      _CertificateTemplateSelectorScreenState();
 }
 
-class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateSelectorScreen> {
+class _CertificateTemplateSelectorScreenState
+    extends State<CertificateTemplateSelectorScreen> {
   CertificateTemplate _selected = CertificateTemplate.classic;
   bool _released = false;
   bool _savingRelease = false;
@@ -96,24 +115,34 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
   }
 
   Future<void> _toggleRelease(bool value) async {
-    setState(() { _released = value; _savingRelease = true; });
+    setState(() {
+      _released = value;
+      _savingRelease = true;
+    });
     try {
       if (widget.courseId != null) {
-        final res = await ApiService().put('/courses/${widget.courseId}/certificate/release', {
-          'released': value,
-          'template': _selected.name,
-        });
+        final res = await ApiService().put(
+          '/courses/${widget.courseId}/certificate/release',
+          {'released': value, 'template': _selected.name},
+        );
         // Update state from server response to keep in sync
         if (res.data is Map && res.data['course'] != null) {
-          final serverReleased = res.data['course']['certificateReleased'] == true;
+          final serverReleased =
+              res.data['course']['certificateReleased'] == true;
           if (mounted) setState(() => _released = serverReleased);
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(value ? '✅ Certificate released to students' : '🔒 Certificate locked'),
-            backgroundColor: value ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 2),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                value
+                    ? '✅ Certificate released to students'
+                    : '🔒 Certificate locked',
+              ),
+              backgroundColor: value ? Colors.green : Colors.orange,
+              duration: const Duration(seconds: 2),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -121,8 +150,8 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
       if (mounted) setState(() => _released = !value);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
-      );
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+        );
       }
     }
     if (mounted) setState(() => _savingRelease = false);
@@ -139,70 +168,114 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
           onPressed: () => goBackOrHome(context),
         ),
-        title: const Text('Certificate Templates', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF0F172A))),
+        title: const Text(
+          'Certificate Templates',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
               widget.onSelect(_selected);
               Navigator.pop(context);
             },
-            child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryColor)),
+            child: const Text(
+              'Apply',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.primaryColor,
+              ),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Choose a design for your course certificate. Students will receive this design with their name when they complete the course.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-            const SizedBox(height: 16),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose a design for your course certificate. Students will receive this design with their name when they complete the course.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
 
-            // ── Certificate Release Toggle ────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: _released ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _released ? const Color(0xFF10B981) : const Color(0xFFF59E0B), width: 1.5),
-              ),
-              child: Row(
-                children: [
-                  Icon(_released ? Icons.lock_open_rounded : Icons.lock_rounded,
-                      color: _released ? const Color(0xFF10B981) : const Color(0xFFF59E0B), size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _released ? 'Certificate Released' : 'Certificate Locked',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14,
-                              color: _released ? const Color(0xFF065F46) : const Color(0xFF92400E)),
-                        ),
-                        Text(
-                          _released
-                              ? 'Students who complete this course can download their certificate.'
-                              : 'Students cannot download certificate until you release it.',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
+              // ── Certificate Release Toggle ────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _released
+                      ? const Color(0xFFF0FDF4)
+                      : const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _released
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFF59E0B),
+                    width: 1.5,
                   ),
-                  _savingRelease
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Switch(
-                          value: _released,
-                          onChanged: _toggleRelease,
-                          activeThumbColor: const Color(0xFF10B981),
-                        ),
-                ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _released ? Icons.lock_open_rounded : Icons.lock_rounded,
+                      color: _released
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFF59E0B),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _released
+                                ? 'Certificate Released'
+                                : 'Certificate Locked',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: _released
+                                  ? const Color(0xFF065F46)
+                                  : const Color(0xFF92400E),
+                            ),
+                          ),
+                          Text(
+                            _released
+                                ? 'Students who complete this course can download their certificate.'
+                                : 'Students cannot download certificate until you release it.',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _savingRelease
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Switch(
+                            value: _released,
+                            onChanged: _toggleRelease,
+                            activeThumbColor: const Color(0xFF10B981),
+                          ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ...CertificateTemplate.values.map((t) => _templateCard(t)),
-          ],
+              const SizedBox(height: 20),
+              ...CertificateTemplate.values.map((t) => _templateCard(t)),
+            ],
+          ),
         ),
       ),
     );
@@ -220,13 +293,23 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
             color: isSelected ? t.primaryColor : const Color(0xFFE2E8F0),
             width: isSelected ? 2.5 : 1.5,
           ),
-          boxShadow: isSelected ? [BoxShadow(color: t.primaryColor.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: t.primaryColor.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
         child: Column(
           children: [
             // Preview
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(14),
+              ),
               child: _CertificatePreview(
                 template: t,
                 studentName: 'Student Name',
@@ -240,19 +323,41 @@ class _CertificateTemplateSelectorScreenState extends State<CertificateTemplateS
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(14),
+                ),
               ),
               child: Row(
                 children: [
                   Icon(t.icon, color: t.primaryColor, size: 20),
                   const SizedBox(width: 8),
-                  Text(t.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: t.primaryColor)),
+                  Text(
+                    t.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: t.primaryColor,
+                    ),
+                  ),
                   const Spacer(),
                   if (isSelected)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(color: t.primaryColor, borderRadius: BorderRadius.circular(20)),
-                      child: const Text('Selected', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Selected',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -308,7 +413,10 @@ class LmsCertificateScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => goBackOrHome(context),
         ),
-        title: const Text('Your Certificate', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Your Certificate',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.download_rounded, color: Colors.white),
@@ -366,18 +474,26 @@ class LmsCertificateScreen extends StatelessWidget {
   Future<void> _downloadPdf(BuildContext context) async {
     try {
       final bytes = await _generatePdf();
-      await Printing.sharePdf(bytes: bytes, filename: 'certificate_${courseTitle.replaceAll(' ', '_')}.pdf');
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'certificate_${courseTitle.replaceAll(' ', '_')}.pdf',
+      );
       // Register verification code so the QR on the PDF verifies
       await _registerCertificate();
       // Mark enrollment as completed in backend (saves to My Certificates)
       if (enrollmentId != null && enrollmentId!.isNotEmpty) {
         try {
-          await ApiService().put('/students/courses/enrollments/$enrollmentId/complete', {});
+          await ApiService().put(
+            '/students/courses/enrollments/$enrollmentId/complete',
+            {},
+          );
         } catch (_) {}
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -385,18 +501,25 @@ class LmsCertificateScreen extends StatelessWidget {
   Future<void> _printCertificate(BuildContext context) async {
     try {
       final bytes = await _generatePdf();
-      await Printing.layoutPdf(onLayout: (_) async => bytes, name: 'certificate');
+      await Printing.layoutPdf(
+        onLayout: (_) async => bytes,
+        name: 'certificate',
+      );
       await _registerCertificate();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
 
   Future<Uint8List> _generatePdf() async {
     final pdf = pw.Document();
-    final date = DateFormat('MMMM dd, yyyy').format(completionDate ?? DateTime.now());
+    final date = DateFormat(
+      'MMMM dd, yyyy',
+    ).format(completionDate ?? DateTime.now());
 
     // Stable certificate ID (registered with backend for QR verification)
     final certId = _certId;
@@ -407,15 +530,21 @@ class LmsCertificateScreen extends StatelessWidget {
     pw.ImageProvider? iqraLogoImg;
     try {
       final bd = await rootBundle.load('assets/Asset 1.png');
-      icareLogoImg = pw.MemoryImage(bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes));
+      icareLogoImg = pw.MemoryImage(
+        bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes),
+      );
     } catch (_) {}
     try {
       final bd = await rootBundle.load('assets/LOGO-IU-01-2048x495-1.png');
-      iqraLogoImg = pw.MemoryImage(bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes));
+      iqraLogoImg = pw.MemoryImage(
+        bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes),
+      );
     } catch (_) {}
     try {
       final bd = await rootBundle.load('assets/images/health.jpeg');
-      rmrLogoImg = pw.MemoryImage(bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes));
+      rmrLogoImg = pw.MemoryImage(
+        bd.buffer.asUint8List(bd.offsetInBytes, bd.lengthInBytes),
+      );
     } catch (_) {}
 
     final qrData = 'https://www.icare.com.co/verify?code=$certId';
@@ -448,162 +577,310 @@ class LmsCertificateScreen extends StatelessWidget {
         break;
     }
 
-    pdf.addPage(pw.Page(
-      pageFormat: PdfPageFormat.a4.landscape,
-      margin: pw.EdgeInsets.zero,
-      build: (ctx) => pw.Container(
-        decoration: pw.BoxDecoration(color: bg),
-        child: pw.Stack(
-          children: [
-            // Border decoration
-            pw.Positioned.fill(
-              child: pw.Container(
-                margin: const pw.EdgeInsets.all(20),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: accent, width: 3),
-                  borderRadius: pw.BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            pw.Positioned.fill(
-              child: pw.Container(
-                margin: const pw.EdgeInsets.all(26),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: primary, width: 1),
-                  borderRadius: pw.BorderRadius.circular(6),
-                ),
-              ),
-            ),
-
-            // Top logos row: RMR (left), Iqra (center), iCare (right)
-            pw.Positioned(
-              top: 35,
-              left: 40,
-              right: 40,
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  // RMR Solution logo (left)
-                  if (rmrLogoImg != null)
-                    pw.Container(width: 60, height: 60, child: pw.Image(rmrLogoImg))
-                  else
-                    pw.Container(width: 60, height: 60),
-
-                  // Iqra University logo (center)
-                  if (iqraLogoImg != null)
-                    pw.Container(width: 70, height: 70, child: pw.Image(iqraLogoImg))
-                  else
-                    pw.Container(width: 70, height: 70),
-
-                  // iCare logo (right)
-                  if (icareLogoImg != null)
-                    pw.Container(width: 60, height: 60, child: pw.Image(icareLogoImg))
-                  else
-                    pw.Container(width: 60, height: 60),
-                ],
-              ),
-            ),
-
-            // QR Code (left side)
-            pw.Positioned(
-              left: 40,
-              top: 120,
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.BarcodeWidget(
-                    barcode: pw.Barcode.qrCode(),
-                    data: qrData,
-                    width: 70,
-                    height: 70,
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: pw.EdgeInsets.zero,
+        build: (ctx) => pw.Container(
+          decoration: pw.BoxDecoration(color: bg),
+          child: pw.Stack(
+            children: [
+              // Border decoration
+              pw.Positioned.fill(
+                child: pw.Container(
+                  margin: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: accent, width: 3),
+                    borderRadius: pw.BorderRadius.circular(8),
                   ),
-                  pw.SizedBox(height: 4),
-                  pw.Text('Scan to verify', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
-                ],
+                ),
               ),
-            ),
+              pw.Positioned.fill(
+                child: pw.Container(
+                  margin: const pw.EdgeInsets.all(26),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: primary, width: 1),
+                    borderRadius: pw.BorderRadius.circular(6),
+                  ),
+                ),
+              ),
 
-            // Main content
-            pw.Center(
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 100, vertical: 40),
-                child: pw.Column(
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
+              // Top logos row: RMR (left), Iqra (center), iCare (right)
+              pw.Positioned(
+                top: 35,
+                left: 40,
+                right: 40,
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.SizedBox(height: 40),
-                    pw.Text('Certificate of Completion', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: primary, letterSpacing: 2)),
-                    pw.SizedBox(height: 10),
-                    pw.Container(height: 2, width: 200, color: accent),
-                    pw.SizedBox(height: 16),
-                    pw.Text('This is to certify that', style: pw.TextStyle(fontSize: 13, color: PdfColors.grey700)),
-                    pw.SizedBox(height: 12),
-                    // Student name — big, prominent
-                    pw.Text(studentName, style: pw.TextStyle(fontSize: 36, fontWeight: pw.FontWeight.bold, color: accent)),
-                    pw.SizedBox(height: 10),
-                    pw.Text('has successfully completed the course', style: pw.TextStyle(fontSize: 13, color: PdfColors.grey700)),
-                    pw.SizedBox(height: 12),
-                    pw.Text(courseTitle, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: primary)),
-                    pw.SizedBox(height: 20),
-                    pw.Text('Date of Completion: $date', style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
-                    pw.SizedBox(height: 30),
+                    // RMR Solution logo (left)
+                    if (rmrLogoImg != null)
+                      pw.Container(
+                        width: 60,
+                        height: 60,
+                        child: pw.Image(rmrLogoImg),
+                      )
+                    else
+                      pw.Container(width: 60, height: 60),
 
-                    // Digital signatures row
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Instructor signature
-                        pw.Column(
-                          children: [
-                            pw.Container(height: 1, width: 100, color: PdfColors.grey500),
-                            pw.SizedBox(height: 4),
-                            pw.Text(instructorName, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primary)),
-                            pw.Text('Instructor', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                            pw.Text('Digital Signature', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey500, fontStyle: pw.FontStyle.italic)),
-                          ],
-                        ),
-                        // Iqra University Registrar
-                        pw.Column(
-                          children: [
-                            pw.Container(height: 1, width: 100, color: PdfColors.grey500),
-                            pw.SizedBox(height: 4),
-                            pw.Text('Registrar', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primary)),
-                            pw.Text('Iqra University', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                            pw.Text('Digital Signature', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey500, fontStyle: pw.FontStyle.italic)),
-                          ],
-                        ),
-                        // iCare Administrator
-                        pw.Column(
-                          children: [
-                            pw.Container(height: 1, width: 100, color: PdfColors.grey500),
-                            pw.SizedBox(height: 4),
-                            pw.Text('Administrator', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primary)),
-                            pw.Text('iCare Virtual Hospital', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                            pw.Text('Digital Signature', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey500, fontStyle: pw.FontStyle.italic)),
-                          ],
-                        ),
-                      ],
+                    // Iqra University logo (center)
+                    if (iqraLogoImg != null)
+                      pw.Container(
+                        width: 70,
+                        height: 70,
+                        child: pw.Image(iqraLogoImg),
+                      )
+                    else
+                      pw.Container(width: 70, height: 70),
+
+                    // iCare logo (right)
+                    if (icareLogoImg != null)
+                      pw.Container(
+                        width: 60,
+                        height: 60,
+                        child: pw.Image(icareLogoImg),
+                      )
+                    else
+                      pw.Container(width: 60, height: 60),
+                  ],
+                ),
+              ),
+
+              // QR Code (left side)
+              pw.Positioned(
+                left: 40,
+                top: 120,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: qrData,
+                      width: 70,
+                      height: 70,
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Scan to verify',
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        color: PdfColors.grey600,
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            // Certificate ID (bottom right)
-            pw.Positioned(
-              bottom: 30,
-              right: 40,
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text('Certificate ID', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                  pw.Text(certId, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primary)),
-                ],
+              // Main content
+              pw.Center(
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 100,
+                    vertical: 40,
+                  ),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      pw.SizedBox(height: 40),
+                      pw.Text(
+                        'Certificate of Completion',
+                        style: pw.TextStyle(
+                          fontSize: 28,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primary,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      pw.SizedBox(height: 10),
+                      pw.Container(height: 2, width: 200, color: accent),
+                      pw.SizedBox(height: 16),
+                      pw.Text(
+                        'This is to certify that',
+                        style: pw.TextStyle(
+                          fontSize: 13,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 12),
+                      // Student name — big, prominent
+                      pw.Text(
+                        studentName,
+                        style: pw.TextStyle(
+                          fontSize: 36,
+                          fontWeight: pw.FontWeight.bold,
+                          color: accent,
+                        ),
+                      ),
+                      pw.SizedBox(height: 10),
+                      pw.Text(
+                        'has successfully completed the course',
+                        style: pw.TextStyle(
+                          fontSize: 13,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 12),
+                      pw.Text(
+                        courseTitle,
+                        style: pw.TextStyle(
+                          fontSize: 20,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primary,
+                        ),
+                      ),
+                      pw.SizedBox(height: 20),
+                      pw.Text(
+                        'Date of Completion: $date',
+                        style: pw.TextStyle(
+                          fontSize: 11,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 30),
+
+                      // Digital signatures row
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Instructor signature
+                          pw.Column(
+                            children: [
+                              pw.Container(
+                                height: 1,
+                                width: 100,
+                                color: PdfColors.grey500,
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                instructorName,
+                                style: pw.TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: primary,
+                                ),
+                              ),
+                              pw.Text(
+                                'Instructor',
+                                style: pw.TextStyle(
+                                  fontSize: 8,
+                                  color: PdfColors.grey600,
+                                ),
+                              ),
+                              pw.Text(
+                                'Digital Signature',
+                                style: pw.TextStyle(
+                                  fontSize: 7,
+                                  color: PdfColors.grey500,
+                                  fontStyle: pw.FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Iqra University Registrar
+                          pw.Column(
+                            children: [
+                              pw.Container(
+                                height: 1,
+                                width: 100,
+                                color: PdfColors.grey500,
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                'Registrar',
+                                style: pw.TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: primary,
+                                ),
+                              ),
+                              pw.Text(
+                                'Iqra University',
+                                style: pw.TextStyle(
+                                  fontSize: 8,
+                                  color: PdfColors.grey600,
+                                ),
+                              ),
+                              pw.Text(
+                                'Digital Signature',
+                                style: pw.TextStyle(
+                                  fontSize: 7,
+                                  color: PdfColors.grey500,
+                                  fontStyle: pw.FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                          // iCare Administrator
+                          pw.Column(
+                            children: [
+                              pw.Container(
+                                height: 1,
+                                width: 100,
+                                color: PdfColors.grey500,
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                'Administrator',
+                                style: pw.TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: primary,
+                                ),
+                              ),
+                              pw.Text(
+                                'iCare Virtual Hospital',
+                                style: pw.TextStyle(
+                                  fontSize: 8,
+                                  color: PdfColors.grey600,
+                                ),
+                              ),
+                              pw.Text(
+                                'Digital Signature',
+                                style: pw.TextStyle(
+                                  fontSize: 7,
+                                  color: PdfColors.grey500,
+                                  fontStyle: pw.FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+
+              // Certificate ID (bottom right)
+              pw.Positioned(
+                bottom: 30,
+                right: 40,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      'Certificate ID',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                    pw.Text(
+                      certId,
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
 
     return pdf.save();
   }
@@ -632,7 +909,9 @@ class _CertificatePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('MMMM dd, yyyy').format(completionDate ?? DateTime.now());
+    final date = DateFormat(
+      'MMMM dd, yyyy',
+    ).format(completionDate ?? DateTime.now());
     final t = template;
     final double scale = compact ? 0.6 : 1.0;
 
@@ -654,7 +933,9 @@ class _CertificatePreview extends StatelessWidget {
               child: Container(
                 margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: t.primaryColor.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: t.primaryColor.withValues(alpha: 0.4),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -669,47 +950,124 @@ class _CertificatePreview extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Image.asset('assets/images/health.jpeg',
-                          height: compact ? 24 : 40, fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => Text('RMR', style: TextStyle(fontSize: compact ? 8 : 10, fontWeight: FontWeight.w700, color: const Color(0xFF0036BC)))),
-                      Image.asset('assets/LOGO-IU-01-2048x495-1.png',
-                          height: compact ? 24 : 40, width: compact ? 90 : 140, fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => Text('Iqra University', style: TextStyle(fontSize: compact ? 8 : 11, fontWeight: FontWeight.w700, color: t.primaryColor))),
-                      Image.asset('assets/Asset 1.png',
-                          height: compact ? 24 : 40, fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => Text('iCare', style: TextStyle(fontSize: compact ? 8 : 10, fontWeight: FontWeight.w700, color: t.primaryColor))),
+                      Image.asset(
+                        'assets/images/health.jpeg',
+                        height: compact ? 24 : 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Text(
+                          'RMR',
+                          style: TextStyle(
+                            fontSize: compact ? 8 : 10,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0036BC),
+                          ),
+                        ),
+                      ),
+                      Image.asset(
+                        'assets/LOGO-IU-01-2048x495-1.png',
+                        height: compact ? 24 : 40,
+                        width: compact ? 90 : 140,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Text(
+                          'Iqra University',
+                          style: TextStyle(
+                            fontSize: compact ? 8 : 11,
+                            fontWeight: FontWeight.w700,
+                            color: t.primaryColor,
+                          ),
+                        ),
+                      ),
+                      Image.asset(
+                        'assets/Asset 1.png',
+                        height: compact ? 24 : 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Text(
+                          'iCare',
+                          style: TextStyle(
+                            fontSize: compact ? 8 : 10,
+                            fontWeight: FontWeight.w700,
+                            color: t.primaryColor,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: compact ? 6 : 12),
                   Container(height: 1.5, color: t.accentColor),
                   SizedBox(height: compact ? 5 : 10),
-                  Text('CERTIFICATE OF COMPLETION',
-                      style: TextStyle(fontSize: compact ? 11 : 19, fontWeight: FontWeight.w900, color: t.primaryColor, letterSpacing: 1.5)),
+                  Text(
+                    'CERTIFICATE OF COMPLETION',
+                    style: TextStyle(
+                      fontSize: compact ? 11 : 19,
+                      fontWeight: FontWeight.w900,
+                      color: t.primaryColor,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                   SizedBox(height: compact ? 3 : 6),
                   Container(height: 2, width: 80, color: t.accentColor),
                   SizedBox(height: compact ? 5 : 12),
-                  Text('This certifies that', style: TextStyle(fontSize: compact ? 8 : 12, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+                  Text(
+                    'This certifies that',
+                    style: TextStyle(
+                      fontSize: compact ? 8 : 12,
+                      color: const Color(0xFF64748B),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                   SizedBox(height: compact ? 3 : 6),
-                  Text(studentName,
-                      style: TextStyle(fontSize: compact ? 15 : 26, fontWeight: FontWeight.w900, color: t.primaryColor)),
+                  Text(
+                    studentName,
+                    style: TextStyle(
+                      fontSize: compact ? 15 : 26,
+                      fontWeight: FontWeight.w900,
+                      color: t.primaryColor,
+                    ),
+                  ),
                   SizedBox(height: compact ? 3 : 6),
-                  Text('has successfully completed', style: TextStyle(fontSize: compact ? 8 : 12, color: const Color(0xFF64748B))),
+                  Text(
+                    'has successfully completed',
+                    style: TextStyle(
+                      fontSize: compact ? 8 : 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
                   SizedBox(height: compact ? 3 : 6),
-                  Text(courseTitle,
-                      style: TextStyle(fontSize: compact ? 10 : 16, fontWeight: FontWeight.w800, color: t.accentColor),
-                      textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    courseTitle,
+                    style: TextStyle(
+                      fontSize: compact ? 10 : 16,
+                      fontWeight: FontWeight.w800,
+                      color: t.accentColor,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   if (!compact) ...[
                     const SizedBox(height: 20),
-                    Container(height: 1, color: t.accentColor.withValues(alpha: 0.4)),
+                    Container(
+                      height: 1,
+                      color: t.accentColor.withValues(alpha: 0.4),
+                    ),
                     const SizedBox(height: 14),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         // QR placeholder
                         Container(
-                          width: 56, height: 56,
-                          decoration: BoxDecoration(border: Border.all(color: t.primaryColor.withValues(alpha: 0.3))),
-                          child: const Icon(Icons.qr_code_2_rounded, size: 48, color: Color(0xFF94A3B8)),
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: t.primaryColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.qr_code_2_rounded,
+                            size: 48,
+                            color: Color(0xFF94A3B8),
+                          ),
                         ),
                         const Spacer(),
                         _sigBlock(t, 'Instructor', instructorName),
@@ -722,7 +1080,13 @@ class _CertificatePreview extends StatelessWidget {
                   ],
                   if (compact) ...[
                     const SizedBox(height: 6),
-                    Text(date, style: TextStyle(fontSize: 8, color: const Color(0xFF94A3B8))),
+                    Text(
+                      date,
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: const Color(0xFF94A3B8),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -734,20 +1098,40 @@ class _CertificatePreview extends StatelessWidget {
   }
 
   Widget _sigBlock(CertificateTemplate t, String role, String name) {
-    return Column(children: [
-      Container(width: 70, height: 1.5, color: t.primaryColor.withValues(alpha: 0.4)),
-      const SizedBox(height: 3),
-      Text(name, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: t.primaryColor)),
-      Text(role, style: const TextStyle(fontSize: 8, color: Color(0xFF94A3B8))),
-    ]);
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 1.5,
+          color: t.primaryColor.withValues(alpha: 0.4),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          name,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: t.primaryColor,
+          ),
+        ),
+        Text(
+          role,
+          style: const TextStyle(fontSize: 8, color: Color(0xFF94A3B8)),
+        ),
+      ],
+    );
   }
 
   Color _bgColor(CertificateTemplate t) {
     switch (t) {
-      case CertificateTemplate.classic:     return const Color(0xFFFFFBF0);
-      case CertificateTemplate.modern:      return const Color(0xFFF5F3FF);
-      case CertificateTemplate.elegant:     return const Color(0xFFF8FAFC);
-      case CertificateTemplate.achievement: return const Color(0xFFF0FDF4);
+      case CertificateTemplate.classic:
+        return const Color(0xFFFFFBF0);
+      case CertificateTemplate.modern:
+        return const Color(0xFFF5F3FF);
+      case CertificateTemplate.elegant:
+        return const Color(0xFFF8FAFC);
+      case CertificateTemplate.achievement:
+        return const Color(0xFFF0FDF4);
     }
   }
 }

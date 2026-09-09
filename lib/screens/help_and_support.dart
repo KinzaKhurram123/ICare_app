@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -19,9 +20,23 @@ class HelpAndSupport extends ConsumerWidget {
     final isPharmacy = role == 'Pharmacy';
     final isLaboratory = role == 'Laboratory';
     final isDoctor = role == 'Doctor';
-    final isPatient = role == 'Patient' || (!isStudent && !isPharmacy && !isLaboratory && !isDoctor && role.isNotEmpty && role != 'Admin' && role != 'Instructor');
+    final isPatient =
+        role == 'Patient' ||
+        (!isStudent &&
+            !isPharmacy &&
+            !isLaboratory &&
+            !isDoctor &&
+            role.isNotEmpty &&
+            role != 'Admin' &&
+            role != 'Instructor');
     if (MediaQuery.of(context).size.width > 600) {
-      return _WebHelpAndSupport(isStudent: isStudent, isPharmacy: isPharmacy, isLaboratory: isLaboratory, isDoctor: isDoctor, isPatient: isPatient);
+      return _WebHelpAndSupport(
+        isStudent: isStudent,
+        isPharmacy: isPharmacy,
+        isLaboratory: isLaboratory,
+        isDoctor: isDoctor,
+        isPatient: isPatient,
+      );
     }
 
     // REFINED MOBILE LAYOUT
@@ -38,88 +53,98 @@ class HelpAndSupport extends ConsumerWidget {
         ),
       ),
       floatingActionButton: isPatient ? null : _WhatsAppFab(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isStudent ? "Academic Support".tr() : "Support Center".tr(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    isStudent
-                        ? "Welcome to the iCare Student Support Center. Our faculty and technical teams are here to ensure your learning journey is seamless.".tr()
-                        : isPharmacy
-                            ? "Welcome to the iCare Pharmacy Support Center. Our team is here to assist with orders, inventory, and platform questions.".tr()
-                            : isLaboratory
-                                ? "Welcome to the iCare Lab Support Center. Our team is available to assist with test requests, result entry, and platform queries.".tr()
-                                : "Welcome to the iCare Support Center. Our team is available 24/7 to help you with any issues or queries.".tr(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF64748B),
-                      height: 1.5,
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isStudent
+                          ? "Academic Support".tr()
+                          : "Support Center".tr(),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildContactTile(
-                    Icons.email_outlined,
-                    isStudent ? "Academic Support" : "Email Support",
-                    isStudent ? "academic@icare.com" : "support@icare.com",
-                  ),
-                  const SizedBox(height: 12),
-                  _buildContactTile(
-                    Icons.phone_outlined,
-                    isPatient ? "Helpline (Call Only)" : "Call Us",
-                    isPatient ? "0306-8961564" : "+92 306-8961564",
-                  ),
-                  const SizedBox(height: 12),
-                  _buildContactTile(
-                    Icons.location_on_outlined,
-                    "Office Address",
-                    "Office No. 4, 1st Floor, Mall Square,\nZamzama Blvd, Phase 5, DHA, Karachi",
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Text(
+                      isStudent
+                          ? "Welcome to the iCare Student Support Center. Our faculty and technical teams are here to ensure your learning journey is seamless."
+                                .tr()
+                          : isPharmacy
+                          ? "Welcome to the iCare Pharmacy Support Center. Our team is here to assist with orders, inventory, and platform questions."
+                                .tr()
+                          : isLaboratory
+                          ? "Welcome to the iCare Lab Support Center. Our team is available to assist with test requests, result entry, and platform queries."
+                                .tr()
+                          : "Welcome to the iCare Support Center. Our team is available 24/7 to help you with any issues or queries."
+                                .tr(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildContactTile(
+                      Icons.email_outlined,
+                      isStudent ? "Academic Support" : "Email Support",
+                      isStudent ? "HR@icare.com.co" : "support@icare.com.co",
+                    ),
+                    const SizedBox(height: 12),
+                    _buildContactTile(
+                      Icons.phone_outlined,
+                      isPatient ? "Helpline (Call Only)" : "Call Us",
+                      isPatient ? "0306-8961564" : "+92 306-8961564",
+                    ),
+                    const SizedBox(height: 12),
+                    _buildContactTile(
+                      Icons.location_on_outlined,
+                      "Office Address",
+                      "Office No. 4, 1st Floor, Mall Square,\nZamzama Blvd, Phase 5, DHA, Karachi",
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              "Frequently Asked Questions".tr(),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+              const SizedBox(height: 32),
+              Text(
+                "Frequently Asked Questions".tr(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Role-specific FAQs for mobile
-            if (isStudent) ..._studentFaqs(),
-            if (isPharmacy) ..._pharmacyFaqs(),
-            if (isLaboratory) ..._labFaqs(),
-            if (isDoctor) ..._doctorFaqs(),
-            if (!isStudent && !isPharmacy && !isLaboratory && !isDoctor) ..._defaultFaqs(),
-          ],
+              const SizedBox(height: 16),
+              // Role-specific FAQs for mobile
+              if (isStudent) ..._studentFaqs(),
+              if (isPharmacy) ..._pharmacyFaqs(),
+              if (isLaboratory) ..._labFaqs(),
+              if (isDoctor) ..._doctorFaqs(),
+              if (!isStudent && !isPharmacy && !isLaboratory && !isDoctor)
+                ..._defaultFaqs(),
+            ],
+          ),
         ),
       ),
     );
@@ -128,95 +153,115 @@ class HelpAndSupport extends ConsumerWidget {
   List<Widget> _studentFaqs() => [
     _WebFaqCard(
       question: "How do I download my certificate?",
-      answer: "Certificates are automatically generated upon 100% completion of a program. You can find them in the 'Certificates' tab of your My Learning section.",
+      answer:
+          "Certificates are automatically generated upon 100% completion of a program. You can find them in the 'Certificates' tab of your My Learning section.",
     ),
     _WebFaqCard(
       question: "Can I access courses offline?",
-      answer: "Currently, our lessons require an active internet connection to stream video and interactive content reliably.",
+      answer:
+          "Currently, our lessons require an active internet connection to stream video and interactive content reliably.",
     ),
     _WebFaqCard(
       question: "How do I take a module quiz?",
-      answer: "Once you complete all lessons in a module, the 'Module Quiz' button becomes active at the bottom of the curriculum list.",
+      answer:
+          "Once you complete all lessons in a module, the 'Module Quiz' button becomes active at the bottom of the curriculum list.",
     ),
     _WebFaqCard(
       question: "How do I track my course progress?",
-      answer: "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
+      answer:
+          "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
     ),
   ];
 
   List<Widget> _pharmacyFaqs() => [
     _WebFaqCard(
       question: "How do I fulfill an incoming prescription?",
-      answer: "Go to 'Awaiting Fulfillment' in your sidebar. Open the prescription, verify the medicines, and click 'Mark as Fulfilled' once the order is ready for pickup or dispatch.",
+      answer:
+          "Go to 'Awaiting Fulfillment' in your sidebar. Open the prescription, verify the medicines, and click 'Mark as Fulfilled' once the order is ready for pickup or dispatch.",
     ),
     _WebFaqCard(
       question: "How do I update my medicine inventory?",
-      answer: "Navigate to 'Inventory' in the sidebar. You can add new medicines, update stock quantities, and set minimum stock thresholds to trigger low-stock alerts.",
+      answer:
+          "Navigate to 'Inventory' in the sidebar. You can add new medicines, update stock quantities, and set minimum stock thresholds to trigger low-stock alerts.",
     ),
     _WebFaqCard(
       question: "Where can I view my revenue and sales data?",
-      answer: "Go to 'Revenue & Analytics' in your sidebar to view total revenue, order trends, top-selling medicines, and order breakdown by status.",
+      answer:
+          "Go to 'Revenue & Analytics' in your sidebar to view total revenue, order trends, top-selling medicines, and order breakdown by status.",
     ),
     _WebFaqCard(
       question: "How do I update my pharmacy profile?",
-      answer: "Go to Settings and select 'Edit Profile'. You can update your pharmacy name, address, Drug Sale License, and contact details from there.",
+      answer:
+          "Go to Settings and select 'Edit Profile'. You can update your pharmacy name, address, Drug Sale License, and contact details from there.",
     ),
   ];
 
   List<Widget> _labFaqs() => [
     _WebFaqCard(
       question: "How do I view and accept test requests?",
-      answer: "Open 'Test Requests' from your sidebar. You will see all incoming diagnostic requests. Click on a request to review patient details and accept or reject it.",
+      answer:
+          "Open 'Test Requests' from your sidebar. You will see all incoming diagnostic requests. Click on a request to review patient details and accept or reject it.",
     ),
     _WebFaqCard(
       question: "How do I enter test results?",
-      answer: "Navigate to 'Result Entry' in the sidebar. Find the test request, fill in the result values, and click 'Submit Results'. The patient and requesting doctor are notified automatically.",
+      answer:
+          "Navigate to 'Result Entry' in the sidebar. Find the test request, fill in the result values, and click 'Submit Results'. The patient and requesting doctor are notified automatically.",
     ),
     _WebFaqCard(
       question: "How do I manage my test catalog?",
-      answer: "Go to 'Test Catalog' in your sidebar to view, add, or update the diagnostic tests your lab offers, including pricing and turnaround time.",
+      answer:
+          "Go to 'Test Catalog' in your sidebar to view, add, or update the diagnostic tests your lab offers, including pricing and turnaround time.",
     ),
     _WebFaqCard(
       question: "Where can I see my lab's revenue and analytics?",
-      answer: "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
+      answer:
+          "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
     ),
   ];
 
   List<Widget> _doctorFaqs() => [
     _WebFaqCard(
       question: "How do I manage my appointment schedule?",
-      answer: "Go to 'My Schedule' in your sidebar to view, accept, or reschedule patient appointments. You can also set your availability and block specific time slots.",
+      answer:
+          "Go to 'My Schedule' in your sidebar to view, accept, or reschedule patient appointments. You can also set your availability and block specific time slots.",
     ),
     _WebFaqCard(
       question: "How do I write and send prescriptions?",
-      answer: "During or after a consultation, click 'Write Prescription' in the appointment details. Add medicines, dosage, and instructions, then send it directly to the patient.",
+      answer:
+          "During or after a consultation, click 'Write Prescription' in the appointment details. Add medicines, dosage, and instructions, then send it directly to the patient.",
     ),
     _WebFaqCard(
       question: "How do I update my consultation fees?",
-      answer: "Navigate to Settings > Professional Settings > Consultation Fees. You can set different fees for in-person, video, and follow-up consultations.",
+      answer:
+          "Navigate to Settings > Professional Settings > Consultation Fees. You can set different fees for in-person, video, and follow-up consultations.",
     ),
     _WebFaqCard(
       question: "Where can I view my earnings and patient analytics?",
-      answer: "Go to 'Revenue & Analytics' in your sidebar for consultation revenue summaries, appointment metrics, patient reviews, and activity trends.",
+      answer:
+          "Go to 'Revenue & Analytics' in your sidebar for consultation revenue summaries, appointment metrics, patient reviews, and activity trends.",
     ),
     _WebFaqCard(
       question: "How do I access patient medical history?",
-      answer: "Click on any appointment to view the patient's profile, which includes past consultations, prescriptions, lab reports, and medical conditions.",
+      answer:
+          "Click on any appointment to view the patient's profile, which includes past consultations, prescriptions, lab reports, and medical conditions.",
     ),
   ];
 
   List<Widget> _defaultFaqs() => [
     _WebFaqCard(
       question: "How do I book a new appointment?",
-      answer: "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
+      answer:
+          "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
     ),
     _WebFaqCard(
       question: "How can I access my lab reports?",
-      answer: "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
+      answer:
+          "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
     ),
     _WebFaqCard(
       question: "What should I do if my payment fails?",
-      answer: "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
+      answer:
+          "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
     ),
   ];
 
@@ -268,7 +313,13 @@ class _WebHelpAndSupport extends StatelessWidget {
   final bool isLaboratory;
   final bool isDoctor;
   final bool isPatient;
-  const _WebHelpAndSupport({this.isStudent = false, this.isPharmacy = false, this.isLaboratory = false, this.isDoctor = false, this.isPatient = false});
+  const _WebHelpAndSupport({
+    this.isStudent = false,
+    this.isPharmacy = false,
+    this.isLaboratory = false,
+    this.isDoctor = false,
+    this.isPatient = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -291,47 +342,130 @@ class _WebHelpAndSupport extends StatelessWidget {
           color: AppColors.primaryColor,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0A000000),
-                          offset: Offset(0, 4),
-                          blurRadius: 16,
-                        ),
-                      ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            offset: Offset(0, 4),
+                            blurRadius: 16,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.support_agent_rounded,
+                              size: 32,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            "Still need help?",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              fontFamily: "Gilroy-Bold",
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            isStudent
+                                ? "Our academic support team is available to help you with courses, certificates, and platform questions."
+                                : isPharmacy
+                                ? "Our pharmacy support team is here to assist with orders, inventory, and platform questions."
+                                : isLaboratory
+                                ? "Our lab support team is available to assist with test requests, result entry, and platform queries."
+                                : "Our support team is available 24/7 to help you with any issues or queries.",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF64748B),
+                              height: 1.6,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          _WebContactItem(
+                            icon: Icons.email_outlined,
+                            title: "Email Us",
+                            subtitle: isStudent
+                                ? "HR@icare.com.co"
+                                : "support@icare.com.co",
+                          ),
+                          const SizedBox(height: 20),
+                          _WebContactItem(
+                            icon: Icons.phone_outlined,
+                            title: isPatient
+                                ? "Helpline (Call Only)"
+                                : "Call Us",
+                            subtitle: isPatient
+                                ? "0306-8961564"
+                                : "+92 306-8961564",
+                          ),
+                          const SizedBox(height: 20),
+                          _WebContactItem(
+                            icon: Icons.location_on_outlined,
+                            title: "Office Address",
+                            subtitle:
+                                "Office No. 4, 1st Floor, Mall Square,\nZamzama Blvd, Phase 5, DHA, Karachi",
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () => _InquiryFormDialog.show(context),
+                              child: const Text(
+                                "Message Support",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    flex: 6,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.support_agent_rounded,
-                            size: 32,
-                            color: AppColors.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                         const Text(
-                          "Still need help?",
+                          "Frequently Asked Questions",
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -339,203 +473,134 @@ class _WebHelpAndSupport extends StatelessWidget {
                             fontFamily: "Gilroy-Bold",
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          isStudent
-                              ? "Our academic support team is available to help you with courses, certificates, and platform questions."
-                              : isPharmacy
-                                  ? "Our pharmacy support team is here to assist with orders, inventory, and platform questions."
-                                  : isLaboratory
-                                      ? "Our lab support team is available to assist with test requests, result entry, and platform queries."
-                                      : "Our support team is available 24/7 to help you with any issues or queries.",
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF64748B),
-                            height: 1.6,
+                        const SizedBox(height: 24),
+                        if (isStudent) ...[
+                          _WebFaqCard(
+                            question: "How do I download my certificate?",
+                            answer:
+                                "Certificates are automatically generated upon 100% completion of a program. Go to the 'Certificates' tab in your courses section to view and download them.",
+                            isExpanded: true,
                           ),
-                        ),
-                        const SizedBox(height: 32),
-                        _WebContactItem(
-                          icon: Icons.email_outlined,
-                          title: "Email Us",
-                          subtitle: isStudent
-                              ? "academic@icare.com"
-                              : "support@icare.com",
-                        ),
-                        const SizedBox(height: 20),
-                        _WebContactItem(
-                          icon: Icons.phone_outlined,
-                          title: isPatient ? "Helpline (Call Only)" : "Call Us",
-                          subtitle: isPatient ? "0306-8961564" : "+92 306-8961564",
-                        ),
-                        const SizedBox(height: 20),
-                        _WebContactItem(
-                          icon: Icons.location_on_outlined,
-                          title: "Office Address",
-                          subtitle: "Office No. 4, 1st Floor, Mall Square,\nZamzama Blvd, Phase 5, DHA, Karachi",
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () => _InquiryFormDialog.show(context),
-                            child: const Text(
-                              "Message Support",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                          _WebFaqCard(
+                            question: "Can I access courses offline?",
+                            answer:
+                                "Currently, lessons require an active internet connection to stream video and interactive content reliably. Offline support is coming soon.",
                           ),
-                        ),
+                          _WebFaqCard(
+                            question: "How do I take a module quiz?",
+                            answer:
+                                "Once you complete all lessons in a module, a 'Take Quiz' button will appear at the bottom of the curriculum. You must be enrolled to access quizzes.",
+                          ),
+                          _WebFaqCard(
+                            question: "How do I track my course progress?",
+                            answer:
+                                "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
+                          ),
+                        ] else if (isPharmacy) ...[
+                          _WebFaqCard(
+                            question:
+                                "How do I fulfill an incoming prescription?",
+                            answer:
+                                "Go to 'Awaiting Fulfillment' in your sidebar. Open the prescription, verify the medicines, and click 'Mark as Fulfilled' once the order is ready for pickup or dispatch.",
+                            isExpanded: true,
+                          ),
+                          _WebFaqCard(
+                            question: "How do I update my medicine inventory?",
+                            answer:
+                                "Navigate to 'Inventory' in the sidebar. You can add new medicines, update stock quantities, and set minimum stock thresholds to trigger low-stock alerts.",
+                          ),
+                          _WebFaqCard(
+                            question:
+                                "Where can I view my revenue and sales data?",
+                            answer:
+                                "Go to 'Revenue & Analytics' in your sidebar to view total revenue, order trends, top-selling medicines, and order breakdown by status.",
+                          ),
+                          _WebFaqCard(
+                            question: "How do I update my pharmacy profile?",
+                            answer:
+                                "Go to Settings and select 'Edit Profile'. You can update your pharmacy name, address, Drug Sale License, and contact details from there.",
+                          ),
+                        ] else if (isLaboratory) ...[
+                          _WebFaqCard(
+                            question: "How do I view and accept test requests?",
+                            answer:
+                                "Open 'Test Requests' from your sidebar. You will see all incoming diagnostic requests. Click on a request to review patient details and accept or reject it.",
+                            isExpanded: true,
+                          ),
+                          _WebFaqCard(
+                            question: "How do I enter test results?",
+                            answer:
+                                "Navigate to 'Result Entry' in the sidebar. Find the test request, fill in the result values, and click 'Submit Results'. The patient and requesting doctor are notified automatically.",
+                          ),
+                          _WebFaqCard(
+                            question: "How do I manage my test catalog?",
+                            answer:
+                                "Go to 'Test Catalog' in your sidebar to view, add, or update the diagnostic tests your lab offers, including pricing and turnaround time.",
+                          ),
+                          _WebFaqCard(
+                            question:
+                                "Where can I see my lab's revenue and analytics?",
+                            answer:
+                                "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
+                          ),
+                        ] else if (isDoctor) ...[
+                          _WebFaqCard(
+                            question:
+                                "How do I manage my appointment schedule?",
+                            answer:
+                                "Go to 'My Schedule' in your sidebar to view, accept, or reschedule patient appointments. You can also set your availability and block specific time slots.",
+                            isExpanded: true,
+                          ),
+                          _WebFaqCard(
+                            question: "How do I write and send prescriptions?",
+                            answer:
+                                "During or after a consultation, click 'Write Prescription' in the appointment details. Add medicines, dosage, and instructions, then send it directly to the patient.",
+                          ),
+                          _WebFaqCard(
+                            question: "How do I update my consultation fees?",
+                            answer:
+                                "Navigate to Settings > Professional Settings > Consultation Fees. You can set different fees for in-person, video, and follow-up consultations.",
+                          ),
+                          _WebFaqCard(
+                            question:
+                                "Where can I view my earnings and patient analytics?",
+                            answer:
+                                "Go to 'Revenue & Analytics' in your sidebar for consultation revenue summaries, appointment metrics, patient reviews, and activity trends.",
+                          ),
+                          _WebFaqCard(
+                            question:
+                                "How do I access patient medical history?",
+                            answer:
+                                "Click on any appointment to view the patient's profile, which includes past consultations, prescriptions, lab reports, and medical conditions.",
+                          ),
+                        ] else ...[
+                          _WebFaqCard(
+                            question: "How do I book a new appointment?",
+                            answer:
+                                "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
+                            isExpanded: true,
+                          ),
+                          _WebFaqCard(
+                            question: "How can I access my lab reports?",
+                            answer:
+                                "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
+                          ),
+                          _WebFaqCard(
+                            question: "What should I do if my payment fails?",
+                            answer:
+                                "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
+                          ),
+                          _WebFaqCard(
+                            question: "Can I cancel or reschedule my task?",
+                            answer:
+                                "Yes, tasks can be managed directly from the 'My Tasks' dashboard. Click the three dots icon next to a task to edit or cancel it.",
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 40),
-                Expanded(
-                  flex: 6,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Frequently Asked Questions",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E293B),
-                          fontFamily: "Gilroy-Bold",
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      if (isStudent) ...[
-                        _WebFaqCard(
-                          question: "How do I download my certificate?",
-                          answer:
-                              "Certificates are automatically generated upon 100% completion of a program. Go to the 'Certificates' tab in your courses section to view and download them.",
-                          isExpanded: true,
-                        ),
-                        _WebFaqCard(
-                          question: "Can I access courses offline?",
-                          answer:
-                              "Currently, lessons require an active internet connection to stream video and interactive content reliably. Offline support is coming soon.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I take a module quiz?",
-                          answer:
-                              "Once you complete all lessons in a module, a 'Take Quiz' button will appear at the bottom of the curriculum. You must be enrolled to access quizzes.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I track my course progress?",
-                          answer:
-                              "Your progress is automatically tracked as you complete lessons. Check the 'My Learning' tab or your Student Dashboard to see your progress percentage.",
-                        ),
-                      ] else if (isPharmacy) ...[
-                        _WebFaqCard(
-                          question: "How do I fulfill an incoming prescription?",
-                          answer:
-                              "Go to 'Awaiting Fulfillment' in your sidebar. Open the prescription, verify the medicines, and click 'Mark as Fulfilled' once the order is ready for pickup or dispatch.",
-                          isExpanded: true,
-                        ),
-                        _WebFaqCard(
-                          question: "How do I update my medicine inventory?",
-                          answer:
-                              "Navigate to 'Inventory' in the sidebar. You can add new medicines, update stock quantities, and set minimum stock thresholds to trigger low-stock alerts.",
-                        ),
-                        _WebFaqCard(
-                          question: "Where can I view my revenue and sales data?",
-                          answer:
-                              "Go to 'Revenue & Analytics' in your sidebar to view total revenue, order trends, top-selling medicines, and order breakdown by status.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I update my pharmacy profile?",
-                          answer:
-                              "Go to Settings and select 'Edit Profile'. You can update your pharmacy name, address, Drug Sale License, and contact details from there.",
-                        ),
-                      ] else if (isLaboratory) ...[
-                        _WebFaqCard(
-                          question: "How do I view and accept test requests?",
-                          answer:
-                              "Open 'Test Requests' from your sidebar. You will see all incoming diagnostic requests. Click on a request to review patient details and accept or reject it.",
-                          isExpanded: true,
-                        ),
-                        _WebFaqCard(
-                          question: "How do I enter test results?",
-                          answer:
-                              "Navigate to 'Result Entry' in the sidebar. Find the test request, fill in the result values, and click 'Submit Results'. The patient and requesting doctor are notified automatically.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I manage my test catalog?",
-                          answer:
-                              "Go to 'Test Catalog' in your sidebar to view, add, or update the diagnostic tests your lab offers, including pricing and turnaround time.",
-                        ),
-                        _WebFaqCard(
-                          question: "Where can I see my lab's revenue and analytics?",
-                          answer:
-                              "Navigate to 'Revenue & Analytics' in your sidebar to track total revenue, completed tests, pending tests, and revenue by test category.",
-                        ),
-                      ] else if (isDoctor) ...[
-                        _WebFaqCard(
-                          question: "How do I manage my appointment schedule?",
-                          answer:
-                              "Go to 'My Schedule' in your sidebar to view, accept, or reschedule patient appointments. You can also set your availability and block specific time slots.",
-                          isExpanded: true,
-                        ),
-                        _WebFaqCard(
-                          question: "How do I write and send prescriptions?",
-                          answer:
-                              "During or after a consultation, click 'Write Prescription' in the appointment details. Add medicines, dosage, and instructions, then send it directly to the patient.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I update my consultation fees?",
-                          answer:
-                              "Navigate to Settings > Professional Settings > Consultation Fees. You can set different fees for in-person, video, and follow-up consultations.",
-                        ),
-                        _WebFaqCard(
-                          question: "Where can I view my earnings and patient analytics?",
-                          answer:
-                              "Go to 'Revenue & Analytics' in your sidebar for consultation revenue summaries, appointment metrics, patient reviews, and activity trends.",
-                        ),
-                        _WebFaqCard(
-                          question: "How do I access patient medical history?",
-                          answer:
-                              "Click on any appointment to view the patient's profile, which includes past consultations, prescriptions, lab reports, and medical conditions.",
-                        ),
-                      ] else ...[
-                        _WebFaqCard(
-                          question: "How do I book a new appointment?",
-                          answer:
-                              "You can book an appointment by navigating to the 'Appointments' tab and clicking 'New Booking'. Select your preferred doctor and available time slot.",
-                          isExpanded: true,
-                        ),
-                        _WebFaqCard(
-                          question: "How can I access my lab reports?",
-                          answer:
-                              "All your lab results are synced automatically. Navigate to the 'Lab Results' section under Quick Links in your sidebar to view and download past reports.",
-                        ),
-                        _WebFaqCard(
-                          question: "What should I do if my payment fails?",
-                          answer:
-                              "If your invoice payment fails, please ensure your card details are correct or try a different payment method. Visit 'Wallet' to manage billing.",
-                        ),
-                        _WebFaqCard(
-                          question: "Can I cancel or reschedule my task?",
-                          answer:
-                              "Yes, tasks can be managed directly from the 'My Tasks' dashboard. Click the three dots icon next to a task to edit or cancel it.",
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -561,9 +626,11 @@ class _WebContactItem extends StatelessWidget {
   /// Outlook, the dialer). Address rows stay non-interactive.
   Uri? get _launchUri {
     final v = subtitle.trim();
-    if (v.contains('@') && !v.contains(' ')) return Uri(scheme: 'mailto', path: v);
+    if (v.contains('@') && !v.contains(' '))
+      return Uri(scheme: 'mailto', path: v);
     final digits = v.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (digits.length >= 7 && !v.contains('\n')) return Uri(scheme: 'tel', path: digits);
+    if (digits.length >= 7 && !v.contains('\n'))
+      return Uri(scheme: 'tel', path: digits);
     return null;
   }
 
@@ -599,7 +666,9 @@ class _WebContactItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: uri != null ? const Color(0xFF1A73E8) : const Color(0xFF1E293B),
+                color: uri != null
+                    ? const Color(0xFF1A73E8)
+                    : const Color(0xFF1E293B),
                 decoration: uri != null ? TextDecoration.underline : null,
                 decorationColor: const Color(0xFF1A73E8),
               ),
@@ -715,7 +784,11 @@ class _WhatsAppFab extends StatelessWidget {
     );
     try {
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+          webOnlyWindowName: '_blank',
+        );
       }
     } catch (_) {}
   }
@@ -766,11 +839,18 @@ class _WhatsAppSupportButton extends StatelessWidget {
     );
     try {
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+          webOnlyWindowName: '_blank',
+        );
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to open WhatsApp.'), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text('Unable to open WhatsApp.'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -786,7 +866,9 @@ class _WhatsAppSupportButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF25D366),
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           elevation: 0,
         ),
         onPressed: () => _openWhatsApp(context),
@@ -828,7 +910,13 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
   String _category = 'General';
   bool _submitting = false;
 
-  static const _categories = ['General', 'Technical Issue', 'Billing', 'Account', 'Feedback'];
+  static const _categories = [
+    'General',
+    'Technical Issue',
+    'Billing',
+    'Account',
+    'Feedback',
+  ];
 
   @override
   void initState() {
@@ -862,7 +950,8 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
     final message = _messageCtrl.text.trim();
     final category = _category;
 
-    String snackMessage = "Your issue has been submitted. Our team will get back to you shortly.";
+    String snackMessage =
+        "Your issue has been submitted. Our team will get back to you shortly.";
     Color snackColor = const Color(0xFF10B981);
 
     try {
@@ -876,18 +965,21 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
         'userId': userId,
       });
     } catch (_) {
-      snackMessage = "Couldn't submit your issue right now. Please try again later.";
+      snackMessage =
+          "Couldn't submit your issue right now. Please try again later.";
       snackColor = const Color(0xFFEF4444);
     }
 
     if (!mounted) return;
     setState(() => _submitting = false);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(snackMessage),
-      backgroundColor: snackColor,
-      duration: const Duration(seconds: 5),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(snackMessage),
+        backgroundColor: snackColor,
+        duration: const Duration(seconds: 5),
+      ),
+    );
   }
 
   @override
@@ -905,32 +997,60 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.support_agent_rounded,
+                        color: AppColors.primaryColor,
+                      ),
                     ),
-                    child: Icon(Icons.support_agent_rounded, color: AppColors.primaryColor),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Contact Support', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                      SizedBox(height: 2),
-                      Text("We'll respond within 24 hours.", style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                    ]),
-                  ),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
-                ]),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Contact Support',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            "We'll respond within 24 hours.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 18),
                 _label('Your Name'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _nameCtrl,
-                  decoration: _deco('Enter your full name', Icons.person_outline_rounded),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                  decoration: _deco(
+                    'Enter your full name',
+                    Icons.person_outline_rounded,
+                  ),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Name is required' : null,
                 ),
                 const SizedBox(height: 14),
                 _label('Email Address'),
@@ -940,8 +1060,10 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: _deco('you@example.com', Icons.email_outlined),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
-                    if (!RegExp(r'^[\w.\-]+@[\w.\-]+\.\w+$').hasMatch(v.trim())) return 'Invalid email';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Email is required';
+                    if (!RegExp(r'^[\w.\-]+@[\w.\-]+\.\w+$').hasMatch(v.trim()))
+                      return 'Invalid email';
                     return null;
                   },
                 ),
@@ -951,7 +1073,9 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
                 DropdownButtonFormField<String>(
                   initialValue: _category,
                   decoration: _deco(null, Icons.category_outlined),
-                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  items: _categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
                   onChanged: (v) => setState(() => _category = v ?? 'General'),
                 ),
                 const SizedBox(height: 14),
@@ -959,8 +1083,13 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _subjectCtrl,
-                  decoration: _deco('Brief summary of your inquiry', Icons.subject_rounded),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Subject is required' : null,
+                  decoration: _deco(
+                    'Brief summary of your inquiry',
+                    Icons.subject_rounded,
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Subject is required'
+                      : null,
                 ),
                 const SizedBox(height: 14),
                 _label('Message'),
@@ -968,47 +1097,74 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
                 TextFormField(
                   controller: _messageCtrl,
                   maxLines: 5,
-                  decoration: _deco('Describe your issue or question in detail...', null).copyWith(
-                    alignLabelWithHint: true,
-                  ),
+                  decoration: _deco(
+                    'Describe your issue or question in detail...',
+                    null,
+                  ).copyWith(alignLabelWithHint: true),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Message is required';
-                    if (v.trim().length < 10) return 'Message should be at least 10 characters';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Message is required';
+                    if (v.trim().length < 10)
+                      return 'Message should be at least 10 characters';
                     return null;
                   },
                 ),
                 const SizedBox(height: 22),
-                Row(children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _submitting ? null : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: _submitting ? null : _submit,
-                      icon: _submitting
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Icon(Icons.send_rounded, size: 18),
-                      label: Text(_submitting ? 'Submitting...' : 'Submit Inquiry', style: const TextStyle(fontWeight: FontWeight.w700)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF475569),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: _submitting ? null : _submit,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.send_rounded, size: 18),
+                        label: Text(
+                          _submitting ? 'Submitting...' : 'Submit Inquiry',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1017,19 +1173,44 @@ class _InquiryFormDialogState extends ConsumerState<_InquiryFormDialog> {
     );
   }
 
-  Widget _label(String text) => Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155), letterSpacing: 0.3));
+  Widget _label(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+      color: Color(0xFF334155),
+      letterSpacing: 0.3,
+    ),
+  );
 
   InputDecoration _deco(String? hint, IconData? icon) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
-        prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF94A3B8)) : null,
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEF4444))),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5)),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
+    prefixIcon: icon != null
+        ? Icon(icon, size: 18, color: const Color(0xFF94A3B8))
+        : null,
+    filled: true,
+    fillColor: const Color(0xFFF8FAFC),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFEF4444)),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+    ),
+  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/services/clinical_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -50,7 +51,9 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
         _assessmentController.text = notes['assessment'] ?? '';
         _planController.text = notes['plan'] ?? '';
         if (notes['icdCodes'] != null) {
-          _selectedICDCodes = List<Map<String, dynamic>>.from(notes['icdCodes']);
+          _selectedICDCodes = List<Map<String, dynamic>>.from(
+            notes['icdCodes'],
+          );
         }
       });
     }
@@ -87,7 +90,9 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Something went wrong. Please try again.')),
+          SnackBar(
+            content: const Text('Something went wrong. Please try again.'),
+          ),
         );
       }
     }
@@ -160,7 +165,11 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: const Text('Unable to submit. Please try again.')),
+                    SnackBar(
+                      content: const Text(
+                        'Unable to submit. Please try again.',
+                      ),
+                    ),
                   );
                 }
               }
@@ -224,72 +233,75 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader('S - Subjective', Icons.person_rounded),
-              _buildTextField(
-                _subjectiveController,
-                'What does the patient report? (symptoms, concerns, duration)',
-                maxLines: 5,
-              ),
-
-              const SizedBox(height: 32),
-              _buildSectionHeader('O - Objective', Icons.visibility_rounded),
-              _buildTextField(
-                _objectiveController,
-                'What do you observe? (vital signs, examination findings, results)',
-                maxLines: 5,
-              ),
-
-              const SizedBox(height: 32),
-              _buildSectionHeader('A - Assessment', Icons.assignment_rounded),
-              _buildTextField(
-                _assessmentController,
-                'What is your clinical impression? (diagnosis, differential diagnosis)',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              _buildICDCodesSection(),
-
-              const SizedBox(height: 32),
-              _buildSectionHeader('P - Plan', Icons.edit_note_rounded),
-              _buildTextField(
-                _planController,
-                'What is the treatment plan? (medications, tests, follow-up, education)',
-                maxLines: 5,
-              ),
-
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _saveSoapNotes,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Finalize SOAP Notes',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('S - Subjective', Icons.person_rounded),
+                _buildTextField(
+                  _subjectiveController,
+                  'What does the patient report? (symptoms, concerns, duration)',
+                  maxLines: 5,
                 ),
-              ),
-              const SizedBox(height: 40),
-            ],
+
+                const SizedBox(height: 32),
+                _buildSectionHeader('O - Objective', Icons.visibility_rounded),
+                _buildTextField(
+                  _objectiveController,
+                  'What do you observe? (vital signs, examination findings, results)',
+                  maxLines: 5,
+                ),
+
+                const SizedBox(height: 32),
+                _buildSectionHeader('A - Assessment', Icons.assignment_rounded),
+                _buildTextField(
+                  _assessmentController,
+                  'What is your clinical impression? (diagnosis, differential diagnosis)',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                _buildICDCodesSection(),
+
+                const SizedBox(height: 32),
+                _buildSectionHeader('P - Plan', Icons.edit_note_rounded),
+                _buildTextField(
+                  _planController,
+                  'What is the treatment plan? (medications, tests, follow-up, education)',
+                  maxLines: 5,
+                ),
+
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _saveSoapNotes,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Finalize SOAP Notes',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
@@ -370,7 +382,9 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
                   builder: (context) => ICDCodeSelector(
                     onCodeSelected: (code) {
                       setState(() {
-                        if (!_selectedICDCodes.any((c) => c['code'] == code['code'])) {
+                        if (!_selectedICDCodes.any(
+                          (c) => c['code'] == code['code'],
+                        )) {
                           _selectedICDCodes.add(code);
                         }
                       });
@@ -406,10 +420,7 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
                 const Expanded(
                   child: Text(
                     'No diagnosis codes added yet',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
                   ),
                 ),
               ],
@@ -421,17 +432,25 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
             runSpacing: 8,
             children: _selectedICDCodes.map((code) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -461,7 +480,9 @@ class _SoapNotesScreenState extends State<SoapNotesScreen> {
                     InkWell(
                       onTap: () {
                         setState(() {
-                          _selectedICDCodes.removeWhere((c) => c['code'] == code['code']);
+                          _selectedICDCodes.removeWhere(
+                            (c) => c['code'] == code['code'],
+                          );
                         });
                       },
                       child: const Icon(

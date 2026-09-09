@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:icare/utils/utils.dart';
+import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/screens/lms_purchase_flow.dart';
 import 'package:icare/services/api_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -24,11 +26,27 @@ class _LmsPublicCourseDetailState extends State<LmsPublicCourseDetail>
   bool _isLoading = true;
   bool _hasError = false;
 
+  // An instructor browsing the catalogue is looking for courses to co-teach,
+  // not to buy - "instructor bhi buy karega kya?" - so the purchase bar is
+  // hidden for them.
+  bool _isInstructor = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _resolveRole();
     _loadCourseDetails();
+  }
+
+  Future<void> _resolveRole() async {
+    try {
+      final user = await SharedPref().getUserData();
+      final role = (user?.role ?? '').toLowerCase();
+      if (mounted && role == 'instructor') {
+        setState(() => _isInstructor = true);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -44,14 +62,12 @@ class _LmsPublicCourseDetailState extends State<LmsPublicCourseDetail>
     });
     
     try {
-      // Try public endpoint first (no auth)
-      final response = await _api.get('/courses/public');
-      final courses = response.data['courses'] as List;
-      final course = courses.firstWhere(
-        (c) => c['_id'] == widget.courseId,
-        orElse: () => null,
-      );
-      
+      // The single-course route, not the catalogue list: the list strips
+      // `modules` to stay small, which is why Curriculum always said "No
+      // curriculum available", and it carries no instructor details at all.
+      final response = await _api.get('/courses/public/${widget.courseId}');
+      final course = response.data['course'];
+
       if (course != null) {
         setState(() {
           _course = course;
@@ -144,7 +160,10 @@ class _LmsPublicCourseDetailState extends State<LmsPublicCourseDetail>
       ),
       
       // Floating Buy Button
-      bottomNavigationBar: _buildBuyButton(),
+      // No purchase bar for an instructor - they browse to find courses to
+      // co-teach, not to enrol. The "request to co-teach" flow the client
+      // described is a separate feature and is not built yet.
+      bottomNavigationBar: _isInstructor ? null : _buildBuyButton(),
     );
   }
 
@@ -487,6 +506,35 @@ class _LmsPublicCourseDetailState extends State<LmsPublicCourseDetail>
     );
   }
 
+  Map<String, dynamic> get _instructor {
+    final i = _course?['instructor'];
+    return i is Map ? Map<String, dynamic>.from(i) : const {};
+  }
+
+  String get _instructorName {
+    final n = (_instructor['name'] ?? '').toString().trim();
+    return n.isEmpty ? 'Instructor' : n;
+  }
+
+  String? get _instructorPhoto {
+    final p = (_instructor['profilePicture'] ?? '').toString().trim();
+    return p.isEmpty ? null : p;
+  }
+
+  String get _instructorSubtitle {
+    final d = (_instructor['designation'] ?? '').toString().trim();
+    if (d.isNotEmpty) return d;
+    final q = (_instructor['qualification'] ?? '').toString().trim();
+    return q.isNotEmpty ? q : 'Instructor';
+  }
+
+  String get _instructorBio {
+    final b = (_instructor['bio'] ?? '').toString().trim();
+    if (b.isNotEmpty) return b;
+    // Say nothing rather than invent a biography for a real person.
+    return 'This instructor has not added a bio yet.';
+  }
+
   Widget _buildInstructorTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -498,32 +546,35 @@ class _LmsPublicCourseDetailState extends State<LmsPublicCourseDetail>
         ),
         child: Column(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 50,
-              backgroundColor: Color(0xFF6366F1),
-              child: Icon(Icons.person, size: 50, color: Colors.white),
+              backgroundColor: const Color(0xFF6366F1),
+              backgroundImage: buildProfileImageProvider(_instructorPhoto),
+              child: buildProfileImageProvider(_instructorPhoto) == null
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Instructor Name',
-              style: TextStyle(
+            Text(
+              _instructorName,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Healthcare Professional',
-              style: TextStyle(
+            Text(
+              _instructorSubtitle,
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Experienced healthcare professional with years of expertise in patient education and medical training.',
+            Text(
+              _instructorBio,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF475569),
                 height: 1.6,

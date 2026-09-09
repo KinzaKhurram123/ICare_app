@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/models/appointment_detail.dart';
@@ -29,13 +30,13 @@ import 'package:intl/intl.dart';
 // name, so the same appointment looked half-empty on a phone.
 final _apptDoctorProfileProvider =
     FutureProvider.family<Map<String, dynamic>?, String>((ref, doctorId) async {
-  if (doctorId.isEmpty) return null;
-  try {
-    return await AppointmentService().getDoctorProfile(doctorId);
-  } catch (_) {
-    return null;
-  }
-});
+      if (doctorId.isEmpty) return null;
+      try {
+        return await AppointmentService().getDoctorProfile(doctorId);
+      } catch (_) {
+        return null;
+      }
+    });
 
 class ProfileOrAppointmentViewScreen extends ConsumerWidget {
   final AppointmentDetail appointment;
@@ -61,8 +62,13 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
       final isPm = parts.length > 1 && parts[1].toUpperCase() == 'PM';
       if (isPm && hour != 12) hour += 12;
       if (!isPm && hour == 12) hour = 0;
-      return DateTime(appt.date.year, appt.date.month, appt.date.day, hour, minute)
-          .isBefore(DateTime.now());
+      return DateTime(
+        appt.date.year,
+        appt.date.month,
+        appt.date.day,
+        hour,
+        minute,
+      ).isBefore(DateTime.now());
     } catch (_) {
       return appt.date.isBefore(DateTime.now());
     }
@@ -109,51 +115,68 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
           color: AppColors.primary500,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header card with avatar + name + booking ID + status
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header card with avatar + name + booking ID + status
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                    child: ClipOval(
-                      child: otherPerson?.profilePicture != null &&
-                              otherPerson!.profilePicture!.isNotEmpty
-                          ? Image(
-                              image: buildProfileImageProvider(
-                                  otherPerson.profilePicture)!,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Center(
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: ClipOval(
+                        child:
+                            otherPerson?.profilePicture != null &&
+                                otherPerson!.profilePicture!.isNotEmpty
+                            ? Image(
+                                image: buildProfileImageProvider(
+                                  otherPerson.profilePicture,
+                                )!,
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Center(
+                                  child: Text(
+                                    otherPerson.name.isNotEmpty
+                                        ? otherPerson.name[0].toUpperCase()
+                                        : 'P',
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF6366F1),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
                                 child: Text(
-                                  otherPerson.name.isNotEmpty
-                                      ? otherPerson.name[0].toUpperCase()
+                                  otherPerson?.name.isNotEmpty == true
+                                      ? otherPerson!.name[0].toUpperCase()
                                       : 'P',
                                   style: const TextStyle(
                                     fontSize: 26,
@@ -162,374 +185,416 @@ class ProfileOrAppointmentViewScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                            )
-                          : Center(
-                              child: Text(
-                                otherPerson?.name.isNotEmpty == true
-                                    ? otherPerson!.name[0].toUpperCase()
-                                    : 'P',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF6366F1),
-                                ),
-                              ),
-                            ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          otherPerson?.name ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'ID: #${appointment.id.length >= 8 ? appointment.id.substring(appointment.id.length - 8) : appointment.id}',
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            otherPerson?.name ?? 'Unknown',
                             style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'ID: #${appointment.id.length >= 8 ? appointment.id.substring(appointment.id.length - 8) : appointment.id}',
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white),
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        appointment.status.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // View Full Details (Doctor only)
+              if (selectedRole == 'Doctor' && appointment.patient != null) ...[
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) =>
+                          PatientProfileView(patient: appointment.patient!),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(
+                          Icons.person_rounded,
+                          size: 16,
+                          color: Color(0xFF6366F1),
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'View Full Patient Profile',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF6366F1),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      appointment.status.toUpperCase(),
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: statusColor),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // View Full Details (Doctor only)
-            if (selectedRole == 'Doctor' && appointment.patient != null) ...[
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) =>
-                        PatientProfileView(patient: appointment.patient!),
-                  ),
                 ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color:
-                            const Color(0xFF6366F1).withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.person_rounded,
-                          size: 16, color: Color(0xFF6366F1)),
-                      SizedBox(width: 6),
-                      Text(
-                        'View Full Patient Profile',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF6366F1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            // Date/Time card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.calendar_today_rounded,
-                            size: 18, color: statusColor),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Scheduled Appointment',
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _detailRow('Date', formattedDate),
-                  const SizedBox(height: 8),
-                  _detailRow('Time', appointment.timeSlot),
-                  const SizedBox(height: 8),
-                  // Shown on desktop but missing here.
-                  _detailRow('Status', appointment.status.toUpperCase()),
-                  const SizedBox(height: 8),
-                  _detailRow('Type', _prettyType(appointment.consultationType)),
-                  const SizedBox(height: 8),
-                  _detailRow('Booking for', 'Self'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Patient/Doctor info card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          selectedRole == 'Doctor'
-                              ? Icons.person_rounded
-                              : Icons.medical_services_rounded,
-                          size: 18,
-                          color: const Color(0xFF6366F1),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        selectedRole == 'Doctor' ? 'Patient Info' : 'Doctor Info',
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _detailRow('Name', otherPerson?.name ?? 'N/A'),
-                  // Same credentials the desktop view shows — a phone was
-                  // getting the name and nothing else.
-                  if (selectedRole != 'Doctor') ...[
-                    ...(() {
-                      final p = ref
-                          .watch(_apptDoctorProfileProvider(appointment.doctor?.id ?? ''))
-                          .value;
-                      if (p == null) return <Widget>[];
-                      final rows = <Widget>[];
-                      void add(String label, String? value) {
-                        if (value == null || value.isEmpty || value == 'null') return;
-                        rows.add(const SizedBox(height: 8));
-                        rows.add(_detailRow(label, value));
-                      }
-                      add('Specialization', p['specialization']?.toString());
-                      add('PMDC No.', p['licenseNumber']?.toString());
-                      final exp = p['experience'];
-                      if (exp != null && exp.toString().isNotEmpty) add('Experience', '$exp yrs');
-                      final rating = p['rating'];
-                      if (rating != null) {
-                        add('Rating', '$rating ★ (${p['totalReviews'] ?? 0} reviews)');
-                      }
-                      return rows;
-                    })(),
-                  ],
-                  if (appointment.reason != null &&
-                      appointment.reason!.isNotEmpty &&
-                      !appointment.reason!.contains('Channel:')) ...[
-                    const SizedBox(height: 8),
-                    _detailRow('Reason', appointment.reason!),
-                  ],
-                ],
-              ),
-            ),
-            if (selectedRole == "lab_technician") ...[
-              const SizedBox(height: 12),
-              Tests(),
-            ],
-            if (selectedRole == "Doctor") ...[
-              const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 16),
+              // Date/Time card
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) =>
-                                SoapNotesScreen(appointment: appointment),
-                          ),
-                        ),
-                        icon: const Icon(Icons.notes_rounded, size: 16),
-                        label: const Text('Soap Notes',
-                            style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w700)),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF6366F1),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                    Container(
-                        width: 1,
-                        height: 32,
-                        color: const Color(0xFFE2E8F0)),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => IntakeNotesScreen(
-                                appointment: appointment,
-                                isReadOnly: selectedRole == "Doctor"),
-                          ),
-                        ),
-                        icon: const Icon(Icons.assignment_rounded, size: 16),
-                        label: const Text('Intake Notes',
-                            style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w700)),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF6366F1),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ],
-            const SizedBox(height: 16),
-
-            if (selectedRole == "Doctor" && appointment.status.toLowerCase() == 'pending' && appointment.status.toLowerCase() != 'completed' && appointment.status.toLowerCase() != 'cancelled') ...[
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CustomButton(
-                    width: Utils.windowWidth(context) * 0.35,
-                    borderRadius: 30,
-                    label: "Accept",
-                    onPressed: () async {
-                      final result = await AppointmentService()
-                          .updateAppointmentStatus(
-                            appointmentId: appointment.id,
-                            status: 'confirmed',
-                          );
-                      if (result['success'] && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Appointment accepted')),
-                        );
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                  ),
-                  SizedBox(width: ScallingConfig.scale(20)),
-                  CustomButton(
-                    borderRadius: 30,
-                    labelColor: AppColors.primaryColor,
-                    width: Utils.windowWidth(context) * 0.35,
-                    label: "Decline",
-                    outlined: true,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => DeclineAppointmentScreen(
-                            appointment: appointment,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_rounded,
+                            size: 18,
+                            color: statusColor,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ],
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Scheduled Appointment',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _detailRow('Date', formattedDate),
+                    const SizedBox(height: 8),
+                    _detailRow('Time', appointment.timeSlot),
+                    const SizedBox(height: 8),
+                    // Shown on desktop but missing here.
+                    _detailRow('Status', appointment.status.toUpperCase()),
+                    const SizedBox(height: 8),
+                    _detailRow(
+                      'Type',
+                      _prettyType(appointment.consultationType),
+                    ),
+                    const SizedBox(height: 8),
+                    _detailRow('Booking for', 'Self'),
+                  ],
+                ),
               ),
-            ],
-            // Patient: Rate & Review after completed appointment
-            if (selectedRole == "Patient" && appointment.status.toLowerCase() == 'completed') ...[
+              const SizedBox(height: 12),
+              // Patient/Doctor info card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF6366F1,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            selectedRole == 'Doctor'
+                                ? Icons.person_rounded
+                                : Icons.medical_services_rounded,
+                            size: 18,
+                            color: const Color(0xFF6366F1),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          selectedRole == 'Doctor'
+                              ? 'Patient Info'
+                              : 'Doctor Info',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _detailRow('Name', otherPerson?.name ?? 'N/A'),
+                    // Same credentials the desktop view shows — a phone was
+                    // getting the name and nothing else.
+                    if (selectedRole != 'Doctor') ...[
+                      ...(() {
+                        final p = ref
+                            .watch(
+                              _apptDoctorProfileProvider(
+                                appointment.doctor?.id ?? '',
+                              ),
+                            )
+                            .value;
+                        if (p == null) return <Widget>[];
+                        final rows = <Widget>[];
+                        void add(String label, String? value) {
+                          if (value == null || value.isEmpty || value == 'null')
+                            return;
+                          rows.add(const SizedBox(height: 8));
+                          rows.add(_detailRow(label, value));
+                        }
+
+                        add('Specialization', p['specialization']?.toString());
+                        add('PMDC No.', p['licenseNumber']?.toString());
+                        final exp = p['experience'];
+                        if (exp != null && exp.toString().isNotEmpty)
+                          add('Experience', '$exp yrs');
+                        final rating = p['rating'];
+                        if (rating != null) {
+                          add(
+                            'Rating',
+                            '$rating ★ (${p['totalReviews'] ?? 0} reviews)',
+                          );
+                        }
+                        return rows;
+                      })(),
+                    ],
+                    if (appointment.reason != null &&
+                        appointment.reason!.isNotEmpty &&
+                        !appointment.reason!.contains('Channel:')) ...[
+                      const SizedBox(height: 8),
+                      _detailRow('Reason', appointment.reason!),
+                    ],
+                  ],
+                ),
+              ),
+              if (selectedRole == "lab_technician") ...[
+                const SizedBox(height: 12),
+                Tests(),
+              ],
+              if (selectedRole == "Doctor") ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) =>
+                                  SoapNotesScreen(appointment: appointment),
+                            ),
+                          ),
+                          icon: const Icon(Icons.notes_rounded, size: 16),
+                          label: const Text(
+                            'Soap Notes',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: const Color(0xFFE2E8F0),
+                      ),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => IntakeNotesScreen(
+                                appointment: appointment,
+                                isReadOnly: selectedRole == "Doctor",
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.assignment_rounded, size: 16),
+                          label: const Text(
+                            'Intake Notes',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: ScallingConfig.scale(16)),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showReviewDialog(context, appointment),
-                    icon: const Icon(Icons.star_rounded, size: 20),
-                    label: const Text('Rate & Review Doctor', style: TextStyle(fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
+
+              if (selectedRole == "Doctor" &&
+                  appointment.status.toLowerCase() == 'pending' &&
+                  appointment.status.toLowerCase() != 'completed' &&
+                  appointment.status.toLowerCase() != 'cancelled') ...[
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomButton(
+                      width: Utils.windowWidth(context) * 0.35,
+                      borderRadius: 30,
+                      label: "Accept",
+                      onPressed: () async {
+                        final result = await AppointmentService()
+                            .updateAppointmentStatus(
+                              appointmentId: appointment.id,
+                              status: 'confirmed',
+                            );
+                        if (result['success'] && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Appointment accepted')),
+                          );
+                          Navigator.of(context).pop(true);
+                        }
+                      },
+                    ),
+                    SizedBox(width: ScallingConfig.scale(20)),
+                    CustomButton(
+                      borderRadius: 30,
+                      labelColor: AppColors.primaryColor,
+                      width: Utils.windowWidth(context) * 0.35,
+                      label: "Decline",
+                      outlined: true,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => DeclineAppointmentScreen(
+                              appointment: appointment,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+              // Patient: Rate & Review after completed appointment
+              if (selectedRole == "Patient" &&
+                  appointment.status.toLowerCase() == 'completed') ...[
+                const SizedBox(height: 16),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(16),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showReviewDialog(context, appointment),
+                      icon: const Icon(Icons.star_rounded, size: 20),
+                      label: const Text(
+                        'Rate & Review Doctor',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -566,7 +631,10 @@ Widget _detailRow(String label, String value) {
   );
 }
 
-Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointment) async {
+Future<void> _showReviewDialog(
+  BuildContext context,
+  AppointmentDetail appointment,
+) async {
   final prefs = await SharedPreferences.getInstance();
   final reviewedKey = 'reviewed_${appointment.id}';
   final alreadyReviewed = prefs.getBool(reviewedKey) ?? false;
@@ -591,7 +659,11 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                 color: const Color(0xFFFFF7ED),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 24),
+              child: const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFF59E0B),
+                size: 24,
+              ),
             ),
             const SizedBox(width: 12),
             const Expanded(
@@ -606,9 +678,16 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
             ? const Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 48),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF10B981),
+                    size: 48,
+                  ),
                   SizedBox(height: 12),
-                  Text('You have already reviewed this consultation.', textAlign: TextAlign.center),
+                  Text(
+                    'You have already reviewed this consultation.',
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               )
             : SingleChildScrollView(
@@ -618,24 +697,38 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                   children: [
                     const Text(
                       'How would you rate your doctor?',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (i) => GestureDetector(
-                        onTap: () => setDialogState(() => selectedStars = i + 1),
-                        child: Icon(
-                          i < selectedStars ? Icons.star_rounded : Icons.star_outline_rounded,
-                          color: const Color(0xFFF59E0B),
-                          size: 40,
+                      children: List.generate(
+                        5,
+                        (i) => GestureDetector(
+                          onTap: () =>
+                              setDialogState(() => selectedStars = i + 1),
+                          child: Icon(
+                            i < selectedStars
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: const Color(0xFFF59E0B),
+                            size: 40,
+                          ),
                         ),
-                      )),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     const Text(
                       'Are you satisfied with the consultation?',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -647,10 +740,14 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: satisfied == true ? const Color(0xFF10B981) : const Color(0xFFF1F5F9),
+                                color: satisfied == true
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: satisfied == true ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+                                  color: satisfied == true
+                                      ? const Color(0xFF10B981)
+                                      : const Color(0xFFE2E8F0),
                                 ),
                               ),
                               child: Center(
@@ -658,7 +755,9 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                                   'Yes',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: satisfied == true ? Colors.white : const Color(0xFF64748B),
+                                    color: satisfied == true
+                                        ? Colors.white
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                               ),
@@ -668,15 +767,20 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                         const SizedBox(width: 10),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () => setDialogState(() => satisfied = false),
+                            onTap: () =>
+                                setDialogState(() => satisfied = false),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: satisfied == false ? const Color(0xFFEF4444) : const Color(0xFFF1F5F9),
+                                color: satisfied == false
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: satisfied == false ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                                  color: satisfied == false
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFFE2E8F0),
                                 ),
                               ),
                               child: Center(
@@ -684,7 +788,9 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                                   'No',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: satisfied == false ? Colors.white : const Color(0xFF64748B),
+                                    color: satisfied == false
+                                        ? Colors.white
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                               ),
@@ -696,7 +802,11 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                     const SizedBox(height: 20),
                     const Text(
                       'Write a review (optional)',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -704,17 +814,24 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                       maxLines: 3,
                       decoration: InputDecoration(
                         hintText: 'Share your experience...',
-                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 13,
+                        ),
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
                         contentPadding: const EdgeInsets.all(12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                       ),
                     ),
@@ -731,10 +848,14 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
             : [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Skip', style: TextStyle(color: Color(0xFF64748B))),
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(color: Color(0xFF64748B)),
+                  ),
                 ),
                 ElevatedButton(
-                  onPressed: (submitting || selectedStars == 0 || satisfied == null)
+                  onPressed:
+                      (submitting || selectedStars == 0 || satisfied == null)
                       ? null
                       : () async {
                           setDialogState(() => submitting = true);
@@ -751,9 +872,11 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(result['success'] == true
-                                      ? 'Thank you for your review!'
-                                      : 'Review saved locally.'),
+                                  content: Text(
+                                    result['success'] == true
+                                        ? 'Thank you for your review!'
+                                        : 'Review saved locally.',
+                                  ),
                                   backgroundColor: const Color(0xFF10B981),
                                 ),
                               );
@@ -763,12 +886,27 @@ Future<void> _showReviewDialog(BuildContext context, AppointmentDetail appointme
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF59E0B),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                   ),
                   child: submitting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Submit', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ],
       ),
@@ -1077,7 +1215,9 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
   Future<void> _fetchDoctorProfile() async {
     try {
       final apiService = AppointmentService();
-      final result = await apiService.getDoctorProfile(widget.appointment.doctor!.id);
+      final result = await apiService.getDoctorProfile(
+        widget.appointment.doctor!.id,
+      );
       if (mounted && result != null) {
         setState(() => _doctorProfile = result);
       }
@@ -1111,457 +1251,581 @@ class _WebPatientProfileViewState extends State<_WebPatientProfileView> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(40),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column - Patient Info Card
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // Doctor/Patient Avatar
-                        Builder(builder: (_) {
-                          final picUrl = selectedRole == 'Patient'
-                              ? (_doctorProfile?['profilePicture']?.toString() ?? appointment.doctor?.profilePicture ?? '')
-                              : (appointment.patient?.profilePicture ?? '');
-                          return Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.primaryColor, width: 3),
-                              color: AppColors.primaryColor.withValues(alpha: 0.1),
-                            ),
-                            child: ClipOval(
-                              child: picUrl.isNotEmpty
-                                  ? Image.network(picUrl, fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Center(
-                                        child: Text(profileName.isNotEmpty ? profileName[0].toUpperCase() : 'U',
-                                          style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                                      ))
-                                  : Center(
-                                      child: Text(profileName.isNotEmpty ? profileName[0].toUpperCase() : 'U',
-                                        style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                                    ),
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: 24),
-                        Text(
-                          profileName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                            fontFamily: "Gilroy-Bold",
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(40),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column - Patient Info Card
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Doctor contact details (email/phone) never shown to patient
-                        // Patient contact details shown only to doctor
-                        if (selectedRole == 'Doctor') ...[
-                          _buildInfoRow(Icons.email_outlined, otherPerson?.email ?? 'N/A'),
-                          const SizedBox(height: 8),
-                          _buildInfoRow(Icons.phone_outlined, otherPerson?.phoneNumber ?? 'N/A'),
-                          const SizedBox(height: 8),
                         ],
-                        _buildInfoRow(
-                          Icons.qr_code_rounded,
-                          "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
-                        ),
-                        const SizedBox(height: 32),
-                        // View Full Details — only for Doctor role (patient object exists)
-                        if (selectedRole == 'Doctor' && appointment.patient != null)
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => PatientProfileView(
-                                    patient: appointment.patient!,
+                      ),
+                      child: Column(
+                        children: [
+                          // Doctor/Patient Avatar
+                          Builder(
+                            builder: (_) {
+                              final picUrl = selectedRole == 'Patient'
+                                  ? (_doctorProfile?['profilePicture']
+                                            ?.toString() ??
+                                        appointment.doctor?.profilePicture ??
+                                        '')
+                                  : (appointment.patient?.profilePicture ?? '');
+                              return Container(
+                                width: 200,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.primaryColor,
+                                    width: 3,
+                                  ),
+                                  color: AppColors.primaryColor.withValues(
+                                    alpha: 0.1,
                                   ),
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              "View Full Details →",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryColor,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 32),
-                // Right Column - Details
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    children: [
-                      // Scheduled Appointment
-                      _buildWebDetailsCard(
-                        "Scheduled Appointment",
-                        Icons.calendar_today_rounded,
-                        appointment.status.toLowerCase() == 'confirmed'
-                            ? const Color(0xFF10B981)
-                            : appointment.status.toLowerCase() == 'completed'
-                                ? const Color(0xFF3B82F6)
-                                : appointment.status.toLowerCase() == 'cancelled'
-                                    ? const Color(0xFFEF4444)
-                                    : const Color(0xFF6366F1),
-                        {
-                          "Date": formattedDate,
-                          "Time": appointment.timeSlot,
-                          "Status": appointment.status.toUpperCase(),
-                          "Type": (appointment.channelName?.isNotEmpty == true ||
-                                  appointment.consultationType?.toLowerCase().contains('video') == true ||
-                                  appointment.consultationType?.toLowerCase().contains('online') == true)
-                              ? "Video / Online"
-                              : "In-Person",
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      // Patient/Doctor Info
-                      _buildWebDetailsCard(
-                        selectedRole == 'Doctor'
-                            ? "Patient Info"
-                            : "Doctor Info",
-                        Icons.person_outline_rounded,
-                        const Color(0xFF3B82F6),
-                        selectedRole == 'Patient'
-                            ? {
-                                "Name": otherPerson?.name ?? 'N/A',
-                                if (_doctorProfile != null) ...{
-                                  if (_doctorProfile!['specialization'] != null &&
-                                      _doctorProfile!['specialization'].toString().isNotEmpty)
-                                    "Specialization": _doctorProfile!['specialization'].toString(),
-                                  if (_doctorProfile!['licenseNumber'] != null &&
-                                      _doctorProfile!['licenseNumber'].toString().isNotEmpty)
-                                    "PMDC No.": _doctorProfile!['licenseNumber'].toString(),
-                                  if (_doctorProfile!['experience'] != null &&
-                                      _doctorProfile!['experience'].toString().isNotEmpty)
-                                    "Experience": "${_doctorProfile!['experience']} yrs",
-                                  if (_doctorProfile!['rating'] != null)
-                                    "Rating": "${_doctorProfile!['rating']} ★ (${_doctorProfile!['totalReviews'] ?? 0} reviews)",
-                                },
-                                if (appointment.reason != null &&
-                                    appointment.reason!.isNotEmpty &&
-                                    !appointment.reason!.contains('Channel:'))
-                                  "Reason": appointment.reason!,
-                              }
-                            : {
-                                // Only name shown to doctor — no contact details
-                                "Name": otherPerson?.name ?? 'N/A',
-                                if (appointment.reason != null &&
-                                    appointment.reason!.isNotEmpty &&
-                                    !appointment.reason!.contains('Channel:'))
-                                  "Reason": appointment.reason!,
-                              },
-                      ),
-                      // Patient viewing completed appointment → show prescription button
-                      if (selectedRole == 'Patient' &&
-                          appointment.status.toLowerCase() == 'completed') ...[
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (_) => const Center(child: CircularProgressIndicator()),
-                              );
-                              try {
-                                final svc = ConsultationService();
-                                final res = await svc.getConsultationByAppointmentId(appointment.id);
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                                if (res['success'] == true && res['consultation'] != null) {
-                                  final consultation = res['consultation'] as Map;
-                                  // Try prescriptionId — string or populated object
-                                  dynamic rawPrescId = consultation['prescriptionId'];
-                                  String prescriptionId = '';
-
-                                  if (rawPrescId is Map) {
-                                    prescriptionId = rawPrescId['_id']?.toString() ?? '';
-                                  } else if (rawPrescId is String) {
-                                    prescriptionId = rawPrescId;
-                                  }
-
-                                  // Fallback: check 'prescription' field (nested object)
-                                  if (prescriptionId.isEmpty && consultation['prescription'] is Map) {
-                                    final prescMap = consultation['prescription'] as Map;
-                                    prescriptionId = prescMap['_id']?.toString() ?? prescMap['id']?.toString() ?? '';
-                                  }
-
-                                  if (prescriptionId.isNotEmpty) {
-                                    final prescription = await svc.getPrescription(prescriptionId);
-                                    if (!context.mounted) return;
-                                    if (prescription != null) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PrescriptionDetailScreen(prescription: prescription),
+                                child: ClipOval(
+                                  child: picUrl.isNotEmpty
+                                      ? Image.network(
+                                          picUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => Center(
+                                            child: Text(
+                                              profileName.isNotEmpty
+                                                  ? profileName[0].toUpperCase()
+                                                  : 'U',
+                                              style: const TextStyle(
+                                                fontSize: 80,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            profileName.isNotEmpty
+                                                ? profileName[0].toUpperCase()
+                                                : 'U',
+                                            style: const TextStyle(
+                                              fontSize: 80,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                          ),
                                         ),
-                                      );
-                                      return;
-                                    }
-                                  }
-                                }
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('No prescription found for this appointment'),
-                                      backgroundColor: Colors.orange,
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                                  );
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.description_outlined, size: 20),
-                            label: const Text("View Prescription"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showReviewDialog(context, appointment),
-                            icon: const Icon(Icons.star_rounded, size: 20, color: Color(0xFFF59E0B)),
-                            label: const Text('Rate & Review Doctor', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFF59E0B))),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              side: const BorderSide(color: Color(0xFFF59E0B)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (selectedRole == "lab_technician") ...[
-                        const SizedBox(height: 24),
-                        _buildWebDetailsCard(
-                          "Test Names",
-                          Icons.biotech_rounded,
-                          const Color(0xFF8B5CF6),
-                          {
-                            "NO. 1": "Complete Blood Count",
-                            "NO. 2": "Blood Sugar",
-                          },
-                        ),
-                      ],
-                      if (selectedRole == "Doctor") ...[
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => IntakeNotesScreen(
-                                    appointment: appointment,
-                                    isReadOnly: widget.selectedRole == "Doctor",
-                                  ),
                                 ),
                               );
                             },
-                            icon: const Icon(
-                              Icons.description_outlined,
-                              size: 20,
-                            ),
-                            label: const Text("Intake Notes"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 20,
-                              ),
-                              side: const BorderSide(
-                                color: AppColors.primaryColor,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            profileName,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              fontFamily: "Gilroy-Bold",
                             ),
                           ),
-                        ),
-                      ],
-                      if (selectedRole == "Doctor") ...[
-                        const SizedBox(height: 24),
-                        if (appointment.status.toLowerCase() == 'confirmed' ||
-                            appointment.status.toLowerCase() == 'in_progress') ...[
                           const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final me = await SharedPref().getUserData();
-                                if (!context.mounted) return;
-                                // Update status to in_progress so patient sees Rejoin button
-                                try {
-                                  await AppointmentService().updateAppointmentStatus(
-                                    appointmentId: appointment.id ?? '',
-                                    status: 'in_progress',
-                                  );
-                                } catch (_) {}
-                                if (!context.mounted) return;
-                                Navigator.push(
-                                  context,
+                          // Doctor contact details (email/phone) never shown to patient
+                          // Patient contact details shown only to doctor
+                          if (selectedRole == 'Doctor') ...[
+                            _buildInfoRow(
+                              Icons.email_outlined,
+                              otherPerson?.email ?? 'N/A',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              Icons.phone_outlined,
+                              otherPerson?.phoneNumber ?? 'N/A',
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          _buildInfoRow(
+                            Icons.qr_code_rounded,
+                            "Booking ID: #${appointment.id.substring(appointment.id.length - 8)}",
+                          ),
+                          const SizedBox(height: 32),
+                          // View Full Details — only for Doctor role (patient object exists)
+                          if (selectedRole == 'Doctor' &&
+                              appointment.patient != null)
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => ConsultationChatScreenV2(
-                                      appointment: appointment,
-                                      isDoctor: true,
-                                      currentUserId: me?.id ?? '',
-                                      currentUserName: me?.name ?? 'Doctor',
-                                      remoteUserName: otherPerson?.name ?? 'Patient',
+                                    builder: (ctx) => PatientProfileView(
+                                      patient: appointment.patient!,
                                     ),
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.play_circle_outline_rounded, size: 22),
-                              label: const Text("Start Consultation"),
+                              child: const Text(
+                                "View Full Details →",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                  // Right Column - Details
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      children: [
+                        // Scheduled Appointment
+                        _buildWebDetailsCard(
+                          "Scheduled Appointment",
+                          Icons.calendar_today_rounded,
+                          appointment.status.toLowerCase() == 'confirmed'
+                              ? const Color(0xFF10B981)
+                              : appointment.status.toLowerCase() == 'completed'
+                              ? const Color(0xFF3B82F6)
+                              : appointment.status.toLowerCase() == 'cancelled'
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF6366F1),
+                          {
+                            "Date": formattedDate,
+                            "Time": appointment.timeSlot,
+                            "Status": appointment.status.toUpperCase(),
+                            "Type":
+                                (appointment.channelName?.isNotEmpty == true ||
+                                    appointment.consultationType
+                                            ?.toLowerCase()
+                                            .contains('video') ==
+                                        true ||
+                                    appointment.consultationType
+                                            ?.toLowerCase()
+                                            .contains('online') ==
+                                        true)
+                                ? "Video / Online"
+                                : "In-Person",
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        // Patient/Doctor Info
+                        _buildWebDetailsCard(
+                          selectedRole == 'Doctor'
+                              ? "Patient Info"
+                              : "Doctor Info",
+                          Icons.person_outline_rounded,
+                          const Color(0xFF3B82F6),
+                          selectedRole == 'Patient'
+                              ? {
+                                  "Name": otherPerson?.name ?? 'N/A',
+                                  if (_doctorProfile != null) ...{
+                                    if (_doctorProfile!['specialization'] !=
+                                            null &&
+                                        _doctorProfile!['specialization']
+                                            .toString()
+                                            .isNotEmpty)
+                                      "Specialization":
+                                          _doctorProfile!['specialization']
+                                              .toString(),
+                                    if (_doctorProfile!['licenseNumber'] !=
+                                            null &&
+                                        _doctorProfile!['licenseNumber']
+                                            .toString()
+                                            .isNotEmpty)
+                                      "PMDC No.":
+                                          _doctorProfile!['licenseNumber']
+                                              .toString(),
+                                    if (_doctorProfile!['experience'] != null &&
+                                        _doctorProfile!['experience']
+                                            .toString()
+                                            .isNotEmpty)
+                                      "Experience":
+                                          "${_doctorProfile!['experience']} yrs",
+                                    if (_doctorProfile!['rating'] != null)
+                                      "Rating":
+                                          "${_doctorProfile!['rating']} ★ (${_doctorProfile!['totalReviews'] ?? 0} reviews)",
+                                  },
+                                  if (appointment.reason != null &&
+                                      appointment.reason!.isNotEmpty &&
+                                      !appointment.reason!.contains('Channel:'))
+                                    "Reason": appointment.reason!,
+                                }
+                              : {
+                                  // Only name shown to doctor — no contact details
+                                  "Name": otherPerson?.name ?? 'N/A',
+                                  if (appointment.reason != null &&
+                                      appointment.reason!.isNotEmpty &&
+                                      !appointment.reason!.contains('Channel:'))
+                                    "Reason": appointment.reason!,
+                                },
+                        ),
+                        // Patient viewing completed appointment → show prescription button
+                        if (selectedRole == 'Patient' &&
+                            appointment.status.toLowerCase() ==
+                                'completed') ...[
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                                try {
+                                  final svc = ConsultationService();
+                                  final res = await svc
+                                      .getConsultationByAppointmentId(
+                                        appointment.id,
+                                      );
+                                  if (!context.mounted) return;
+                                  Navigator.pop(context);
+                                  if (res['success'] == true &&
+                                      res['consultation'] != null) {
+                                    final consultation =
+                                        res['consultation'] as Map;
+                                    // Try prescriptionId — string or populated object
+                                    dynamic rawPrescId =
+                                        consultation['prescriptionId'];
+                                    String prescriptionId = '';
+
+                                    if (rawPrescId is Map) {
+                                      prescriptionId =
+                                          rawPrescId['_id']?.toString() ?? '';
+                                    } else if (rawPrescId is String) {
+                                      prescriptionId = rawPrescId;
+                                    }
+
+                                    // Fallback: check 'prescription' field (nested object)
+                                    if (prescriptionId.isEmpty &&
+                                        consultation['prescription'] is Map) {
+                                      final prescMap =
+                                          consultation['prescription'] as Map;
+                                      prescriptionId =
+                                          prescMap['_id']?.toString() ??
+                                          prescMap['id']?.toString() ??
+                                          '';
+                                    }
+
+                                    if (prescriptionId.isNotEmpty) {
+                                      final prescription = await svc
+                                          .getPrescription(prescriptionId);
+                                      if (!context.mounted) return;
+                                      if (prescription != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                PrescriptionDetailScreen(
+                                                  prescription: prescription,
+                                                ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    }
+                                  }
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No prescription found for this appointment',
+                                        ),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.description_outlined,
+                                size: 20,
+                              ),
+                              label: const Text("View Prescription"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6366F1),
+                                backgroundColor: const Color(0xFF10B981),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 0,
                                 textStyle: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                           ),
-                        ],
-                        if (appointment.status.toLowerCase() == 'pending' && appointment.status.toLowerCase() != 'completed' && appointment.status.toLowerCase() != 'cancelled') ...[
-                          const SizedBox(height: 32),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final result = await AppointmentService()
-                                        .updateAppointmentStatus(
-                                          appointmentId: appointment.id,
-                                          status: 'confirmed',
-                                        );
-                                    if (result['success'] && context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Appointment accepted'),
-                                        ),
-                                      );
-                                      Navigator.of(context).pop(true);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.check_circle_outline_rounded,
-                                    size: 22,
-                                  ),
-                                  label: const Text("Accept Appointment"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 20,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                    textStyle: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  _showReviewDialog(context, appointment),
+                              icon: const Icon(
+                                Icons.star_rounded,
+                                size: 20,
+                                color: Color(0xFFF59E0B),
+                              ),
+                              label: const Text(
+                                'Rate & Review Doctor',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFF59E0B),
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (ctx) =>
-                                            DeclineAppointmentScreen(
-                                              appointment: appointment,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.cancel_outlined,
-                                    size: 22,
-                                  ),
-                                  label: const Text("Decline"),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFEF4444),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 20,
-                                    ),
-                                    side: const BorderSide(
-                                      color: Color(0xFFEF4444),
-                                      width: 2,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    textStyle: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
+                                side: const BorderSide(
+                                  color: Color(0xFFF59E0B),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ],
+                        if (selectedRole == "lab_technician") ...[
+                          const SizedBox(height: 24),
+                          _buildWebDetailsCard(
+                            "Test Names",
+                            Icons.biotech_rounded,
+                            const Color(0xFF8B5CF6),
+                            {
+                              "NO. 1": "Complete Blood Count",
+                              "NO. 2": "Blood Sugar",
+                            },
+                          ),
+                        ],
+                        if (selectedRole == "Doctor") ...[
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (ctx) => IntakeNotesScreen(
+                                      appointment: appointment,
+                                      isReadOnly:
+                                          widget.selectedRole == "Doctor",
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.description_outlined,
+                                size: 20,
+                              ),
+                              label: const Text("Intake Notes"),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
+                                side: const BorderSide(
+                                  color: AppColors.primaryColor,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (selectedRole == "Doctor") ...[
+                          const SizedBox(height: 24),
+                          if (appointment.status.toLowerCase() == 'confirmed' ||
+                              appointment.status.toLowerCase() ==
+                                  'in_progress') ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final me = await SharedPref().getUserData();
+                                  if (!context.mounted) return;
+                                  // Update status to in_progress so patient sees Rejoin button
+                                  try {
+                                    await AppointmentService()
+                                        .updateAppointmentStatus(
+                                          appointmentId: appointment.id ?? '',
+                                          status: 'in_progress',
+                                        );
+                                  } catch (_) {}
+                                  if (!context.mounted) return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ConsultationChatScreenV2(
+                                        appointment: appointment,
+                                        isDoctor: true,
+                                        currentUserId: me?.id ?? '',
+                                        currentUserName: me?.name ?? 'Doctor',
+                                        remoteUserName:
+                                            otherPerson?.name ?? 'Patient',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.play_circle_outline_rounded,
+                                  size: 22,
+                                ),
+                                label: const Text("Start Consultation"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6366F1),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (appointment.status.toLowerCase() == 'pending' &&
+                              appointment.status.toLowerCase() != 'completed' &&
+                              appointment.status.toLowerCase() !=
+                                  'cancelled') ...[
+                            const SizedBox(height: 32),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      final result = await AppointmentService()
+                                          .updateAppointmentStatus(
+                                            appointmentId: appointment.id,
+                                            status: 'confirmed',
+                                          );
+                                      if (result['success'] &&
+                                          context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Appointment accepted',
+                                            ),
+                                          ),
+                                        );
+                                        Navigator.of(context).pop(true);
+                                      }
+                                    },
+                                    icon: const Icon(
+                                      Icons.check_circle_outline_rounded,
+                                      size: 22,
+                                    ),
+                                    label: const Text("Accept Appointment"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF10B981),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 20,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (ctx) =>
+                                              DeclineAppointmentScreen(
+                                                appointment: appointment,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.cancel_outlined,
+                                      size: 22,
+                                    ),
+                                    label: const Text("Decline"),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFFEF4444),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 20,
+                                      ),
+                                      side: const BorderSide(
+                                        color: Color(0xFFEF4444),
+                                        width: 2,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

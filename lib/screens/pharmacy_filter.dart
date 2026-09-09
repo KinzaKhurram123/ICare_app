@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -87,83 +88,86 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomDropdown<String>(
-                title: "Category",
-                selectedItem: _selectedMedicineCategory,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                CustomDropdown<String>(
+                  title: "Category",
+                  selectedItem: _selectedMedicineCategory,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: medicineCategoryList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMedicineCategory = value!;
+                    });
+                  },
                 ),
-                items: medicineCategoryList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMedicineCategory = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Medicine Type",
-                selectedItem: _selectedMedicineType,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Medicine Type",
+                  selectedItem: _selectedMedicineType,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: medicineTypeList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMedicineType = value!;
+                    });
+                  },
                 ),
-                items: medicineTypeList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMedicineType = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Brand Manifacturer",
-                selectedItem: _selectedBrandManufacturer,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Brand Manifacturer",
+                  selectedItem: _selectedBrandManufacturer,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: brandManufacturerList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBrandManufacturer = value!;
+                    });
+                  },
                 ),
-                items: brandManufacturerList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBrandManufacturer = value!;
-                  });
-                },
-              ),
-              ChooseLocationButton(label: "Near By Store Availability"),
-              CustomDropdown<String>(
-                title: "Delievery Option",
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                ChooseLocationButton(label: "Near By Store Availability"),
+                CustomDropdown<String>(
+                  title: "Delievery Option",
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  selectedItem: _selectedDeliveryOption,
+                  items: deliveryOptionList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDeliveryOption = value!;
+                    });
+                  },
                 ),
-                selectedItem: _selectedDeliveryOption,
-                items: deliveryOptionList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDeliveryOption = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Reviews",
-                selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Reviews",
+                  selectedItem: _selectedReviews,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: reviewsList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedReviews = value!;
+                    });
+                  },
                 ),
-                items: reviewsList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedReviews = value!;
-                  });
-                },
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomButton(
-                label: "Search",
-                borderRadius: 30,
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-            ],
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomButton(
+                  label: "Search",
+                  borderRadius: 30,
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -337,7 +341,9 @@ class _PharmacyFilterScreenState extends State<PharmacyFilterScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 10,
-                          shadowColor: AppColors.primaryColor.withValues(alpha: 0.4),
+                          shadowColor: AppColors.primaryColor.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                         child: const Text(
                           "Find Pharmacies",

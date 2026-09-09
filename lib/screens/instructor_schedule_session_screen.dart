@@ -299,6 +299,8 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
                   ],
 
                   TextFormField(
+                    maxLength: 120,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _titleController,
                     decoration: const InputDecoration(
                       labelText: 'Session Title *',
@@ -310,6 +312,8 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 2000,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _descriptionController,
                     decoration: const InputDecoration(
                       labelText: 'Description',
@@ -344,6 +348,8 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
                     children: [
                       Expanded(
                         child: TextFormField(
+                          maxLength: 5,
+                          buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                           initialValue: _duration.toString(),
                           decoration: const InputDecoration(
                             labelText: 'Duration (minutes)',
@@ -356,6 +362,8 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
+                          maxLength: 200,
+                          buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                           initialValue: _maxParticipants.toString(),
                           decoration: const InputDecoration(
                             labelText: 'Max Participants',
@@ -378,6 +386,8 @@ class _InstructorScheduleSessionScreenState extends State<InstructorScheduleSess
                 icon: Icons.video_call_rounded,
                 children: [
                   TextFormField(
+                    maxLength: 500,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _meetingLinkController,
                     decoration: InputDecoration(
                       labelText: 'Google Meet Link',

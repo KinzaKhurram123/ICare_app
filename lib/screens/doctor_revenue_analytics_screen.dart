@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -31,7 +32,8 @@ class _DoctorRevenueAnalyticsScreenState
       context: context,
       firstDate: DateTime(now.year - 3),
       lastDate: now,
-      initialDateRange: _customRange ??
+      initialDateRange:
+          _customRange ??
           DateTimeRange(
             start: now.subtract(const Duration(days: 30)),
             end: now,
@@ -81,44 +83,47 @@ class _DoctorRevenueAnalyticsScreenState
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildPeriodSelector(),
-            const SizedBox(height: 24),
-            _buildUsageStats(),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSectionHeader('Revenue Trends'),
-                const Icon(
-                  Icons.trending_up_rounded,
-                  color: Colors.green,
-                  size: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildRevenueChart(),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSectionHeader('Patient Distribution'),
-                const Icon(
-                  Icons.pie_chart_rounded,
-                  color: Colors.blue,
-                  size: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildDemographicsSection(),
-            const SizedBox(height: 40),
-          ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPeriodSelector(),
+              const SizedBox(height: 24),
+              _buildUsageStats(),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader('Revenue Trends'),
+                  const Icon(
+                    Icons.trending_up_rounded,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildRevenueChart(),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader('Patient Distribution'),
+                  const Icon(
+                    Icons.pie_chart_rounded,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildDemographicsSection(),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
@@ -151,14 +156,18 @@ class _DoctorRevenueAnalyticsScreenState
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 9),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryColor : Colors.transparent,
+                            color: isSelected
+                                ? AppColors.primaryColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             period,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : const Color(0xFF64748B),
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF64748B),
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -175,7 +184,10 @@ class _DoctorRevenueAnalyticsScreenState
             GestureDetector(
               onTap: _pickDateRange,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -200,17 +212,32 @@ class _DoctorRevenueAnalyticsScreenState
         const SizedBox(height: 8),
         Row(
           children: [
-            const Icon(Icons.calendar_today_rounded, size: 13, color: Color(0xFF94A3B8)),
+            const Icon(
+              Icons.calendar_today_rounded,
+              size: 13,
+              color: Color(0xFF94A3B8),
+            ),
             const SizedBox(width: 5),
             Text(
               _periodLabel,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
             ),
             if (_customRange != null) ...[
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: () => setState(() { _customRange = null; _selectedPeriod = 'Monthly'; }),
-                child: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF94A3B8)),
+                onTap: () => setState(() {
+                  _customRange = null;
+                  _selectedPeriod = 'Monthly';
+                }),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 14,
+                  color: Color(0xFF94A3B8),
+                ),
               ),
             ],
           ],

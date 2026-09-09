@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { OAuth2Client } = require('google-auth-library');
 const { connectMongoDB } = require('../config/mongodb');
+const { sendEmail } = require('../utils/email');
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
 const LabProfile = require('../models/LabProfile');
@@ -59,7 +60,6 @@ async function logLoginSession(req, userId) {
   } catch (_) {}
 }
 
-const { sendEmail } = require('../utils/email');
 
 // ─── MR NUMBER GENERATOR ──────────────────────────────────────────────────────
 // Format: MR-XXXXXX (6 uppercase alphanumeric chars, e.g. MR-A3F9K2)
@@ -806,6 +806,77 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// ─── CHANGE PASSWORD (logged in) ─────────────────────────────────────────────
+// The Settings > Change Password screen previously did nothing at all: the
+// "Confirm Changes" button only opened the success modal, so users were told
+// their password had changed when it never had. This is the real endpoint, and
+// it sends the confirmation email the client asked for ("usko NOTIFICATION
+// EMAIL chali jaye ki aapka password change kar diya").
+const changePassword = async (req, res) => {
+  try {
+    await connectMongoDB();
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current and new password are required' });
+    }
+    if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Accounts created through Google/Apple sign-in have no local password to
+    // compare against; tell them plainly rather than failing on a bcrypt call.
+    if (!user.password) {
+      return res.status(400).json({ success: false, message: 'This account signs in with Google or Apple, so it has no password to change.' });
+    }
+
+    const matches = await bcrypt.compare(currentPassword, user.password);
+    if (!matches) {
+      return res.status(400).json({ success: false, message: 'Your current password is incorrect' });
+    }
+    if (await bcrypt.compare(newPassword, user.password)) {
+      return res.status(400).json({ success: false, message: 'New password must be different from your current one' });
+    }
+
+    await User.findByIdAndUpdate(user._id, { password: await bcrypt.hash(newPassword, 10) });
+
+    // Best-effort: the password IS changed at this point, so a mail failure
+    // must not turn into an error the user reads as "it didn't work".
+    try {
+      const when = new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' });
+      await sendEmail({
+        to: user.email,
+        subject: 'Your iCare password was changed',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">
+            <h2 style="color:#0036BC;margin:0 0 12px">Password changed</h2>
+            <p>Hi ${user.name || 'there'},</p>
+            <p>Your iCare account password was changed on <strong>${when}</strong> (PKT).</p>
+            <p>If this was you, no further action is needed.</p>
+            <p style="background:#FEF2F2;border-left:3px solid #DC2626;padding:12px;color:#991B1B">
+              If you did <strong>not</strong> make this change, please reset your password
+              immediately and contact us at support@icare.com.co.
+            </p>
+            <p style="color:#64748B;font-size:12px;margin-top:24px">iCare Virtual Hospital</p>
+          </div>`,
+      });
+    } catch (mailErr) {
+      console.error('changePassword: confirmation email failed:', mailErr.message);
+    }
+
+    return res.status(200).json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ success: false, message: 'Could not change password. Please try again.' });
+  }
+};
+
 // ─── GOOGLE LOGIN ─────────────────────────────────────────────────────────────
 const googleLogin = async (req, res) => {
   try {
@@ -987,4 +1058,4 @@ const appleLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getUserProfile, forgotPassword, verifyOTP, resetPassword, googleLogin, appleLogin, checkEmail, checkEmailAvailable, verifyEmailOtp, resendEmailOtp };
+module.exports = { register, login, getUserProfile, forgotPassword, verifyOTP, resetPassword, changePassword, googleLogin, appleLogin, checkEmail, checkEmailAvailable, verifyEmailOtp, resendEmailOtp };

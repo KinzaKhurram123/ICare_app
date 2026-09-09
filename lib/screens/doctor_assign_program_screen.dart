@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/models/course.dart';
 import 'package:icare/services/course_service.dart';
@@ -92,39 +93,42 @@ class _DoctorAssignProgramScreenState extends State<DoctorAssignProgramScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildPatientHeader(),
-            const SizedBox(height: 32),
-            const Text(
-              'Select Health Program',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPatientHeader(),
+              const SizedBox(height: 32),
+              const Text(
+                'Select Health Program',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-            ),
-            const Text(
-              'Assign a structured care plan to support the treatment.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (_availablePrograms.isEmpty)
-              const Text('No health programs available in the library.')
-            else
-              _buildProgramList(),
+              const Text(
+                'Assign a structured care plan to support the treatment.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (_availablePrograms.isEmpty)
+                const Text('No health programs available in the library.')
+              else
+                _buildProgramList(),
 
-            const SizedBox(height: 40),
-            CustomButton(
-              label: 'Assign to Patient',
-              onPressed: _selectedProgram != null ? _assignProgram : null,
-            ),
-          ],
+              const SizedBox(height: 40),
+              CustomButton(
+                label: 'Assign to Patient',
+                onPressed: _selectedProgram != null ? _assignProgram : null,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -136,7 +140,9 @@ class _DoctorAssignProgramScreenState extends State<DoctorAssignProgramScreen> {
       decoration: BoxDecoration(
         color: AppColors.primaryColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AppColors.primaryColor.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         children: [

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -227,6 +228,12 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                                 label: 'Full Name',
                                 icon: Icons.badge_outlined,
                                 hint: 'Your full name',
+                                maxLength: 60,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r"[A-Za-z .'-]"),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 16),
                               Row(
@@ -239,6 +246,10 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                                       icon: Icons.cake_outlined,
                                       hint: '20',
                                       keyboardType: TextInputType.number,
+                                      maxLength: 3,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -280,6 +291,7 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                               _buildTextField(
                                 controller: _addressController,
                                 label: 'Address',
+                                maxLength: 120,
                                 icon: Icons.map_outlined,
                                 hint: 'City, Country',
                                 maxLines: 2,
@@ -294,6 +306,12 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                               _buildTextField(
                                 controller: _qualificationController,
                                 label: 'Previous Qualification',
+                                maxLength: 80,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r"[A-Za-z ,.()'-]"),
+                                  ),
+                                ],
                                 icon: Icons.history_edu_rounded,
                                 hint: 'e.g. B.Sc Psychology',
                               ),
@@ -301,6 +319,12 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                               _buildTextField(
                                 controller: _educationLevelController,
                                 label: 'Current Education Level',
+                                maxLength: 60,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r"[A-Za-z ,.()'-]"),
+                                  ),
+                                ],
                                 icon: Icons.layers_outlined,
                                 hint: 'e.g. Undergraduate',
                               ),
@@ -314,6 +338,7 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                               _buildTextField(
                                 controller: _bioController,
                                 label: 'Personal Bio',
+                                maxLength: 500,
                                 icon: Icons.notes_rounded,
                                 hint: 'Tell us a bit about yourself...',
                                 maxLines: 4,
@@ -322,6 +347,7 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                               _buildTextField(
                                 controller: _preferencesController,
                                 label: 'Learning Preferences',
+                                maxLength: 300,
                                 icon: Icons.label_outline_rounded,
                                 hint:
                                     'e.g. Psychology, Therapy, Health (comma separated)',
@@ -418,9 +444,13 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Student Profile Setup',
-                  style: TextStyle(
+                // Show the student's own name rather than a generic title -
+                // the page is about them, and the name is already loaded.
+                Text(
+                  _nameController.text.trim().isEmpty
+                      ? 'Student Profile Setup'
+                      : _nameController.text.trim(),
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -428,7 +458,9 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Customize your learning experience by completing your profile',
+                  _nameController.text.trim().isEmpty
+                      ? 'Customize your learning experience by completing your profile'
+                      : 'Student Profile',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.85),
@@ -496,9 +528,23 @@ class _StudentProfileSetupState extends ConsumerState<StudentProfileSetup>
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     int maxLines = 1,
+    // Same rule as the instructor profile: every field is capped, and the
+    // ones that should only take letters or only digits enforce it.
+    int maxLength = 100,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
+      buildCounter:
+          (_, {required currentLength, required isFocused, maxLength}) =>
+              (isFocused && maxLength != null && currentLength > maxLength * 0.7)
+              ? Text(
+                  '$currentLength/$maxLength',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                )
+              : null,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

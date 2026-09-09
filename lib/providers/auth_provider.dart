@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:icare/models/auth.dart';
 import 'package:icare/models/user.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -86,6 +87,12 @@ class AuthNotifier extends StateNotifier<Auth> {
   }
 
   Future<void> setUserLogout() async {
+    // Google caches the chosen account, so without this the next
+    // "Continue with Google" silently signs back in as the user who just
+    // logged out, never showing the account picker.
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {}
     await SharedPref().remove("userRole");
     await SharedPref().remove("token");
     await SharedPref().remove("userData");

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:icare/widgets/drag_scroll.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,9 @@ class DoctorProfile extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: CustomText(
-          text: fromViewProfile ? "Doctor's Profile".tr() : "Create Profile".tr(),
+          text: fromViewProfile
+              ? "Doctor's Profile".tr()
+              : "Create Profile".tr(),
           fontSize: 16.78,
           fontFamily: "Gilroy-Bold",
           fontWeight: FontWeight.w400,
@@ -46,119 +49,126 @@ class DoctorProfile extends StatelessWidget {
           SizedBox(width: ScallingConfig.scale(20)),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              ProfilePicker(onPickImage: (pickedImage) {}),
-              SizedBox(height: ScallingConfig.scale(15)),
-              CustomText(
-                text: "Aaron Smith",
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                fontWeight: FontWeight.w400,
-                fontSize: 16.78,
-              ),
-              SizedBox(height: ScallingConfig.scale(40)),
-              CustomText(
-                text: "16 Years",
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                fontWeight: FontWeight.w400,
-                fontSize: 34.78,
-              ),
-              CustomText(
-                text: "Experience".tr(),
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Regular",
-                // fontWeight: FontWeight.w400,
-                fontSize: 16.78,
-              ),
-              SizedBox(height: ScallingConfig.scale(10)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CustomRecordCard(
-                    color: AppColors.primaryColor,
-                    icon: SvgWrapper(assetPath: ImagePaths.profile2User),
-                    number: "150",
-                    label: fromViewProfile ? "Patients".tr() : "Total Consultations".tr(),
-                  ),
-                  SizedBox(width: ScallingConfig.scale(15)),
-                  CustomRecordCard(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (ctx) => RatingAndReviews()),
-                      );
-                    },
-                    icon: SvgWrapper(assetPath: ImagePaths.star),
-                    number: "4.9",
-                    label: "Ratings".tr(),
-                  ),
-                ],
-              ),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                ProfilePicker(onPickImage: (pickedImage) {}),
+                SizedBox(height: ScallingConfig.scale(15)),
+                CustomText(
+                  text: "Aaron Smith",
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  fontWeight: FontWeight.w400,
+                  fontSize: 16.78,
+                ),
+                SizedBox(height: ScallingConfig.scale(40)),
+                CustomText(
+                  text: "16 Years",
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  fontWeight: FontWeight.w400,
+                  fontSize: 34.78,
+                ),
+                CustomText(
+                  text: "Experience".tr(),
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Regular",
+                  // fontWeight: FontWeight.w400,
+                  fontSize: 16.78,
+                ),
+                SizedBox(height: ScallingConfig.scale(10)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomRecordCard(
+                      color: AppColors.primaryColor,
+                      icon: SvgWrapper(assetPath: ImagePaths.profile2User),
+                      number: "150",
+                      label: fromViewProfile
+                          ? "Patients".tr()
+                          : "Total Consultations".tr(),
+                    ),
+                    SizedBox(width: ScallingConfig.scale(15)),
+                    CustomRecordCard(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => RatingAndReviews(),
+                          ),
+                        );
+                      },
+                      icon: SvgWrapper(assetPath: ImagePaths.star),
+                      number: "4.9",
+                      label: "Ratings".tr(),
+                    ),
+                  ],
+                ),
 
-              SizedBox(height: ScallingConfig.scale(10)),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.9,
-                child: ListTile(
-                  leading: SvgWrapper(assetPath: ImagePaths.sms),
-                  title: CustomText(
-                    text: "lisamarie@gmail.com",
-                    color: AppColors.grayColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Gilroy-SemiBold",
+                SizedBox(height: ScallingConfig.scale(10)),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.9,
+                  child: ListTile(
+                    leading: SvgWrapper(assetPath: ImagePaths.sms),
+                    title: CustomText(
+                      text: "lisamarie@gmail.com",
+                      color: AppColors.grayColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Gilroy-SemiBold",
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.85,
-                child: Divider(),
-              ),
-              SizedBox(height: ScallingConfig.scale(1)),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.9,
-                child: ListTile(
-                  leading: SvgWrapper(
-                    assetPath: ImagePaths.calll,
-                    color: AppColors.primaryColor,
-                  ),
-                  title: CustomText(
-                    text: "+1 234 567 8963",
-                    color: AppColors.grayColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Gilroy-SemiBold",
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.85,
+                  child: Divider(),
+                ),
+                SizedBox(height: ScallingConfig.scale(1)),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.9,
+                  child: ListTile(
+                    leading: SvgWrapper(
+                      assetPath: ImagePaths.calll,
+                      color: AppColors.primaryColor,
+                    ),
+                    title: CustomText(
+                      text: "+1 234 567 8963",
+                      color: AppColors.grayColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Gilroy-SemiBold",
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.85,
-                child: Divider(),
-              ),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.85,
+                  child: Divider(),
+                ),
 
-              SizedBox(height: ScallingConfig.scale(5)),
-              CustomText(
-                text: "Bio:".tr(),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                width: Utils.windowWidth(context) * 0.85,
-              ),
-              SizedBox(height: ScallingConfig.scale(5)),
-              CustomText(
-                text:
-                    "Lorem ipsum dolor sit amet consectetur adipiscing elit  nascetur at leo accumsan, odio habitanLorem ipsum dolor.",
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: AppColors.grayColor,
-                maxLines: 3,
-                fontFamily: "Gilroy-Medium",
-                width: Utils.windowWidth(context) * 0.85,
-              ),
-            ],
+                SizedBox(height: ScallingConfig.scale(5)),
+                CustomText(
+                  text: "Bio:".tr(),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  width: Utils.windowWidth(context) * 0.85,
+                ),
+                SizedBox(height: ScallingConfig.scale(5)),
+                CustomText(
+                  text:
+                      "Lorem ipsum dolor sit amet consectetur adipiscing elit  nascetur at leo accumsan, odio habitanLorem ipsum dolor.",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.grayColor,
+                  maxLines: 3,
+                  fontFamily: "Gilroy-Medium",
+                  width: Utils.windowWidth(context) * 0.85,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/enhanced_prescription.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
@@ -39,7 +40,10 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_rounded, color: AppColors.primaryColor),
+            icon: const Icon(
+              Icons.download_rounded,
+              color: AppColors.primaryColor,
+            ),
             tooltip: 'Download PDF',
             onPressed: () {
               // TODO: Implement PDF download
@@ -49,7 +53,10 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.share_rounded, color: AppColors.primaryColor),
+            icon: const Icon(
+              Icons.share_rounded,
+              color: AppColors.primaryColor,
+            ),
             tooltip: 'Share',
             onPressed: () {
               // TODO: Implement share
@@ -60,110 +67,129 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          margin: const EdgeInsets.symmetric(horizontal: 0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ══════════════════════════════════════════════════════════
-              // HEADER SECTION
-              // ══════════════════════════════════════════════════════════
-              _buildHeader(),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            margin: const EdgeInsets.symmetric(horizontal: 0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ══════════════════════════════════════════════════════════
+                // HEADER SECTION
+                // ══════════════════════════════════════════════════════════
+                _buildHeader(),
 
-              const Divider(height: 1, thickness: 2),
+                const Divider(height: 1, thickness: 2),
 
-              // ══════════════════════════════════════════════════════════
-              // BODY SECTION
-              // ══════════════════════════════════════════════════════════
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Diagnosis Section
-                    if (prescription.diagnoses.isNotEmpty) ...[
-                      _buildSectionTitle('Diagnosis', Icons.medical_services_rounded),
-                      const SizedBox(height: 12),
-                      ...prescription.diagnoses.map((diagnosis) => _buildDiagnosisItem(diagnosis)),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Medications Section
-                    if (prescription.medicines.isNotEmpty) ...[
-                      _buildSectionTitle('Medications', Icons.medication_rounded),
-                      const SizedBox(height: 12),
-                      _buildMedicationsTable(),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Lab Tests Section
-                    if (prescription.labTests.isNotEmpty) ...[
-                      _buildSectionTitle('Lab Tests', Icons.biotech_rounded),
-                      const SizedBox(height: 12),
-                      ...prescription.labTests.map((test) => _buildLabTestItem(test)),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Doctor Notes Section
-                    if (prescription.doctorNotes.isNotEmpty) ...[
-                      _buildSectionTitle('Doctor Notes / Instructions', Icons.notes_rounded),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFBEB),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFDE68A)),
+                // ══════════════════════════════════════════════════════════
+                // BODY SECTION
+                // ══════════════════════════════════════════════════════════
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Diagnosis Section
+                      if (prescription.diagnoses.isNotEmpty) ...[
+                        _buildSectionTitle(
+                          'Diagnosis',
+                          Icons.medical_services_rounded,
                         ),
-                        child: Text(
-                          prescription.doctorNotes,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF0F172A),
-                            height: 1.6,
+                        const SizedBox(height: 12),
+                        ...prescription.diagnoses.map(
+                          (diagnosis) => _buildDiagnosisItem(diagnosis),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Medications Section
+                      if (prescription.medicines.isNotEmpty) ...[
+                        _buildSectionTitle(
+                          'Medications',
+                          Icons.medication_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMedicationsTable(),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Lab Tests Section
+                      if (prescription.labTests.isNotEmpty) ...[
+                        _buildSectionTitle('Lab Tests', Icons.biotech_rounded),
+                        const SizedBox(height: 12),
+                        ...prescription.labTests.map(
+                          (test) => _buildLabTestItem(test),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Doctor Notes Section
+                      if (prescription.doctorNotes.isNotEmpty) ...[
+                        _buildSectionTitle(
+                          'Doctor Notes / Instructions',
+                          Icons.notes_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Text(
+                            prescription.doctorNotes,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF0F172A),
+                              height: 1.6,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        const SizedBox(height: 24),
+                      ],
 
-                    // SOAP Notes (if available)
-                    if (prescription.soapNotes != null) ...[
-                      _buildSectionTitle('Clinical Notes (SOAP)', Icons.description_rounded),
-                      const SizedBox(height: 12),
-                      _buildSOAPNotes(),
-                      const SizedBox(height: 24),
-                    ],
+                      // SOAP Notes (if available)
+                      if (prescription.soapNotes != null) ...[
+                        _buildSectionTitle(
+                          'Clinical Notes (SOAP)',
+                          Icons.description_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSOAPNotes(),
+                        const SizedBox(height: 24),
+                      ],
 
-                    // Referral & Follow-up
-                    if (prescription.referralFollowUp != null) ...[
-                      _buildReferralFollowUp(),
-                      const SizedBox(height: 24),
+                      // Referral & Follow-up
+                      if (prescription.referralFollowUp != null) ...[
+                        _buildReferralFollowUp(),
+                        const SizedBox(height: 24),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
-              // ══════════════════════════════════════════════════════════
-              // FOOTER SECTION
-              // ══════════════════════════════════════════════════════════
-              _buildFooter(context),
-            ],
+                // ══════════════════════════════════════════════════════════
+                // FOOTER SECTION
+                // ══════════════════════════════════════════════════════════
+                _buildFooter(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -174,8 +200,10 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
   // HEADER SECTION
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildHeader() {
-    final prescriptionDate = DateFormat('dd MMM yyyy, hh:mm a').format(prescription.prescribedAt);
-    
+    final prescriptionDate = DateFormat(
+      'dd MMM yyyy, hh:mm a',
+    ).format(prescription.prescribedAt);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -203,11 +231,28 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2))],
+                  border: Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.2),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Image.asset('assets/Asset 1.png', height: 36, width: 36, fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Icon(Icons.local_hospital_rounded, color: AppColors.primaryColor, size: 24)),
+                child: Image.asset(
+                  'assets/Asset 1.png',
+                  height: 36,
+                  width: 36,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.local_hospital_rounded,
+                    color: AppColors.primaryColor,
+                    size: 24,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -220,11 +265,16 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.green.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -266,9 +316,17 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _buildInfoRow('Name', patientData?['name'] ?? 'N/A'),
-                    _buildInfoRow('Age', patientData?['age']?.toString() ?? 'N/A'),
+                    _buildInfoRow(
+                      'Age',
+                      patientData?['age']?.toString() ?? 'N/A',
+                    ),
                     _buildInfoRow('Gender', patientData?['gender'] ?? 'N/A'),
-                    _buildInfoRow('MR Number', patientData?['mrNumber'] ?? patientData?['id']?.toString().substring(0, 8) ?? 'N/A'),
+                    _buildInfoRow(
+                      'MR Number',
+                      patientData?['mrNumber'] ??
+                          patientData?['id']?.toString().substring(0, 8) ??
+                          'N/A',
+                    ),
                     _buildInfoRow('Date & Time', prescriptionDate),
                   ],
                 ),
@@ -289,9 +347,20 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Name', withDoctorTitle(doctorData?['name'] ?? 'N/A')),
-                    _buildInfoRow('PMDC License', doctorData?['pmdcLicense'] ?? doctorData?['licenseNumber'] ?? 'N/A'),
-                    _buildInfoRow('Specialization', doctorData?['specialization'] ?? 'General Practitioner'),
+                    _buildInfoRow(
+                      'Name',
+                      withDoctorTitle(doctorData?['name'] ?? 'N/A'),
+                    ),
+                    _buildInfoRow(
+                      'PMDC License',
+                      doctorData?['pmdcLicense'] ??
+                          doctorData?['licenseNumber'] ??
+                          'N/A',
+                    ),
+                    _buildInfoRow(
+                      'Specialization',
+                      doctorData?['specialization'] ?? 'General Practitioner',
+                    ),
                     _buildInfoRow('Phone', doctorData?['phone'] ?? 'N/A'),
                   ],
                 ),
@@ -481,7 +550,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
             final index = entry.key;
             final medicine = entry.value;
             final isLast = index == prescription.medicines.length - 1;
-            
+
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -507,7 +576,8 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        if (medicine.notes != null && medicine.notes!.isNotEmpty) ...[
+                        if (medicine.notes != null &&
+                            medicine.notes!.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
                             medicine.notes!,
@@ -536,7 +606,10 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -605,7 +678,9 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              test.isUrgent ? Icons.priority_high_rounded : Icons.science_rounded,
+              test.isUrgent
+                  ? Icons.priority_high_rounded
+                  : Icons.science_rounded,
               color: test.isUrgent ? Colors.red : const Color(0xFF3B82F6),
               size: 20,
             ),
@@ -629,7 +704,10 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                     ),
                     if (test.isUrgent)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -645,7 +723,8 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (test.instructions != null && test.instructions!.isNotEmpty) ...[
+                if (test.instructions != null &&
+                    test.instructions!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     test.instructions!,
@@ -687,9 +766,7 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
             _buildSOAPSection('Assessment', soap.assessment),
             const SizedBox(height: 12),
           ],
-          if (soap.plan.isNotEmpty) ...[
-            _buildSOAPSection('Plan', soap.plan),
-          ],
+          if (soap.plan.isNotEmpty) ...[_buildSOAPSection('Plan', soap.plan)],
         ],
       ),
     );
@@ -734,7 +811,11 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.event_repeat_rounded, color: Color(0xFFF59E0B), size: 20),
+              Icon(
+                Icons.event_repeat_rounded,
+                color: Color(0xFFF59E0B),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Referral & Follow-up',
@@ -747,18 +828,29 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (referral.referralType != null && referral.referralType != 'none') ...[
-            _buildInfoRow('Referral Type', referral.referralType?.toString() ?? ''),
+          if (referral.referralType != null &&
+              referral.referralType != 'none') ...[
+            _buildInfoRow(
+              'Referral Type',
+              referral.referralType?.toString() ?? '',
+            ),
             if (referral.referralSpecialty != null)
               _buildInfoRow('Specialty', referral.referralSpecialty!),
             if (referral.referralNotes != null)
               _buildInfoRow('Notes', referral.referralNotes!),
             const SizedBox(height: 8),
           ],
-          if (referral.followUpDuration != null && referral.followUpDuration != 'none') ...[
-            _buildInfoRow('Follow-up', _getFollowUpLabel(referral.followUpDuration!.toString())),
+          if (referral.followUpDuration != null &&
+              referral.followUpDuration != 'none') ...[
+            _buildInfoRow(
+              'Follow-up',
+              _getFollowUpLabel(referral.followUpDuration!.toString()),
+            ),
             if (referral.followUpDate != null)
-              _buildInfoRow('Follow-up Date', DateFormat('dd MMM yyyy').format(referral.followUpDate!)),
+              _buildInfoRow(
+                'Follow-up Date',
+                DateFormat('dd MMM yyyy').format(referral.followUpDate!),
+              ),
             if (referral.followUpNotes != null)
               _buildInfoRow('Follow-up Notes', referral.followUpNotes!),
           ],
@@ -814,10 +906,13 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       // Navigate to pharmacy with prescription
-                      context.push('/pharmacies', extra: {
-                        'prescriptionId': prescription.id,
-                        'medicines': prescription.medicines,
-                      });
+                      context.push(
+                        '/pharmacies',
+                        extra: {
+                          'prescriptionId': prescription.id,
+                          'medicines': prescription.medicines,
+                        },
+                      );
                     },
                     icon: const Icon(Icons.local_pharmacy_rounded, size: 20),
                     label: const Text('Order Medicine'),
@@ -832,7 +927,8 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (prescription.medicines.isNotEmpty && prescription.labTests.isNotEmpty)
+              if (prescription.medicines.isNotEmpty &&
+                  prescription.labTests.isNotEmpty)
                 const SizedBox(width: 12),
               // Order Lab Tests Button
               if (prescription.labTests.isNotEmpty)
@@ -840,10 +936,13 @@ class PrescriptionPdfViewScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       // Navigate to lab with prescription
-                      context.push('/laboratories', extra: {
-                        'prescriptionId': prescription.id,
-                        'labTests': prescription.labTests,
-                      });
+                      context.push(
+                        '/laboratories',
+                        extra: {
+                          'prescriptionId': prescription.id,
+                          'labTests': prescription.labTests,
+                        },
+                      );
                     },
                     icon: const Icon(Icons.biotech_rounded, size: 20),
                     label: const Text('Order Lab Tests'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/widgets/back_button.dart';
 
@@ -76,44 +77,46 @@ class _ClinicalAuditScreenState extends State<ClinicalAuditScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildQualityScore(),
-            const SizedBox(height: 32),
-            _buildSectionHeader('Performance Metrics'),
-            const SizedBox(height: 16),
-            _buildMetricTile('Documentation Completeness', '98%', Colors.green),
-            _buildMetricTile('Prescription Accuracy', '100%', Colors.green),
-            _buildMetricTile('Patient Follow-up Rate', '85%', Colors.orange),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSectionHeader('Clinical Flags & QA Reviews'),
-                TextButton.icon(
-                  onPressed: _runQAScan,
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text(
-                    'Refresh Scan',
-                    style: TextStyle(fontSize: 12),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildQualityScore(),
+              const SizedBox(height: 32),
+              _buildSectionHeader('Performance Metrics'),
+              const SizedBox(height: 16),
+              _buildMetricTile(
+                'Documentation Completeness',
+                '98%',
+                Colors.green,
+              ),
+              _buildMetricTile('Prescription Accuracy', '100%', Colors.green),
+              _buildMetricTile('Patient Follow-up Rate', '85%', Colors.orange),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionHeader('Clinical Flags & QA Reviews'),
+                  TextButton.icon(
+                    onPressed: _runQAScan,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text(
+                      'Refresh Scan',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ..._auditLogs
-                .map(
-                  (log) => _buildAuditLog(
-                    log['message'],
-                    log['status'],
-                    log['color'],
-                  ),
-                )
-                ,
-          ],
+                ],
+              ),
+              const SizedBox(height: 16),
+              ..._auditLogs.map(
+                (log) =>
+                    _buildAuditLog(log['message'], log['status'], log['color']),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/theme.dart';
 import 'package:icare/utils/utils.dart';
@@ -95,115 +96,118 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
         leading: CustomBackButton(),
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              ChooseLocationButton(label: "Choose Location"),
-              CustomDropdown<String>(
-                title: "Doctor's Speciality",
-                selectedItem: _selectedSpeciality,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                ChooseLocationButton(label: "Choose Location"),
+                CustomDropdown<String>(
+                  title: "Doctor's Speciality",
+                  selectedItem: _selectedSpeciality,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: specialityArray,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSpeciality = value!;
+                    });
+                  },
                 ),
-                items: specialityArray,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSpeciality = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Reviews",
-                selectedItem: _selectedReviews,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Reviews",
+                  selectedItem: _selectedReviews,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: reviewsList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedReviews = value!;
+                    });
+                  },
                 ),
-                items: reviewsList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedReviews = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Sort By",
-                selectedItem: _selectedSortByOption,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Sort By",
+                  selectedItem: _selectedSortByOption,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: sortByOptions,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSortByOption = value!;
+                    });
+                  },
                 ),
-                items: sortByOptions,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSortByOption = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Spoken Language",
-                selectedItem: _selectedSpokenLanguage,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Spoken Language",
+                  selectedItem: _selectedSpokenLanguage,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: spokenLanguagesList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSpokenLanguage = value!;
+                    });
+                  },
                 ),
-                items: spokenLanguagesList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSpokenLanguage = value!;
-                  });
-                },
-              ),
-              CustomDropdown<String>(
-                title: "Pharmcy Type (Optional)",
-                selectedItem: _selectedPharmacyType,
-                margin: EdgeInsets.symmetric(
-                  vertical: ScallingConfig.verticalScale(6),
+                CustomDropdown<String>(
+                  title: "Pharmcy Type (Optional)",
+                  selectedItem: _selectedPharmacyType,
+                  margin: EdgeInsets.symmetric(
+                    vertical: ScallingConfig.verticalScale(6),
+                  ),
+                  items: pharmacyTypeList,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPharmacyType = value!;
+                    });
+                  },
                 ),
-                items: pharmacyTypeList,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedPharmacyType = value!;
-                  });
-                },
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.scale(5),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(5),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ToggleSwitchButtonWithPlaceholder(
+                        value: _medicineAvailablity,
+                        onToggle: (value) {
+                          setState(() {
+                            _medicineAvailablity = value;
+                          });
+                        },
+                        title: "Medicine Availability",
+                        width: Utils.windowWidth(context) * 0.42,
+                      ),
+                      SizedBox(width: ScallingConfig.scale(18)),
+                      ToggleSwitchButtonWithPlaceholder(
+                        title: "Home Availability",
+                        value: _homeAvailablity,
+                        onToggle: (value) {
+                          setState(() {
+                            _homeAvailablity = value;
+                          });
+                        },
+                        width: Utils.windowWidth(context) * 0.42,
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ToggleSwitchButtonWithPlaceholder(
-                      value: _medicineAvailablity,
-                      onToggle: (value) {
-                        setState(() {
-                          _medicineAvailablity = value;
-                        });
-                      },
-                      title: "Medicine Availability",
-                      width: Utils.windowWidth(context) * 0.42,
-                    ),
-                    SizedBox(width: ScallingConfig.scale(18)),
-                    ToggleSwitchButtonWithPlaceholder(
-                      title: "Home Availability",
-                      value: _homeAvailablity,
-                      onToggle: (value) {
-                        setState(() {
-                          _homeAvailablity = value;
-                        });
-                      },
-                      width: Utils.windowWidth(context) * 0.42,
-                    ),
-                  ],
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomButton(
+                  label: "Search",
+                  borderRadius: 30,
+                  width: Utils.windowWidth(context) * 0.9,
                 ),
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomButton(
-                label: "Search",
-                borderRadius: 30,
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -407,7 +411,9 @@ class _PatientFiltersScreenState extends State<PatientFiltersScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 10,
-                          shadowColor: AppColors.primaryColor.withValues(alpha: 0.4),
+                          shadowColor: AppColors.primaryColor.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                         child: const Text(
                           "Search results",

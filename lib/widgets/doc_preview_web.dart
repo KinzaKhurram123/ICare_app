@@ -1,5 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,7 +6,11 @@ import 'package:url_launcher/url_launcher.dart';
 class DocPreviewDialog extends StatefulWidget {
   final String proxyUrl;
   final String fileName;
-  const DocPreviewDialog({super.key, required this.proxyUrl, required this.fileName});
+  const DocPreviewDialog({
+    super.key,
+    required this.proxyUrl,
+    required this.fileName,
+  });
 
   @override
   State<DocPreviewDialog> createState() => _DocPreviewDialogState();
@@ -27,9 +30,10 @@ class _DocPreviewDialogState extends State<DocPreviewDialog> {
       final src = useGoogleViewer
           ? 'https://docs.google.com/viewer?url=${Uri.encodeComponent(widget.proxyUrl)}&embedded=true'
           : widget.proxyUrl;
-      return html.IFrameElement()
+      return web.document.createElement('iframe') as web.HTMLIFrameElement
         ..src = src
-        ..style.cssText = 'width:100%;height:100%;border:none;background:#f8f9fa;';
+        ..style.cssText =
+            'width:100%;height:100%;border:none;background:#f8f9fa;';
     });
   }
 
@@ -58,7 +62,10 @@ class _DocPreviewDialogState extends State<DocPreviewDialog> {
               onPressed: () {
                 final sep = widget.proxyUrl.contains('?') ? '&' : '?';
                 final dlUrl = '${widget.proxyUrl}${sep}download=1';
-                launchUrl(Uri.parse(dlUrl), mode: LaunchMode.externalApplication);
+                launchUrl(
+                  Uri.parse(dlUrl),
+                  mode: LaunchMode.externalApplication,
+                );
               },
             ),
             const SizedBox(width: 4),
@@ -70,7 +77,11 @@ class _DocPreviewDialogState extends State<DocPreviewDialog> {
   }
 }
 
-Future<void> showDocPreview(BuildContext context, String proxyUrl, String fileName) {
+Future<void> showDocPreview(
+  BuildContext context,
+  String proxyUrl,
+  String fileName,
+) {
   return showDialog(
     context: context,
     barrierDismissible: true,

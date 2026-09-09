@@ -44,7 +44,10 @@ BUILD_ID="$(date +%Y%m%d%H%M%S)"
 perl -pi -e 's/\?v=\d{14}//g' "$BOOTSTRAP"
 
 # Only the entry points need this — everything else is pulled in by them.
-perl -pi -e "s/(main\.dart\.js|flutter\.js|main\.dart\.mjs)(?![\w.\?])/\$1?v=$BUILD_ID/g" "$BOOTSTRAP"
+# main.dart.wasm is one of them: a --wasm build names it the same on every
+# deploy while its contents change, so without a stamp a browser holding the
+# previous copy keeps running old code against a new backend.
+perl -pi -e "s/(main\.dart\.js|flutter\.js|main\.dart\.mjs|main\.dart\.wasm)(?![\w.\?])/\$1?v=$BUILD_ID/g" "$BOOTSTRAP"
 
 STAMPED="$(grep -o 'main\.dart\.js?v=[0-9]*' "$BOOTSTRAP" | head -1)"
 if [ -n "$STAMPED" ]; then

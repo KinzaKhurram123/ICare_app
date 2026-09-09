@@ -1,18 +1,19 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+// package:web rather than dart:html — dart:html does not exist under
+// dart2wasm, and one file importing it forces the whole app onto the JS build.
+import 'package:web/web.dart' as web;
 
 void activateLanguage(String lang) {
   try {
     if (lang == 'Urdu') {
-      html.document.cookie = 'googtrans=/en/ur; path=/';
-      html.document.cookie =
-          'googtrans=/en/ur; path=/; domain=.${html.window.location.hostname}';
+      web.document.cookie = 'googtrans=/en/ur; path=/';
+      web.document.cookie =
+          'googtrans=/en/ur; path=/; domain=.${web.window.location.hostname}';
     } else {
-      html.document.cookie =
+      web.document.cookie =
           'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-      html.document.cookie =
-          'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${html.window.location.hostname}';
+      web.document.cookie =
+          'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${web.window.location.hostname}';
     }
-    html.window.location.reload();
+    web.window.location.reload();
   } catch (_) {}
 }

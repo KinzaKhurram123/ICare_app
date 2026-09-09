@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/models/doctor.dart';
@@ -21,7 +22,10 @@ String _experienceLabel(String? years) {
 // (30s-polled) list fast, so the object handed to this screen often has no
 // photo even when the doctor has one. Fetch the full record by id for the
 // avatar — this screen loads once, so the weight is fine here.
-final _doctorPhotoProvider = FutureProvider.family<String?, String>((ref, doctorId) async {
+final _doctorPhotoProvider = FutureProvider.family<String?, String>((
+  ref,
+  doctorId,
+) async {
   try {
     final result = await DoctorService().getDoctorById(doctorId);
     if (result['success'] == true) {
@@ -75,277 +79,292 @@ class DoctorDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Doctor Header Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                    backgroundImage: buildProfileImageProvider(photo),
-                    child: buildProfileImageProvider(photo) == null
-                        ? Text(
-                            doctor.user.name.isNotEmpty ? doctor.user.name.substring(0, 1).toUpperCase() : 'D',
-                            style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Name
-                  Text(
-                    doctor.user.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+        body: DragScroll(
+          builder: (context, dragScrollCtrl) => ListView(
+            controller: dragScrollCtrl,
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Doctor Header Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  // Specialization
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Avatar
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: AppColors.primaryColor.withValues(
+                        alpha: 0.1,
+                      ),
+                      backgroundImage: buildProfileImageProvider(photo),
+                      child: buildProfileImageProvider(photo) == null
+                          ? Text(
+                              doctor.user.name.isNotEmpty
+                                  ? doctor.user.name
+                                        .substring(0, 1)
+                                        .toUpperCase()
+                                  : 'D',
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryColor,
+                              ),
+                            )
+                          : null,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+                    const SizedBox(height: 16),
+                    // Name
+                    Text(
+                      doctor.user.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: Text(
-                      doctor.specialization ?? 'General Practitioner',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor,
+                    const SizedBox(height: 8),
+                    // Specialization
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        doctor.specialization ?? 'General Practitioner',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryColor,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Stats Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.work_history_rounded,
+                      label: 'Experience',
+                      value: _experienceLabel(doctor.experience),
+                      color: const Color(0xFF3B82F6),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.star_rounded,
+                      label: 'Rating',
+                      value: averageRating > 0
+                          ? averageRating.toStringAsFixed(1)
+                          : 'New',
+                      color: const Color(0xFFF59E0B),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.people_rounded,
+                      label: 'Reviews',
+                      value: '${doctor.reviewCount}',
+                      color: const Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.payments_rounded,
+                      label: 'Fee',
+                      value:
+                          (doctor.consultationFee != null &&
+                              doctor.consultationFee! > 0)
+                          ? 'PKR ${doctor.consultationFee!.toInt()}'
+                          : 'Free',
+                      color: const Color(0xFF8B5CF6),
+                    ),
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Stats Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.work_history_rounded,
-                    label: 'Experience',
-                    value: _experienceLabel(doctor.experience),
-                    color: const Color(0xFF3B82F6),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.star_rounded,
-                    label: 'Rating',
-                    value: averageRating > 0
-                        ? averageRating.toStringAsFixed(1)
-                        : 'New',
-                    color: const Color(0xFFF59E0B),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.people_rounded,
-                    label: 'Reviews',
-                    value: '${doctor.reviewCount}',
-                    color: const Color(0xFF10B981),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.payments_rounded,
-                    label: 'Fee',
-                    value: (doctor.consultationFee != null && doctor.consultationFee! > 0)
-                        ? 'PKR ${doctor.consultationFee!.toInt()}'
-                        : 'Free',
-                    color: const Color(0xFF8B5CF6),
-                  ),
+              // Contact Information (Doctor-only view)
+              if (selectedRole == 'Doctor') ...[
+                _buildInfoCard(
+                  title: 'Contact Information',
+                  icon: Icons.contact_phone_rounded,
+                  iconColor: const Color(0xFF3B82F6),
+                  children: [
+                    _buildInfoItem(
+                      icon: Icons.email_rounded,
+                      label: 'Email',
+                      value: doctor.user.email,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoItem(
+                      icon: Icons.phone_rounded,
+                      label: 'Phone',
+                      value: doctor.user.phoneNumber,
+                    ),
+                  ],
                 ),
               ],
-            ),
 
-            const SizedBox(height: 16),
-
-            // Contact Information (Doctor-only view)
-            if (selectedRole == 'Doctor') ...[
-              _buildInfoCard(
-                title: 'Contact Information',
-                icon: Icons.contact_phone_rounded,
-                iconColor: const Color(0xFF3B82F6),
-                children: [
-                  _buildInfoItem(
-                    icon: Icons.email_rounded,
-                    label: 'Email',
-                    value: doctor.user.email,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoItem(
-                    icon: Icons.phone_rounded,
-                    label: 'Phone',
-                    value: doctor.user.phoneNumber,
-                  ),
-                ],
-              ),
-            ],
-
-            // Qualifications
-            if (doctor.degrees.isNotEmpty ||
-                (doctor.licenseNumber != null &&
-                    doctor.licenseNumber!.isNotEmpty)) ...[
-              const SizedBox(height: 16),
-              _buildInfoCard(
-                title: 'Qualifications',
-                icon: Icons.school_rounded,
-                iconColor: const Color(0xFF8B5CF6),
-                children: [
-                  if (doctor.degrees.isNotEmpty) ...[
-                    _buildInfoItem(
-                      icon: Icons.workspace_premium_rounded,
-                      label: 'Degrees',
-                      value: doctor.degrees.join(', '),
-                    ),
+              // Qualifications
+              if (doctor.degrees.isNotEmpty ||
+                  (doctor.licenseNumber != null &&
+                      doctor.licenseNumber!.isNotEmpty)) ...[
+                const SizedBox(height: 16),
+                _buildInfoCard(
+                  title: 'Qualifications',
+                  icon: Icons.school_rounded,
+                  iconColor: const Color(0xFF8B5CF6),
+                  children: [
+                    if (doctor.degrees.isNotEmpty) ...[
+                      _buildInfoItem(
+                        icon: Icons.workspace_premium_rounded,
+                        label: 'Degrees',
+                        value: doctor.degrees.join(', '),
+                      ),
+                      if (doctor.licenseNumber != null &&
+                          doctor.licenseNumber!.isNotEmpty)
+                        const SizedBox(height: 12),
+                    ],
                     if (doctor.licenseNumber != null &&
                         doctor.licenseNumber!.isNotEmpty)
-                      const SizedBox(height: 12),
+                      _buildInfoItem(
+                        icon: Icons.badge_rounded,
+                        label: 'License',
+                        value: doctor.licenseNumber!,
+                      ),
                   ],
-                  if (doctor.licenseNumber != null &&
-                      doctor.licenseNumber!.isNotEmpty)
-                    _buildInfoItem(
-                      icon: Icons.badge_rounded,
-                      label: 'License',
-                      value: doctor.licenseNumber!,
-                    ),
-                ],
-              ),
-            ],
+                ),
+              ],
 
-            // Clinic Information
-            if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty ||
-                doctor.clinicAddress != null &&
-                    doctor.clinicAddress!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildInfoCard(
-                title: 'Clinic Information',
-                icon: Icons.local_hospital_rounded,
-                iconColor: const Color(0xFFEF4444),
-                children: [
-                  if (doctor.clinicName != null &&
-                      doctor.clinicName!.isNotEmpty) ...[
-                    _buildInfoItem(
-                      icon: Icons.business_rounded,
-                      label: 'Clinic Name',
-                      value: doctor.clinicName!,
-                    ),
+              // Clinic Information
+              if (doctor.clinicName != null && doctor.clinicName!.isNotEmpty ||
+                  doctor.clinicAddress != null &&
+                      doctor.clinicAddress!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildInfoCard(
+                  title: 'Clinic Information',
+                  icon: Icons.local_hospital_rounded,
+                  iconColor: const Color(0xFFEF4444),
+                  children: [
+                    if (doctor.clinicName != null &&
+                        doctor.clinicName!.isNotEmpty) ...[
+                      _buildInfoItem(
+                        icon: Icons.business_rounded,
+                        label: 'Clinic Name',
+                        value: doctor.clinicName!,
+                      ),
+                      if (doctor.clinicAddress != null &&
+                          doctor.clinicAddress!.isNotEmpty)
+                        const SizedBox(height: 12),
+                    ],
                     if (doctor.clinicAddress != null &&
                         doctor.clinicAddress!.isNotEmpty)
-                      const SizedBox(height: 12),
+                      _buildInfoItem(
+                        icon: Icons.location_on_rounded,
+                        label: 'Address',
+                        value: doctor.clinicAddress!,
+                      ),
                   ],
-                  if (doctor.clinicAddress != null &&
-                      doctor.clinicAddress!.isNotEmpty)
-                    _buildInfoItem(
-                      icon: Icons.location_on_rounded,
-                      label: 'Address',
-                      value: doctor.clinicAddress!,
-                    ),
-                ],
-              ),
-            ],
+                ),
+              ],
 
-            // Availability
-            if (doctor.availableDays.isNotEmpty ||
-                doctor.availableTime != null) ...[
-              const SizedBox(height: 16),
-              _buildInfoCard(
-                title: 'Availability',
-                icon: Icons.calendar_month_rounded,
-                iconColor: const Color(0xFF06B6D4),
-                children: [
-                  if (doctor.availableDays.isNotEmpty) ...[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.event_available_rounded,
-                          size: 20,
-                          color: const Color(0xFF06B6D4),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: doctor.availableDays.map((day) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF06B6D4,
-                                  ).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
+              // Availability
+              if (doctor.availableDays.isNotEmpty ||
+                  doctor.availableTime != null) ...[
+                const SizedBox(height: 16),
+                _buildInfoCard(
+                  title: 'Availability',
+                  icon: Icons.calendar_month_rounded,
+                  iconColor: const Color(0xFF06B6D4),
+                  children: [
+                    if (doctor.availableDays.isNotEmpty) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.event_available_rounded,
+                            size: 20,
+                            color: const Color(0xFF06B6D4),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: doctor.availableDays.map((day) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: const Color(
                                       0xFF06B6D4,
-                                    ).withValues(alpha: 0.3),
+                                    ).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF06B6D4,
+                                      ).withValues(alpha: 0.3),
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  day,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF06B6D4),
+                                  child: Text(
+                                    day,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF06B6D4),
+                                    ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
+                                );
+                              }).toList(),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                      if (doctor.availableTime != null)
+                        const SizedBox(height: 12),
+                    ],
                     if (doctor.availableTime != null)
-                      const SizedBox(height: 12),
+                      _buildInfoItem(
+                        icon: Icons.access_time_rounded,
+                        label: 'Working Hours',
+                        value:
+                            '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
+                      ),
                   ],
-                  if (doctor.availableTime != null)
-                    _buildInfoItem(
-                      icon: Icons.access_time_rounded,
-                      label: 'Working Hours',
-                      value:
-                          '${doctor.availableTime!.start} - ${doctor.availableTime!.end}',
-                    ),
-                ],
-              ),
-            ],
+                ),
+              ],
 
-            const SizedBox(height: 100),
-          ],
+              const SizedBox(height: 100),
+            ],
+          ),
         ),
         bottomNavigationBar: SafeArea(
           child: Container(
@@ -361,17 +380,31 @@ class DoctorDetailScreen extends ConsumerWidget {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             title: const Row(
                               children: [
-                                Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                Icon(
+                                  Icons.lock_rounded,
+                                  color: Color(0xFF0036BC),
+                                ),
                                 SizedBox(width: 10),
-                                Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                                Text(
+                                  'Login Required',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ],
                             ),
                             content: const Text(
                               'You need to be logged in to book an appointment. Please sign in to continue.',
-                              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                             actions: [
                               TextButton(
@@ -381,13 +414,20 @@ class DoctorDetailScreen extends ConsumerWidget {
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  context.go('/login?redirectDoctorId=${doctor.id}');
+                                  context.go(
+                                    '/login?redirectDoctorId=${doctor.id}',
+                                  );
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF0036BC),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-                                child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                                child: const Text(
+                                  'Sign In',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ],
                           ),
@@ -461,7 +501,11 @@ class DoctorDetailScreen extends ConsumerWidget {
                 ),
                 child: Center(
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.primaryColor),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 20,
+                      color: AppColors.primaryColor,
+                    ),
                     onPressed: () => goBackOrHome(context),
                     padding: EdgeInsets.zero,
                   ),
@@ -564,11 +608,21 @@ class DoctorDetailScreen extends ConsumerWidget {
                               child: CircleAvatar(
                                 radius: isDesktop ? 65 : 55,
                                 backgroundColor: const Color(0xFFF0F9FF),
-                                backgroundImage: buildProfileImageProvider(photo),
+                                backgroundImage: buildProfileImageProvider(
+                                  photo,
+                                ),
                                 child: buildProfileImageProvider(photo) == null
                                     ? Text(
-                                        doctor.user.name.isNotEmpty ? doctor.user.name.substring(0, 1).toUpperCase() : 'D',
-                                        style: TextStyle(fontSize: isDesktop ? 56 : 48, fontWeight: FontWeight.w900, color: AppColors.primaryColor),
+                                        doctor.user.name.isNotEmpty
+                                            ? doctor.user.name
+                                                  .substring(0, 1)
+                                                  .toUpperCase()
+                                            : 'D',
+                                        style: TextStyle(
+                                          fontSize: isDesktop ? 56 : 48,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.primaryColor,
+                                        ),
                                       )
                                     : null,
                               ),
@@ -1012,17 +1066,31 @@ class DoctorDetailScreen extends ConsumerWidget {
                           showDialog(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               title: const Row(
                                 children: [
-                                  Icon(Icons.lock_rounded, color: Color(0xFF0036BC)),
+                                  Icon(
+                                    Icons.lock_rounded,
+                                    color: Color(0xFF0036BC),
+                                  ),
                                   SizedBox(width: 10),
-                                  Text('Login Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                                  Text(
+                                    'Login Required',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ],
                               ),
                               content: const Text(
                                 'You need to be logged in to book an appointment. Please sign in to continue.',
-                                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
                               ),
                               actions: [
                                 TextButton(
@@ -1032,13 +1100,20 @@ class DoctorDetailScreen extends ConsumerWidget {
                                 ElevatedButton(
                                   onPressed: () {
                                     Navigator.pop(ctx);
-                                    context.go('/login?redirectDoctorId=${doctor.id}');
+                                    context.go(
+                                      '/login?redirectDoctorId=${doctor.id}',
+                                    );
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF0036BC),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                  child: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                                  child: const Text(
+                                    'Sign In',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ],
                             ),

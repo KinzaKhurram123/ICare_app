@@ -8,7 +8,18 @@ import 'package:icare/utils/theme.dart';
 class LmsPublicCatalog extends StatefulWidget {
   /// Optional audience filter: 'patient' or 'doctor'/'professional'
   final String? audienceFilter;
-  const LmsPublicCatalog({super.key, this.audienceFilter});
+
+  /// True when this is rendered inside another screen's tab (My Courses >
+  /// Browse Courses). The hero banner carries a back arrow and a Login button
+  /// that make no sense there, and a signed-in student does not need the
+  /// marketing header taking a third of the tab.
+  final bool embedded;
+
+  const LmsPublicCatalog({
+    super.key,
+    this.audienceFilter,
+    this.embedded = false,
+  });
 
   @override
   State<LmsPublicCatalog> createState() => _LmsPublicCatalogState();
@@ -121,21 +132,32 @@ class _LmsPublicCatalogState extends State<LmsPublicCatalog> {
       body: CustomScrollView(
         slivers: [
           // Hero banner (like Coursera/Udemy)
+          if (!widget.embedded)
           SliverAppBar(
             expandedHeight: 160,
             pinned: true,
             backgroundColor: AppColors.primaryColor,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-              onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
+              // This screen is reached both by GoRouter (/lms/catalog) and by
+              // a plain Navigator.push from the instructor sidebar. Only the
+              // second case has a Navigator route to pop, and checking
+              // GoRouter first sent those users to /home instead of back.
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
+                }
+              },
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.login_rounded, color: Colors.white),
-                onPressed: () => Navigator.pushNamed(context, '/login'),
-                tooltip: 'Login',
-              ),
-            ],
+            // No Login action here. It only ever made sense to a signed-out
+            // visitor, and everyone reaching this screen from inside the app
+            // is already signed in - they just saw an unexplained door icon.
+            // Signed-out visitors still get Sign In on the landing page.
+            actions: const [],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(

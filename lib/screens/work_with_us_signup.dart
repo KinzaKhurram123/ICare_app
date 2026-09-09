@@ -1909,7 +1909,7 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
               GestureDetector(
-                onTap: () => context.go('/terms'),
+                onTap: () => context.push('/terms'),
                 child: Text(
                   'Terms and Conditions',
                   style: TextStyle(
@@ -1926,7 +1926,7 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
               GestureDetector(
-                onTap: () => context.go('/privacypolicy'),
+                onTap: () => context.push('/privacypolicy'),
                 child: Text(
                   'Privacy Policy',
                   style: TextStyle(
@@ -1943,7 +1943,7 @@ class _WorkWithUsSignupState extends State<WorkWithUsSignup> {
                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
               ),
               GestureDetector(
-                onTap: () => context.go('/refund-policy'),
+                onTap: () => context.push('/refund-policy'),
                 child: Text(
                   'Refund Policy',
                   style: TextStyle(

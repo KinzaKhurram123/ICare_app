@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:icare/models/referral.dart';
 import 'package:icare/services/referral_service.dart';
 import 'package:icare/utils/theme.dart';
@@ -123,37 +124,42 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
         elevation: 0,
         title: const Text('Referral Details'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusCard(),
-            const SizedBox(height: 16),
-            _buildPatientCard(),
-            const SizedBox(height: 16),
-            _buildDoctorCards(),
-            const SizedBox(height: 16),
-            _buildReasonCard(),
-            const SizedBox(height: 16),
-            _buildClinicalNotesCard(),
-            if (widget.referral.specialistNotes != null) ...[
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusCard(),
               const SizedBox(height: 16),
-              _buildSpecialistNotesCard(),
-            ],
-            if (widget.referral.rejectionReason != null) ...[
+              _buildPatientCard(),
               const SizedBox(height: 16),
-              _buildDeclineReasonCard(),
+              _buildDoctorCards(),
+              const SizedBox(height: 16),
+              _buildReasonCard(),
+              const SizedBox(height: 16),
+              _buildClinicalNotesCard(),
+              if (widget.referral.specialistNotes != null) ...[
+                const SizedBox(height: 16),
+                _buildSpecialistNotesCard(),
+              ],
+              if (widget.referral.rejectionReason != null) ...[
+                const SizedBox(height: 16),
+                _buildDeclineReasonCard(),
+              ],
+              if (!widget.isSent &&
+                  widget.referral.status == ReferralStatus.pending) ...[
+                const SizedBox(height: 24),
+                _buildActionButtons(),
+              ],
+              if (!widget.isSent &&
+                  widget.referral.status == ReferralStatus.accepted) ...[
+                const SizedBox(height: 24),
+                _buildCompleteButton(),
+              ],
             ],
-            if (!widget.isSent && widget.referral.status == ReferralStatus.pending) ...[
-              const SizedBox(height: 24),
-              _buildActionButtons(),
-            ],
-            if (!widget.isSent && widget.referral.status == ReferralStatus.accepted) ...[
-              const SizedBox(height: 24),
-              _buildCompleteButton(),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -232,9 +238,7 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
       'Patient Information',
       Icons.person,
       AppColors.primaryColor,
-      [
-        _buildInfoRow('Patient ID', widget.referral.patientId),
-      ],
+      [_buildInfoRow('Patient ID', widget.referral.patientId)],
     );
   }
 
@@ -245,9 +249,7 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
           'Referring Doctor',
           Icons.medical_services,
           const Color(0xFF3B82F6),
-          [
-            _buildInfoRow('Doctor ID', widget.referral.referringDoctorId),
-          ],
+          [_buildInfoRow('Doctor ID', widget.referral.referringDoctorId)],
         ),
         if (widget.referral.specialistDoctorId != null) ...[
           const SizedBox(height: 16),
@@ -256,7 +258,10 @@ class _ReferralDetailScreenState extends State<ReferralDetailScreen> {
             Icons.local_hospital,
             const Color(0xFF8B5CF6),
             [
-              _buildInfoRow('Specialist ID', widget.referral.specialistDoctorId!),
+              _buildInfoRow(
+                'Specialist ID',
+                widget.referral.specialistDoctorId!,
+              ),
             ],
           ),
         ],

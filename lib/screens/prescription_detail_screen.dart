@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/services.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/laboratories.dart';
@@ -42,26 +43,40 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   String get _patientName =>
-      _patient['name'] ?? _patient['username'] ?? prescription['patientName'] ?? 'Patient';
+      _patient['name'] ??
+      _patient['username'] ??
+      prescription['patientName'] ??
+      'Patient';
 
   String get _patientAge {
     final age = _patient['age'] ?? prescription['patientAge'];
     return age != null ? '$age yrs' : '';
   }
 
-  String get _patientGender =>
-      _capitalize(_patient['gender']?.toString() ?? prescription['patientGender']?.toString() ?? '');
+  String get _patientGender => _capitalize(
+    _patient['gender']?.toString() ??
+        prescription['patientGender']?.toString() ??
+        '',
+  );
 
   String get _patientMrNumber {
-    final mr = _patient['mrNumber'] ?? _patient['MRNumber'] ?? prescription['mrNumber'];
+    final mr =
+        _patient['mrNumber'] ??
+        _patient['MRNumber'] ??
+        prescription['mrNumber'];
     if (mr != null) return mr.toString();
     final id = _patient['_id']?.toString() ?? _patient['id']?.toString() ?? '';
-    if (id.length >= 6) return 'MR-${id.substring(id.length - 6).toUpperCase()}';
+    if (id.length >= 6)
+      return 'MR-${id.substring(id.length - 6).toUpperCase()}';
     return '';
   }
 
   String get _doctorName {
-    final name = _doctor['name'] ?? _doctor['username'] ?? prescription['doctorName'] ?? 'Doctor';
+    final name =
+        _doctor['name'] ??
+        _doctor['username'] ??
+        prescription['doctorName'] ??
+        'Doctor';
     return name.toString();
   }
 
@@ -104,7 +119,9 @@ class PrescriptionDetailScreen extends StatelessWidget {
 
   List<dynamic> get _diagnoses =>
       (prescription['diagnoses'] as List?) ??
-      (prescription['diagnosis'] is List ? prescription['diagnosis'] as List : []) ;
+      (prescription['diagnosis'] is List
+          ? prescription['diagnosis'] as List
+          : []);
 
   List<dynamic> get _medicines =>
       (prescription['medicines'] as List?) ??
@@ -132,7 +149,8 @@ class PrescriptionDetailScreen extends StatelessWidget {
   String get _followUpDate {
     final f = _followUp;
     if (f != null) {
-      final dateStr = f['date']?.toString() ?? f['followUpDate']?.toString() ?? '';
+      final dateStr =
+          f['date']?.toString() ?? f['followUpDate']?.toString() ?? '';
       if (dateStr.isNotEmpty) {
         try {
           return DateFormat('MMMM dd, yyyy').format(_parsePkt(dateStr));
@@ -168,7 +186,9 @@ class PrescriptionDetailScreen extends StatelessWidget {
   String get _prescriptionDate {
     final dateStr = prescription['createdAt']?.toString() ?? '';
     if (dateStr.isNotEmpty) {
-      try { return DateFormat('MMMM dd, yyyy').format(_parsePkt(dateStr)); } catch (_) {}
+      try {
+        return DateFormat('MMMM dd, yyyy').format(_parsePkt(dateStr));
+      } catch (_) {}
     }
     return DateFormat('MMMM dd, yyyy').format(DateTime.now());
   }
@@ -176,7 +196,9 @@ class PrescriptionDetailScreen extends StatelessWidget {
   String get _prescriptionTime {
     final dateStr = prescription['createdAt']?.toString() ?? '';
     if (dateStr.isNotEmpty) {
-      try { return DateFormat('hh:mm a').format(_parsePkt(dateStr)); } catch (_) {}
+      try {
+        return DateFormat('hh:mm a').format(_parsePkt(dateStr));
+      } catch (_) {}
     }
     return '';
   }
@@ -199,9 +221,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryColor,
         elevation: 0,
         leading: const CustomBackButton(color: Colors.white),
-        title: const Text('Prescription',
-            style: TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Prescription',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: () => _downloadPdf(context),
@@ -215,96 +242,109 @@ class PrescriptionDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── HEADER ──────────────────────────────────────────
-                  _buildHeader(),
-
-                  // ── BODY ────────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_chiefComplaints.isNotEmpty) ...[
-                          _sectionTitle('Chief Complaints'),
-                          const SizedBox(height: 8),
-                          _buildChiefComplaints(),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1),
-                          const SizedBox(height: 20),
-                        ],
-
-                        if (_diagnoses.isNotEmpty) ...[
-                          _sectionTitle('Diagnosis'),
-                          const SizedBox(height: 10),
-                          _buildDiagnoses(),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1),
-                          const SizedBox(height: 20),
-                        ],
-
-                        if (_medicines.isNotEmpty) ...[
-                          _sectionTitle('Rx  (Medications)', icon: Icons.medication_rounded),
-                          const SizedBox(height: 12),
-                          _buildMedicines(),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1),
-                          const SizedBox(height: 20),
-                        ],
-
-                        if (_labTests.isNotEmpty) ...[
-                          _sectionTitle('Lab Tests', icon: Icons.biotech_rounded),
-                          const SizedBox(height: 12),
-                          _buildLabTests(),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1),
-                          const SizedBox(height: 20),
-                        ],
-
-                        if (_doctorNotes.isNotEmpty) ...[
-                          _sectionTitle('Doctor\'s Notes'),
-                          const SizedBox(height: 8),
-                          _buildDoctorNotes(),
-                          const SizedBox(height: 20),
-                          const Divider(height: 1),
-                          const SizedBox(height: 20),
-                        ],
-
-                        if (_followUpDate.isNotEmpty || _followUpSpecialty.isNotEmpty) ...[
-                          _sectionTitle('Follow-up'),
-                          const SizedBox(height: 10),
-                          _buildFollowUp(),
-                          const SizedBox(height: 20),
-                        ],
-
-                        // Signature area
-                        _buildSignatureArea(),
-                      ],
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPad,
+            vertical: 20,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
-                  ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── HEADER ──────────────────────────────────────────
+                    _buildHeader(),
 
-                  // ── FOOTER BUTTONS ───────────────────────────────────
-                  _buildFooterButtons(context),
-                ],
+                    // ── BODY ────────────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_chiefComplaints.isNotEmpty) ...[
+                            _sectionTitle('Chief Complaints'),
+                            const SizedBox(height: 8),
+                            _buildChiefComplaints(),
+                            const SizedBox(height: 20),
+                            const Divider(height: 1),
+                            const SizedBox(height: 20),
+                          ],
+
+                          if (_diagnoses.isNotEmpty) ...[
+                            _sectionTitle('Diagnosis'),
+                            const SizedBox(height: 10),
+                            _buildDiagnoses(),
+                            const SizedBox(height: 20),
+                            const Divider(height: 1),
+                            const SizedBox(height: 20),
+                          ],
+
+                          if (_medicines.isNotEmpty) ...[
+                            _sectionTitle(
+                              'Rx  (Medications)',
+                              icon: Icons.medication_rounded,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildMedicines(),
+                            const SizedBox(height: 20),
+                            const Divider(height: 1),
+                            const SizedBox(height: 20),
+                          ],
+
+                          if (_labTests.isNotEmpty) ...[
+                            _sectionTitle(
+                              'Lab Tests',
+                              icon: Icons.biotech_rounded,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildLabTests(),
+                            const SizedBox(height: 20),
+                            const Divider(height: 1),
+                            const SizedBox(height: 20),
+                          ],
+
+                          if (_doctorNotes.isNotEmpty) ...[
+                            _sectionTitle('Doctor\'s Notes'),
+                            const SizedBox(height: 8),
+                            _buildDoctorNotes(),
+                            const SizedBox(height: 20),
+                            const Divider(height: 1),
+                            const SizedBox(height: 20),
+                          ],
+
+                          if (_followUpDate.isNotEmpty ||
+                              _followUpSpecialty.isNotEmpty) ...[
+                            _sectionTitle('Follow-up'),
+                            const SizedBox(height: 10),
+                            _buildFollowUp(),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // Signature area
+                          _buildSignatureArea(),
+                        ],
+                      ),
+                    ),
+
+                    // ── FOOTER BUTTONS ───────────────────────────────────
+                    _buildFooterButtons(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -338,11 +378,16 @@ class PrescriptionDetailScreen extends StatelessWidget {
             children: [
               // iCare logo image
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Image.asset(
                   'assets/Asset 1.png',
@@ -351,9 +396,21 @@ class PrescriptionDetailScreen extends StatelessWidget {
                   errorBuilder: (_, _, _) => const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
+                      Icon(
+                        Icons.local_hospital_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       SizedBox(width: 6),
-                      Text('iCare', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      Text(
+                        'iCare',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -363,10 +420,18 @@ class PrescriptionDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('iCare Telemedicine Platform',
-                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-                    Text('RM Health Solutions (Private) Limited',
-                        style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    Text(
+                      'iCare Telemedicine Platform',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'RM Health Solutions (Private) Limited',
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
+                    ),
                   ],
                 ),
               ),
@@ -374,12 +439,22 @@ class PrescriptionDetailScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(_prescriptionDate,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                  Text(
+                    _prescriptionDate,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   if (_prescriptionTime.isNotEmpty)
-                    Text(_prescriptionTime,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text(
+                      _prescriptionTime,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -391,7 +466,11 @@ class PrescriptionDetailScreen extends StatelessWidget {
             children: [
               Expanded(child: _buildPatientInfo()),
               const SizedBox(width: 16),
-              Container(width: 1, height: 80, color: Colors.white.withValues(alpha: 0.3)),
+              Container(
+                width: 1,
+                height: 80,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
               const SizedBox(width: 16),
               Expanded(child: _buildDoctorInfo()),
             ],
@@ -405,29 +484,48 @@ class PrescriptionDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('PATIENT',
-            style: TextStyle(
-                color: Colors.white60,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5)),
+        const Text(
+          'PATIENT',
+          style: TextStyle(
+            color: Colors.white60,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 6),
-        Text(_patientName,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+        Text(
+          _patientName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         const SizedBox(height: 4),
         Row(
           children: [
             if (_patientAge.isNotEmpty) ...[
-              Text(_patientAge,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                _patientAge,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
               const SizedBox(width: 6),
-              Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+              Container(
+                width: 3,
+                height: 3,
+                decoration: const BoxDecoration(
+                  color: Colors.white54,
+                  shape: BoxShape.circle,
+                ),
+              ),
               const SizedBox(width: 6),
             ],
             if (_patientGender.isNotEmpty)
-              Text(_patientGender,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                _patientGender,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
           ],
         ),
         if (_patientMrNumber.isNotEmpty) ...[
@@ -438,12 +536,15 @@ class PrescriptionDetailScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(_patientMrNumber,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5)),
+            child: Text(
+              _patientMrNumber,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
           ),
         ],
       ],
@@ -454,25 +555,41 @@ class PrescriptionDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('DOCTOR',
-            style: TextStyle(
-                color: Colors.white60,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5)),
+        const Text(
+          'DOCTOR',
+          style: TextStyle(
+            color: Colors.white60,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 6),
-        Text(withDoctorTitle(_doctorName),
-            style: const TextStyle(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+        Text(
+          withDoctorTitle(_doctorName),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         if (_doctorQualifications.isNotEmpty) ...[
           const SizedBox(height: 3),
-          Text(_doctorQualifications,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            _doctorQualifications,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
         ],
         if (_doctorSpecialty.isNotEmpty) ...[
           const SizedBox(height: 2),
-          Text(_doctorSpecialty,
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(
+            _doctorSpecialty,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
         if (_doctorPmdc.isNotEmpty) ...[
           const SizedBox(height: 4),
@@ -480,8 +597,10 @@ class PrescriptionDetailScreen extends StatelessWidget {
             children: [
               const Icon(Icons.badge_rounded, size: 12, color: Colors.white70),
               const SizedBox(width: 4),
-              Text('PMDC: $_doctorPmdc',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'PMDC: $_doctorPmdc',
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
           ),
         ],
@@ -491,8 +610,10 @@ class PrescriptionDetailScreen extends StatelessWidget {
             children: [
               const Icon(Icons.phone_rounded, size: 12, color: Colors.white70),
               const SizedBox(width: 4),
-              Text(_doctorPhone,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                _doctorPhone,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
           ),
         ],
@@ -533,9 +654,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFFED7AA)),
       ),
-      child: Text(_chiefComplaints,
-          style: const TextStyle(
-              fontSize: 14, color: Color(0xFF374151), height: 1.5)),
+      child: Text(
+        _chiefComplaints,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF374151),
+          height: 1.5,
+        ),
+      ),
     );
   }
 
@@ -550,7 +676,8 @@ class PrescriptionDetailScreen extends StatelessWidget {
         String desc = '';
         if (d is Map) {
           code = d['code']?.toString() ?? d['icdCode']?.toString() ?? '';
-          desc = d['description']?.toString() ??
+          desc =
+              d['description']?.toString() ??
               d['desc']?.toString() ??
               d['name']?.toString() ??
               d.toString();
@@ -569,25 +696,34 @@ class PrescriptionDetailScreen extends StatelessWidget {
             children: [
               if (code.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(code,
-                      style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.5)),
+                  child: Text(
+                    code,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
               ],
-              Text(desc,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A))),
+              Text(
+                desc,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
             ],
           ),
         );
@@ -609,19 +745,35 @@ class PrescriptionDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMedicineRow(Map m, int index) {
-    final name = m['name']?.toString() ?? m['medicineName']?.toString() ?? m['medicine']?.toString() ?? 'Medicine';
+    final name =
+        m['name']?.toString() ??
+        m['medicineName']?.toString() ??
+        m['medicine']?.toString() ??
+        'Medicine';
     final dosage = m['dosage']?.toString() ?? m['dose']?.toString() ?? '';
     final rawFormType = (m['formType'] ?? '').toString().toLowerCase();
-    final formTypeLabel = rawFormType == 'capsule' ? 'Capsule' :
-                          rawFormType == 'liquid' ? 'Liquid/Syrup' :
-                          rawFormType == 'drops' ? 'Drops' :
-                          rawFormType == 'injection' ? 'Injection' :
-                          rawFormType == 'cream' ? 'Cream' :
-                          rawFormType == 'inhaler' ? 'Inhaler' :
-                          rawFormType == 'tablet' ? 'Tablet' : '';
+    final formTypeLabel = rawFormType == 'capsule'
+        ? 'Capsule'
+        : rawFormType == 'liquid'
+        ? 'Liquid/Syrup'
+        : rawFormType == 'drops'
+        ? 'Drops'
+        : rawFormType == 'injection'
+        ? 'Injection'
+        : rawFormType == 'cream'
+        ? 'Cream'
+        : rawFormType == 'inhaler'
+        ? 'Inhaler'
+        : rawFormType == 'tablet'
+        ? 'Tablet'
+        : '';
     final frequency = m['frequency']?.toString() ?? '';
     final duration = m['duration']?.toString() ?? '';
-    final instructions = m['instructions']?.toString() ?? m['notes']?.toString() ?? m['note']?.toString() ?? '';
+    final instructions =
+        m['instructions']?.toString() ??
+        m['notes']?.toString() ??
+        m['note']?.toString() ??
+        '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -645,18 +797,26 @@ class PrescriptionDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(
-                  child: Text('${index + 1}',
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(name,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A))),
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
               ),
             ],
           ),
@@ -680,12 +840,21 @@ class PrescriptionDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.only(left: 38),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, size: 13, color: Color(0xFF64748B)),
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 13,
+                    color: Color(0xFF64748B),
+                  ),
                   const SizedBox(width: 5),
                   Expanded(
-                    child: Text(instructions,
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF64748B), fontStyle: FontStyle.italic)),
+                    child: Text(
+                      instructions,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -707,12 +876,19 @@ class PrescriptionDetailScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text('${index + 1}. ',
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryColor)),
+          Text(
+            '${index + 1}. ',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryColor,
+            ),
+          ),
           Expanded(
-            child: Text(text,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+            ),
           ),
         ],
       ),
@@ -723,9 +899,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label: ',
-            style: const TextStyle(
-                fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
@@ -733,11 +914,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
-          child: Text(value,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryColor)),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryColor,
+            ),
+          ),
         ),
       ],
     );
@@ -777,36 +961,56 @@ class PrescriptionDetailScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.biotech_rounded, color: Color(0xFF8B5CF6), size: 18),
+              const Icon(
+                Icons.biotech_rounded,
+                color: Color(0xFF8B5CF6),
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A))),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
                     if (notes.isNotEmpty)
-                      Text(notes,
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(
+                        notes,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
                   ],
                 ),
               ),
               if (urgencyLabel != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: urgencyColor!.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: urgencyColor.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: urgencyColor.withValues(alpha: 0.4),
+                    ),
                   ),
-                  child: Text(urgencyLabel,
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: urgencyColor)),
+                  child: Text(
+                    urgencyLabel,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: urgencyColor,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -826,11 +1030,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFA7F3D0)),
       ),
-      child: Text(_doctorNotes,
-          style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF374151),
-              height: 1.6)),
+      child: Text(
+        _doctorNotes,
+        style: const TextStyle(
+          fontSize: 13,
+          color: Color(0xFF374151),
+          height: 1.6,
+        ),
+      ),
     );
   }
 
@@ -852,7 +1059,11 @@ class PrescriptionDetailScreen extends StatelessWidget {
               color: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.event_repeat_rounded, color: Color(0xFF0EA5E9), size: 22),
+            child: const Icon(
+              Icons.event_repeat_rounded,
+              color: Color(0xFF0EA5E9),
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -860,11 +1071,23 @@ class PrescriptionDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_followUpDate.isNotEmpty)
-                  _followUpRow(Icons.calendar_month_rounded, 'Next Visit', _followUpDate),
+                  _followUpRow(
+                    Icons.calendar_month_rounded,
+                    'Next Visit',
+                    _followUpDate,
+                  ),
                 if (_followUpSpecialty.isNotEmpty)
-                  _followUpRow(Icons.local_hospital_rounded, 'Referred To', _followUpSpecialty),
+                  _followUpRow(
+                    Icons.local_hospital_rounded,
+                    'Referred To',
+                    _followUpSpecialty,
+                  ),
                 if (_followUp != null && _followUp!['reason'] != null)
-                  _followUpRow(Icons.notes_rounded, 'Reason', _followUp!['reason'].toString()),
+                  _followUpRow(
+                    Icons.notes_rounded,
+                    'Reason',
+                    _followUp!['reason'].toString(),
+                  ),
               ],
             ),
           ),
@@ -880,13 +1103,23 @@ class PrescriptionDetailScreen extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: const Color(0xFF0EA5E9)),
           const SizedBox(width: 6),
-          Text('$label: ',
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
           ),
         ],
       ),
@@ -915,10 +1148,26 @@ class PrescriptionDetailScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('assets/Asset 1.png', height: 32, fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const Icon(Icons.local_hospital_rounded, color: AppColors.primaryColor, size: 28)),
+                  Image.asset(
+                    'assets/Asset 1.png',
+                    height: 32,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.local_hospital_rounded,
+                      color: AppColors.primaryColor,
+                      size: 28,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  const Text('iCare', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primaryColor, letterSpacing: 1)),
+                  const Text(
+                    'iCare',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primaryColor,
+                      letterSpacing: 1,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -948,16 +1197,36 @@ class PrescriptionDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(width: 180, height: 1, color: const Color(0xFF374151)),
+                Container(
+                  width: 180,
+                  height: 1,
+                  color: const Color(0xFF374151),
+                ),
                 const SizedBox(height: 6),
-                Text(withDoctorTitle(_doctorName),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                Text(
+                  withDoctorTitle(_doctorName),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
                 if (_doctorPmdc.isNotEmpty)
-                  Text('PMDC Reg. No. $_doctorPmdc',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text(
+                    'PMDC Reg. No. $_doctorPmdc',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
                 if (_doctorPhone.isNotEmpty)
-                  Text(_doctorPhone,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text(
+                    _doctorPhone,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -973,12 +1242,20 @@ class PrescriptionDetailScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF0EA5E9)),
+              const Icon(
+                Icons.verified_rounded,
+                size: 16,
+                color: Color(0xFF0EA5E9),
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'This is electronically generated prescription, does not require any signature and is intended to be used in Pakistan only.',
-                  style: TextStyle(fontSize: 10, color: Color(0xFF64748B), height: 1.4),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
@@ -1008,23 +1285,26 @@ class PrescriptionDetailScreen extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: _medicines.isNotEmpty
                   ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PharmaciesScreen(
-                            prescribedMedicines: _medicines,
-                          ),
-                        ),
-                      )
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PharmaciesScreen(prescribedMedicines: _medicines),
+                      ),
+                    )
                   : null,
               icon: const Icon(Icons.local_pharmacy_rounded, size: 18),
-              label: const Text('Order Medicines',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              label: const Text(
+                'Order Medicines',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFFE2E8F0),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
             ),
@@ -1035,21 +1315,25 @@ class PrescriptionDetailScreen extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: _labTests.isNotEmpty
                   ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LaboratoriesScreen(),
-                        ),
-                      )
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LaboratoriesScreen(),
+                      ),
+                    )
                   : null,
               icon: const Icon(Icons.science_rounded, size: 18),
-              label: const Text('Order Lab Tests',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              label: const Text(
+                'Order Lab Tests',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFFE2E8F0),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
             ),
@@ -1076,17 +1360,48 @@ class PrescriptionDetailScreen extends StatelessWidget {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('iCare', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                    pw.Text('RM Health Solutions (Private) Limited', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
-                    pw.Text('iCare Telemedicine Platform', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                    pw.Text(
+                      'iCare',
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800,
+                      ),
+                    ),
+                    pw.Text(
+                      'RM Health Solutions (Private) Limited',
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.grey,
+                      ),
+                    ),
+                    pw.Text(
+                      'iCare Telemedicine Platform',
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.grey,
+                      ),
+                    ),
                   ],
                 ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    pw.Text(_prescriptionDate, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(
+                      _prescriptionDate,
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
                     if (_prescriptionTime.isNotEmpty)
-                      pw.Text(_prescriptionTime, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                      pw.Text(
+                        _prescriptionTime,
+                        style: const pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey,
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -1096,41 +1411,129 @@ class PrescriptionDetailScreen extends StatelessWidget {
             // Patient + Doctor
             pw.Row(
               children: [
-                pw.Expanded(child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('PATIENT', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
-                    pw.Text(_patientName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    if (_patientAge.isNotEmpty) pw.Text('Age: $_patientAge  |  Gender: $_patientGender', style: const pw.TextStyle(fontSize: 10)),
-                    if (_patientMrNumber.isNotEmpty) pw.Text('MR#: $_patientMrNumber', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                  ],
-                )),
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'PATIENT',
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey,
+                        ),
+                      ),
+                      pw.Text(
+                        _patientName,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      if (_patientAge.isNotEmpty)
+                        pw.Text(
+                          'Age: $_patientAge  |  Gender: $_patientGender',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      if (_patientMrNumber.isNotEmpty)
+                        pw.Text(
+                          'MR#: $_patientMrNumber',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 pw.SizedBox(width: 20),
-                pw.Expanded(child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('DOCTOR', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey)),
-                    pw.Text(withDoctorTitle(_doctorName), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    if (_doctorQualifications.isNotEmpty) pw.Text(_doctorQualifications, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
-                    if (_doctorSpecialty.isNotEmpty) pw.Text(_doctorSpecialty, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                    if (_doctorPmdc.isNotEmpty) pw.Text('PMDC: $_doctorPmdc', style: const pw.TextStyle(fontSize: 10)),
-                    if (_doctorPhone.isNotEmpty) pw.Text('Phone: $_doctorPhone', style: const pw.TextStyle(fontSize: 10)),
-                  ],
-                )),
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'DOCTOR',
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey,
+                        ),
+                      ),
+                      pw.Text(
+                        withDoctorTitle(_doctorName),
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      if (_doctorQualifications.isNotEmpty)
+                        pw.Text(
+                          _doctorQualifications,
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey800,
+                          ),
+                        ),
+                      if (_doctorSpecialty.isNotEmpty)
+                        pw.Text(
+                          _doctorSpecialty,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blue800,
+                          ),
+                        ),
+                      if (_doctorPmdc.isNotEmpty)
+                        pw.Text(
+                          'PMDC: $_doctorPmdc',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      if (_doctorPhone.isNotEmpty)
+                        pw.Text(
+                          'Phone: $_doctorPhone',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
             pw.SizedBox(height: 16),
             // Diagnosis
             if (_diagnoses.isNotEmpty) ...[
-              pw.Text('DIAGNOSIS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text(
+                'DIAGNOSIS',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
               pw.SizedBox(height: 4),
-              pw.Wrap(spacing: 8, runSpacing: 4,
+              pw.Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: _diagnoses.map((d) {
-                  final desc = d is Map ? (d['description'] ?? d['desc'] ?? d['name'] ?? d.toString()) : d.toString();
+                  final desc = d is Map
+                      ? (d['description'] ??
+                            d['desc'] ??
+                            d['name'] ??
+                            d.toString())
+                      : d.toString();
                   return pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: pw.BoxDecoration(color: PdfColors.red50, border: pw.Border.all(color: PdfColors.red200), borderRadius: pw.BorderRadius.circular(4)),
-                    child: pw.Text(desc.toString(), style: const pw.TextStyle(fontSize: 11)),
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.red50,
+                      border: pw.Border.all(color: PdfColors.red200),
+                      borderRadius: pw.BorderRadius.circular(4),
+                    ),
+                    child: pw.Text(
+                      desc.toString(),
+                      style: const pw.TextStyle(fontSize: 11),
+                    ),
                   );
                 }).toList(),
               ),
@@ -1138,25 +1541,49 @@ class PrescriptionDetailScreen extends StatelessWidget {
             ],
             // Medicines
             if (_medicines.isNotEmpty) ...[
-              pw.Text('Rx  MEDICATIONS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text(
+                'Rx  MEDICATIONS',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
               pw.SizedBox(height: 4),
               ..._medicines.asMap().entries.map((e) {
                 final m = e.value;
-                final name = m is Map ? (m['name'] ?? m['medicine'] ?? 'Medicine') : m.toString();
+                final name = m is Map
+                    ? (m['name'] ?? m['medicine'] ?? 'Medicine')
+                    : m.toString();
                 final dose = m is Map ? (m['dosage'] ?? m['dose'] ?? '') : '';
                 final freq = m is Map ? (m['frequency'] ?? '') : '';
                 final dur = m is Map ? (m['duration'] ?? '') : '';
                 return pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 6),
                   padding: const pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(color: PdfColors.blue50, border: pw.Border.all(color: PdfColors.blue200), borderRadius: pw.BorderRadius.circular(4)),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue50,
+                    border: pw.Border.all(color: PdfColors.blue200),
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('${e.key + 1}. $name', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                      pw.Text(
+                        '${e.key + 1}. $name',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
                       if (dose.isNotEmpty || freq.isNotEmpty || dur.isNotEmpty)
-                        pw.Text('${dose.isNotEmpty ? "Dose: $dose  " : ""}${freq.isNotEmpty ? "Frequency: $freq  " : ""}${dur.isNotEmpty ? "Duration: $dur" : ""}',
-                            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(
+                          '${dose.isNotEmpty ? "Dose: $dose  " : ""}${freq.isNotEmpty ? "Frequency: $freq  " : ""}${dur.isNotEmpty ? "Duration: $dur" : ""}',
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
                     ],
                   ),
                 );
@@ -1165,26 +1592,55 @@ class PrescriptionDetailScreen extends StatelessWidget {
             ],
             // Lab Tests
             if (_labTests.isNotEmpty) ...[
-              pw.Text('LAB TESTS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text(
+                'LAB TESTS',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
               pw.SizedBox(height: 4),
               ..._labTests.map((t) {
-                final name = t is Map ? (t['name'] ?? t['testName'] ?? 'Lab Test') : t.toString();
-                return pw.Bullet(text: name.toString(), style: const pw.TextStyle(fontSize: 11));
+                final name = t is Map
+                    ? (t['name'] ?? t['testName'] ?? 'Lab Test')
+                    : t.toString();
+                return pw.Bullet(
+                  text: name.toString(),
+                  style: const pw.TextStyle(fontSize: 11),
+                );
               }),
               pw.SizedBox(height: 12),
             ],
             // Doctor notes
             if (_doctorNotes.isNotEmpty) ...[
-              pw.Text('DOCTOR NOTES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text(
+                'DOCTOR NOTES',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
               pw.SizedBox(height: 4),
               pw.Text(_doctorNotes, style: const pw.TextStyle(fontSize: 11)),
               pw.SizedBox(height: 12),
             ],
             // Follow-up
             if (_followUpDate.isNotEmpty) ...[
-              pw.Text('FOLLOW-UP', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              pw.Text(
+                'FOLLOW-UP',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
               pw.SizedBox(height: 4),
-              pw.Text('Next visit: $_followUpDate', style: const pw.TextStyle(fontSize: 11)),
+              pw.Text(
+                'Next visit: $_followUpDate',
+                style: const pw.TextStyle(fontSize: 11),
+              ),
               pw.SizedBox(height: 16),
             ],
             // Signature
@@ -1197,11 +1653,22 @@ class PrescriptionDetailScreen extends StatelessWidget {
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      _doctorPmdc.isNotEmpty ? 'PMDC Reg. No. $_doctorPmdc' : 'iCare Telemedicine Platform',
-                      style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+                      _doctorPmdc.isNotEmpty
+                          ? 'PMDC Reg. No. $_doctorPmdc'
+                          : 'iCare Telemedicine Platform',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
                     ),
                     pw.SizedBox(height: 2),
-                    pw.Text('Electronically Generated', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                    pw.Text(
+                      'Electronically Generated',
+                      style: const pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfColors.grey,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -1209,10 +1676,16 @@ class PrescriptionDetailScreen extends StatelessWidget {
             pw.SizedBox(height: 12),
             pw.Container(
               padding: const pw.EdgeInsets.all(8),
-              decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: pw.BorderRadius.circular(4)),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(4),
+              ),
               child: pw.Text(
                 'This is electronically generated prescription, does not require any signature and is intended to be used in Pakistan only.',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.grey700,
+                ),
               ),
             ),
           ],
@@ -1221,13 +1694,14 @@ class PrescriptionDetailScreen extends StatelessWidget {
 
       await Printing.layoutPdf(
         onLayout: (_) async => pdf.save(),
-        name: 'iCare_Prescription_${_patientName.replaceAll(' ', '_')}_$_prescriptionDate.pdf',
+        name:
+            'iCare_Prescription_${_patientName.replaceAll(' ', '_')}_$_prescriptionDate.pdf',
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
       }
     }
   }
@@ -1239,14 +1713,17 @@ class PrescriptionDetailScreen extends StatelessWidget {
     buf.writeln('=== iCare PRESCRIPTION ===');
     buf.writeln('Date: $_prescriptionDate');
     buf.writeln('Patient: $_patientName');
-    if (_patientAge.isNotEmpty) buf.writeln('Age/Gender: $_patientAge / $_patientGender');
+    if (_patientAge.isNotEmpty)
+      buf.writeln('Age/Gender: $_patientAge / $_patientGender');
     if (_patientMrNumber.isNotEmpty) buf.writeln('MR#: $_patientMrNumber');
     buf.writeln('\nDoctor: Dr. $_doctorName');
     if (_doctorPmdc.isNotEmpty) buf.writeln('PMDC: $_doctorPmdc');
     if (_diagnoses.isNotEmpty) {
       buf.writeln('\nDIAGNOSIS:');
       for (final d in _diagnoses) {
-        buf.writeln('• ${d is Map ? (d['description'] ?? d['name'] ?? d.toString()) : d}');
+        buf.writeln(
+          '• ${d is Map ? (d['description'] ?? d['name'] ?? d.toString()) : d}',
+        );
       }
     }
     if (_medicines.isNotEmpty) {
@@ -1258,7 +1735,9 @@ class PrescriptionDetailScreen extends StatelessWidget {
           final dose = m['dosage'] ?? m['dose'] ?? '';
           final freq = m['frequency'] ?? '';
           final dur = m['duration'] ?? '';
-          buf.writeln('${i + 1}. $name${dose.isNotEmpty ? ' | $dose' : ''}${freq.isNotEmpty ? ' | $freq' : ''}${dur.isNotEmpty ? ' | $dur' : ''}');
+          buf.writeln(
+            '${i + 1}. $name${dose.isNotEmpty ? ' | $dose' : ''}${freq.isNotEmpty ? ' | $freq' : ''}${dur.isNotEmpty ? ' | $dur' : ''}',
+          );
         } else {
           buf.writeln('${i + 1}. $m');
         }
@@ -1267,7 +1746,9 @@ class PrescriptionDetailScreen extends StatelessWidget {
     if (_labTests.isNotEmpty) {
       buf.writeln('\nLAB TESTS:');
       for (final t in _labTests) {
-        buf.writeln('• ${t is Map ? (t['name'] ?? t['testName'] ?? t.toString()) : t}');
+        buf.writeln(
+          '• ${t is Map ? (t['name'] ?? t['testName'] ?? t.toString()) : t}',
+        );
       }
     }
     if (_doctorNotes.isNotEmpty) {
@@ -1299,28 +1780,53 @@ class PrescriptionDetailScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const Text('Share Prescription',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            const Text(
+              'Share Prescription',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _shareOption(Icons.copy_rounded, 'Copy Text', const Color(0xFF0036BC), () {
-                  Navigator.pop(context);
-                  _copyPrescriptionText(context);
-                }),
-                _shareOption(Icons.download_rounded, 'Download PDF', const Color(0xFF8B5CF6), () {
-                  Navigator.pop(context);
-                  _downloadPdf(context);
-                }),
-                _shareOption(Icons.print_rounded, 'Print', const Color(0xFF374151), () {
-                  Navigator.pop(context);
-                  _downloadPdf(context);
-                }),
+                _shareOption(
+                  Icons.copy_rounded,
+                  'Copy Text',
+                  const Color(0xFF0036BC),
+                  () {
+                    Navigator.pop(context);
+                    _copyPrescriptionText(context);
+                  },
+                ),
+                _shareOption(
+                  Icons.download_rounded,
+                  'Download PDF',
+                  const Color(0xFF8B5CF6),
+                  () {
+                    Navigator.pop(context);
+                    _downloadPdf(context);
+                  },
+                ),
+                _shareOption(
+                  Icons.print_rounded,
+                  'Print',
+                  const Color(0xFF374151),
+                  () {
+                    Navigator.pop(context);
+                    _downloadPdf(context);
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -1330,18 +1836,33 @@ class PrescriptionDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _shareOption(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _shareOption(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF374151), fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

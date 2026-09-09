@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:icare/utils/notify_tone.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:icare/widgets/whatsapp_button.dart';
-import 'package:icare/screens/admin_dashboard.dart';
 import 'package:icare/screens/admin_payments_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -59,15 +59,11 @@ import 'package:icare/screens/payment_invoices.dart';
 import 'package:icare/screens/pharmacies.dart';
 import 'package:icare/screens/patient_prescriptions.dart';
 import 'package:icare/screens/reminder_list.dart';
-import 'package:icare/screens/student_dashboard.dart';
 import 'package:icare/screens/student_profile_setup.dart';
-import 'package:icare/screens/instructor_dashboard.dart';
-import 'package:icare/screens/instructor_courses_management.dart';
-import 'package:icare/screens/instructor_learners_screen.dart';
-import 'package:icare/screens/instructor_precautions_management.dart';
-import 'package:icare/screens/instructor_analytics.dart';
 import 'package:icare/screens/instructor_profile_setup.dart';
-import 'package:icare/screens/instructor_lms_dashboard.dart';
+import 'package:icare/navigators/deferred_route.dart';
+import 'package:icare/screens/instructor_lms_dashboard.dart'
+    deferred as i_lms_dash;
 import 'dart:async';
 import 'package:icare/screens/lms_live_session_screen.dart';
 import 'package:icare/services/lms_service.dart';
@@ -92,11 +88,16 @@ class TabsScreen extends ConsumerStatefulWidget {
 }
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
+  // Built once on the instructor's first render; see build() below.
+  Widget? _instructorLmsShell;
+
   Timer? _livePoller;
   Timer? _notifPoller;
   int _notifUnreadCount = 0;
-  final Set<String> _shownNotifIds = {}; // banner-shown ids, so a notification never redisplays
-  bool _notifInitialized = false; // suppress banners for pre-existing unread on first load
+  final Set<String> _shownNotifIds =
+      {}; // banner-shown ids, so a notification never redisplays
+  bool _notifInitialized =
+      false; // suppress banners for pre-existing unread on first load
   // Authoritative guard against old unread notifications resurfacing as a
   // banner on every fresh login (e.g. "Certificate Ready to Issue" from
   // days ago reappearing each time). _notifInitialized alone only covers
@@ -159,11 +160,15 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   double _whatsappOffset(String location, String role) {
     // Community has an extended "New Post" FAB (plus an extra "Add Topic" FAB
     // for admins), so it needs the most clearance.
-    if (location == '/community' || location.startsWith('/community/')) return 150;
-    if (_routesWithOwnFab.any((p) => location == p || location.startsWith('$p/'))) {
+    if (location == '/community' || location.startsWith('/community/'))
+      return 150;
+    if (_routesWithOwnFab.any(
+      (p) => location == p || location.startsWith('$p/'),
+    )) {
       return 90;
     }
-    if (role == 'Pharmacy' && location.startsWith('/pharmacy/orders')) return 90;
+    if (role == 'Pharmacy' && location.startsWith('/pharmacy/orders'))
+      return 90;
     return 20;
   }
 
@@ -187,14 +192,19 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   // ── Notification polling ─────────────────────────────────────────────────
   void _startNotifPolling() {
     _fetchNotifications();
-    _notifPoller ??= Timer.periodic(const Duration(seconds: 30), (_) => _fetchNotifications());
+    _notifPoller ??= Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchNotifications(),
+    );
   }
 
   Future<void> _fetchNotifications() async {
     if (!mounted) return;
     try {
       final result = await NotificationService().getNotifications();
-      final all = List<Map<String, dynamic>>.from(result['notifications'] ?? []);
+      final all = List<Map<String, dynamic>>.from(
+        result['notifications'] ?? [],
+      );
       // Backend field is `read`, not `isRead` — reading the wrong key here
       // meant every notification counted as unread forever, so a raw count
       // delta could tick up again later and redisplay the SAME banner
@@ -204,7 +214,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
       final newOnes = unread.where((n) {
         final id = n['_id']?.toString();
-        if (id == null || id.isEmpty || _shownNotifIds.contains(id)) return false;
+        if (id == null || id.isEmpty || _shownNotifIds.contains(id))
+          return false;
         final createdAt = DateTime.tryParse(n['createdAt']?.toString() ?? '');
         // No createdAt to compare against — err toward NOT showing an old
         // notification as if it were fresh, rather than risk a resurfaced
@@ -240,7 +251,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       builder: (_) => _NotificationBanner(
         title: notif['title']?.toString() ?? 'New Notification',
         message: notif['message']?.toString() ?? '',
-        onDismiss: () { _bannerEntry?.remove(); _bannerEntry = null; },
+        onDismiss: () {
+          _bannerEntry?.remove();
+          _bannerEntry = null;
+        },
       ),
     );
     Overlay.of(context).insert(_bannerEntry!);
@@ -255,7 +269,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     if (_livePoller != null) return; // already running
     debugPrint('🟢 LIVE POLLER: starting');
     _checkForLiveSessions();
-    _livePoller = Timer.periodic(const Duration(seconds: 10), (_) => _checkForLiveSessions());
+    _livePoller = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _checkForLiveSessions(),
+    );
   }
 
   void _startGlobalLivePoller() => _ensurePollerRunning();
@@ -264,7 +281,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // Skip if not mounted, student is already in a session, or dialog is already up
     if (!mounted) return;
     if (LmsLiveSessionScreen.activeCourseId != null) {
-      debugPrint('🟡 LIVE POLLER: skipping — already in session ${LmsLiveSessionScreen.activeCourseId}');
+      debugPrint(
+        '🟡 LIVE POLLER: skipping — already in session ${LmsLiveSessionScreen.activeCourseId}',
+      );
       return;
     }
     if (_dialogActive) {
@@ -280,16 +299,19 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         final Map course = (rawCourse is Map)
             ? rawCourse
             : (rawCourseId is Map)
-                ? rawCourseId
-                : <String, dynamic>{};
-        final courseId = course['_id']?.toString() ??
+            ? rawCourseId
+            : <String, dynamic>{};
+        final courseId =
+            course['_id']?.toString() ??
             (rawCourseId is String ? rawCourseId : null) ??
             '';
         final courseTitle = course['title']?.toString() ?? 'Your Course';
         if (courseId.isEmpty) continue;
         try {
           final result = await _lms.checkActiveLiveSession(courseId);
-          debugPrint('📡 Tab poller - $courseTitle ($courseId): isLive=${result['isLive']}');
+          debugPrint(
+            '📡 Tab poller - $courseTitle ($courseId): isLive=${result['isLive']}',
+          );
 
           if (result['isLive'] != true) {
             // Session ended — clear snooze so next session shows fresh
@@ -309,19 +331,26 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           if (snooze != null && snooze['sessionId'] == effectiveId) {
             // Student already joined this session — never re-show
             if (snooze['joined'] == true) {
-              debugPrint('⏭️ LIVE POLLER: student already joined $courseTitle, skipping');
+              debugPrint(
+                '⏭️ LIVE POLLER: student already joined $courseTitle, skipping',
+              );
               continue;
             }
             // Student clicked Later — snooze for 3 minutes, then re-show
             final snoozedAt = snooze['snoozedAt'] as DateTime?;
             if (snoozedAt != null &&
-                DateTime.now().difference(snoozedAt) < const Duration(minutes: 3)) {
-              debugPrint('⏭️ LIVE POLLER: snoozed for $courseTitle, ${3 - DateTime.now().difference(snoozedAt).inMinutes}min left');
+                DateTime.now().difference(snoozedAt) <
+                    const Duration(minutes: 3)) {
+              debugPrint(
+                '⏭️ LIVE POLLER: snoozed for $courseTitle, ${3 - DateTime.now().difference(snoozedAt).inMinutes}min left',
+              );
               continue;
             }
           }
 
-          debugPrint('🔔 LIVE POLLER: showing JOIN dialog for $courseTitle sessionId=$effectiveId');
+          debugPrint(
+            '🔔 LIVE POLLER: showing JOIN dialog for $courseTitle sessionId=$effectiveId',
+          );
           _sessionSnooze[courseId] = {
             'sessionId': effectiveId,
             'snoozedAt': DateTime.now(),
@@ -348,17 +377,28 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: const Color(0xFF1C2333),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.live_tv_rounded, color: Colors.red, size: 56),
-          const SizedBox(height: 12),
-          const Text('🔴 LIVE SESSION STARTED!',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.live_tv_rounded, color: Colors.red, size: 56),
+            const SizedBox(height: 12),
+            const Text(
+              '🔴 LIVE SESSION STARTED!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 8),
-          Text('$courseTitle\nis now live. Join now!',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$courseTitle\nis now live. Join now!',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        ]),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+        ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
@@ -373,7 +413,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               };
               debugPrint('😴 LIVE POLLER: snoozed $courseTitle for 3 min');
             },
-            child: const Text('Later (3 min)', style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              'Later (3 min)',
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -390,14 +433,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                 'snoozedAt': DateTime.now(),
                 'joined': true,
               };
-              Navigator.push(context, MaterialPageRoute(
-                builder: (_) => LmsLiveSessionScreen(
-                  sessionId: sessionId,
-                  courseId: courseId,
-                  sessionTitle: courseTitle,
-                  isInstructor: false,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LmsLiveSessionScreen(
+                    sessionId: sessionId,
+                    courseId: courseId,
+                    sessionTitle: courseTitle,
+                    isInstructor: false,
+                  ),
                 ),
-              )).then((_) {
+              ).then((_) {
                 // After leaving session, clear joined flag so
                 // if instructor starts a NEW session later, dialog shows again
                 if (_sessionSnooze[courseId]?['sessionId'] == sessionId) {
@@ -406,7 +452,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               });
             },
             icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('JOIN NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            label: const Text(
+              'JOIN NOW',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
           ),
         ],
       ),
@@ -423,18 +472,24 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // Start live poller as soon as we know user is a Student (handles post-login case
     // where initState ran before auth was set).
     if (role == 'Student') {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _ensurePollerRunning());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _ensurePollerRunning(),
+      );
     }
 
     // Instructor gets the full Google Classroom LMS as their main interface
     if (role == 'Instructor') {
-      // NOT deferred, deliberately. This sits in a build() method that
-      // re-runs on every rebuild, and DeferredScreen creates its load Future
-      // in State.initState — so a new DeferredScreen instance each rebuild
-      // remounted the whole dashboard and refetched its data, leaving the
-      // instructor staring at a spinner. Deferring here saved ~0KB anyway,
-      // since classroom_course_view.dart imports the same screens eagerly.
-      return const InstructorLmsDashboard();
+      // Deferred, but built exactly once and cached in _instructorLmsShell.
+      // The earlier attempt handed build() a fresh DeferredScreen every time;
+      // since DeferredScreen starts its load Future in initState, a remount
+      // refetched the dashboard and dropped the instructor back on a spinner.
+      // Returning the identical widget instance keeps the element (and its
+      // State) in place across rebuilds, so the load happens once.
+      _instructorLmsShell ??= DeferredScreen(
+        loader: i_lms_dash.loadLibrary,
+        builder: () => i_lms_dash.InstructorLmsDashboard(),
+      );
+      return _instructorLmsShell!;
     }
 
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -470,37 +525,45 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             },
           ),
           centerTitle: false,
-          title: Builder(builder: (_) {
-            final userName = ref.watch(authProvider).user?.name ?? 'User';
-            final firstName = userName.split(' ').first;
-            final roleLabel = role == 'Doctor' ? 'Doctor Account'
-                : role == 'Pharmacy' ? 'Pharmacy Account'
-                : role == 'Laboratory' ? 'Laboratory Account'
-                : role == 'Instructor' ? 'Instructor Account'
-                : role == 'Student' ? 'Student Account'
-                : role == 'Admin' ? 'Admin Account'
-                : 'Patient Account';
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomText(
-                  text: 'Hello, $firstName',
-                  fontSize: 14,
-                  color: AppColors.darkGreyColor,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Gilroy-Bold',
-                ),
-                CustomText(
-                  text: roleLabel,
-                  fontSize: 11,
-                  color: AppColors.primaryColor,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Gilroy-SemiBold',
-                ),
-              ],
-            );
-          }),
+          title: Builder(
+            builder: (_) {
+              final userName = ref.watch(authProvider).user?.name ?? 'User';
+              final firstName = userName.split(' ').first;
+              final roleLabel = role == 'Doctor'
+                  ? 'Doctor Account'
+                  : role == 'Pharmacy'
+                  ? 'Pharmacy Account'
+                  : role == 'Laboratory'
+                  ? 'Laboratory Account'
+                  : role == 'Instructor'
+                  ? 'Instructor Account'
+                  : role == 'Student'
+                  ? 'Student Account'
+                  : role == 'Admin'
+                  ? 'Admin Account'
+                  : 'Patient Account';
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomText(
+                    text: 'Hello, $firstName',
+                    fontSize: 14,
+                    color: AppColors.darkGreyColor,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Gilroy-Bold',
+                  ),
+                  CustomText(
+                    text: roleLabel,
+                    fontSize: 11,
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Gilroy-SemiBold',
+                  ),
+                ],
+              );
+            },
+          ),
           actions: [
             Padding(
               padding: EdgeInsets.only(right: ScallingConfig.scale(10)),
@@ -537,11 +600,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           ],
         ),
         bottomNavigationBar: BottomTabBar(
-          tabs: buildTabs(
-            role: role,
-            context: context,
-            location: location,
-          ),
+          tabs: buildTabs(role: role, context: context, location: location),
           onSelect: (value) {},
         ),
       );
@@ -555,10 +614,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           Row(
             children: [
               // ── Left Sidebar ────────────────────────────────────────────────
-              _WebSidebar(
-                location: location,
-                role: role,
-              ),
+              _WebSidebar(location: location, role: role),
               // ── Main content area ─────────────────────────────────────────
               Expanded(
                 child: Column(
@@ -618,10 +674,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 // Web Sidebar
 // ═══════════════════════════════════════════════════════════════════════════
 class _WebSidebar extends ConsumerStatefulWidget {
-  const _WebSidebar({
-    required this.location,
-    required this.role,
-  });
+  const _WebSidebar({required this.location, required this.role});
+
   /// Current route, e.g. `/doctor/appointments` — decides which item is
   /// highlighted, and each item navigates by URL rather than by index.
   final String location;
@@ -663,7 +717,8 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
   Future<void> _loadAvailableRoles() async {
     try {
       final res = await ApiService().get('/auth/profile');
-      final roles = (res.data['user']?['roles'] as List?)
+      final roles =
+          (res.data['user']?['roles'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           [];
@@ -676,12 +731,17 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
     if (!mounted) return;
     if (result['success'] == true) {
       final inner = result['data'];
-      await ref.read(authProvider.notifier).setUserToken(inner['token'].toString());
+      await ref
+          .read(authProvider.notifier)
+          .setUserToken(inner['token'].toString());
       final currentUser = ref.read(authProvider).user;
-      final user = app_user.User.fromJson(Map<String, dynamic>.from(inner['user'] as Map)).copyWith(
-        isEmailVerified: currentUser?.isEmailVerified ?? true,
-        isPhoneVerified: currentUser?.isPhoneVerified ?? true,
-      );
+      final user =
+          app_user.User.fromJson(
+            Map<String, dynamic>.from(inner['user'] as Map),
+          ).copyWith(
+            isEmailVerified: currentUser?.isEmailVerified ?? true,
+            isPhoneVerified: currentUser?.isPhoneVerified ?? true,
+          );
       await ref.read(authProvider.notifier).setUser(user);
       if (!mounted) return;
       context.go('/dashboard');
@@ -710,13 +770,25 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              const Icon(Icons.swap_horiz_rounded, color: AppColors.primaryColor, size: 22),
-              const SizedBox(width: 8),
-              const Text('Switch Role', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            ]),
+            Row(
+              children: [
+                const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: AppColors.primaryColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Switch Role',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
-            const Text('Select a role to switch to its dashboard.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+            const Text(
+              'Select a role to switch to its dashboard.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            ),
             const SizedBox(height: 16),
             ..._availableRoles.map((r) {
               final key = r.toLowerCase();
@@ -724,18 +796,27 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: InkWell(
-                  onTap: isActive ? null : () async {
-                    Navigator.pop(sheetCtx);
-                    await _switchRole(key);
-                  },
+                  onTap: isActive
+                      ? null
+                      : () async {
+                          Navigator.pop(sheetCtx);
+                          await _switchRole(key);
+                        },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.primaryColor.withValues(alpha: 0.06) : Colors.white,
+                      color: isActive
+                          ? AppColors.primaryColor.withValues(alpha: 0.06)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isActive ? AppColors.primaryColor : const Color(0xFFE2E8F0),
+                        color: isActive
+                            ? AppColors.primaryColor
+                            : const Color(0xFFE2E8F0),
                         width: isActive ? 1.5 : 1,
                       ),
                     ),
@@ -744,21 +825,34 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withValues(alpha: 0.1),
+                            color: AppColors.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(_roleIcons[key] ?? Icons.person_rounded, color: AppColors.primaryColor, size: 18),
+                          child: Icon(
+                            _roleIcons[key] ?? Icons.person_rounded,
+                            color: AppColors.primaryColor,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _roleDisplayNames[key] ?? r,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
                         ),
                         if (isActive)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primaryColor,
                               borderRadius: BorderRadius.circular(20),
@@ -766,14 +860,28 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.check_rounded, color: Colors.white, size: 12),
+                                Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
                                 SizedBox(width: 3),
-                                Text('Current', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                                Text(
+                                  'Current',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ],
                             ),
                           )
                         else
-                          const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFF94A3B8),
+                          ),
                       ],
                     ),
                   ),
@@ -795,19 +903,47 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
       items = <_SidebarItem>[];
     } else if (role == 'Instructor') {
       items = [
-        _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', path: '/instructor/dashboard'),
-        _SidebarItem(icon: Icons.school_outlined, label: 'Courses', path: '/instructor/manage-courses'),
+        _SidebarItem(
+          icon: Icons.dashboard_outlined,
+          label: 'Dashboard',
+          path: '/instructor/dashboard',
+        ),
+        _SidebarItem(
+          icon: Icons.school_outlined,
+          label: 'Courses',
+          path: '/instructor/manage-courses',
+        ),
       ];
     } else if (role == 'Patient') {
       items = [
-        _SidebarItem(icon: Icons.home_outlined, label: 'Home', path: '/patient/home'),
+        _SidebarItem(
+          icon: Icons.home_outlined,
+          label: 'Home',
+          path: '/patient/home',
+        ),
       ];
     } else if (role == 'Receptionist') {
       items = [
-        _SidebarItem(icon: Icons.home_outlined, label: 'Front Desk', path: '/reception/dashboard'),
-        _SidebarItem(icon: Icons.receipt_long_outlined, label: 'Records', path: '/reception/records'),
-        _SidebarItem(icon: Icons.help_outline_rounded, label: 'Help & Support', path: '/help'),
-        _SidebarItem(icon: Icons.settings_outlined, label: 'Settings', path: '/settings'),
+        _SidebarItem(
+          icon: Icons.home_outlined,
+          label: 'Front Desk',
+          path: '/reception/dashboard',
+        ),
+        _SidebarItem(
+          icon: Icons.receipt_long_outlined,
+          label: 'Records',
+          path: '/reception/records',
+        ),
+        _SidebarItem(
+          icon: Icons.help_outline_rounded,
+          label: 'Help & Support',
+          path: '/help',
+        ),
+        _SidebarItem(
+          icon: Icons.settings_outlined,
+          label: 'Settings',
+          path: '/settings',
+        ),
       ];
     } else if (role == 'Doctor') {
       items = [
@@ -831,7 +967,9 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
               ? '/student/dashboard'
               : (role == 'Pharmacy'
                     ? '/pharmacy/dashboard'
-                    : (role == 'Laboratory' ? '/lab/dashboard' : '/patient/home')),
+                    : (role == 'Laboratory'
+                          ? '/lab/dashboard'
+                          : '/patient/home')),
         ),
         _SidebarItem(
           icon: role == 'Pharmacy'
@@ -845,12 +983,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
               ? 'Orders'
               : (role == 'Laboratory'
                     ? 'New Requests'
-                    : (role == 'Student' ? 'My Courses' : 'Appointments')),
+                    // The catalogue page (All Courses / Enrolled Courses) is
+                    // "iCare Academy"; "My Courses" is the classroom entry
+                    // further down. Both were labelled "My Courses", so the
+                    // student sidebar showed the same name twice.
+                    : (role == 'Student' ? 'iCare Academy' : 'Appointments')),
           path: role == 'Pharmacy'
               ? '/pharmacy/orders'
               : (role == 'Laboratory'
                     ? '/lab/bookings'
-                    : (role == 'Student' ? '/student/courses' : '/doctor/appointments')),
+                    : (role == 'Student'
+                          ? '/student/courses'
+                          : '/doctor/appointments')),
         ),
         if (role != 'Student')
           _SidebarItem(
@@ -900,108 +1044,145 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
           const SizedBox(height: 28),
 
           // ── Profile card (hidden for Patient, Doctor, Pharmacy, Laboratory, Student, Instructor) ───────────────
-          if (role != 'Patient' && role != 'Doctor' && role != 'Pharmacy' && role != 'Laboratory' && role != 'Student' && role != 'Instructor')
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.15)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryColor, width: 2),
-                    ),
-                    child: Consumer(
-                      builder: (context, ref, child) {
-                        final user = ref.watch(authProvider).user;
-                        final imgProvider = buildProfileImageProvider(user?.profilePicture);
-                        final initial = (user != null && user.name.isNotEmpty) ? user.name[0].toUpperCase() : 'U';
-                        return CircleAvatar(
-                          radius: 24,
-                          backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                          child: ClipOval(
-                            child: imgProvider != null
-                              ? Image(image: imgProvider, width: 48, height: 48, fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor)))
-                              : Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                          ),
-                        );
-                      },
-                    ),
+          if (role != 'Patient' &&
+              role != 'Doctor' &&
+              role != 'Pharmacy' &&
+              role != 'Laboratory' &&
+              role != 'Student' &&
+              role != 'Instructor')
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const ProfileEditScreen(),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final userName =
-                                ref.watch(authProvider).user?.name ?? 'User';
-                            return Text(
-                              userName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                color: AppColors.primaryColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            );
-                          },
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryColor,
+                          width: 2,
                         ),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                      ),
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final user = ref.watch(authProvider).user;
+                          final imgProvider = buildProfileImageProvider(
+                            user?.profilePicture,
+                          );
+                          final initial = (user != null && user.name.isNotEmpty)
+                              ? user.name[0].toUpperCase()
+                              : 'U';
+                          return CircleAvatar(
+                            radius: 24,
+                            backgroundColor: AppColors.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            child: ClipOval(
+                              child: imgProvider != null
+                                  ? Image(
+                                      image: imgProvider,
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Text(
+                                        initial,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      initial,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Consumer(
+                            builder: (context, ref, child) {
+                              final userName =
+                                  ref.watch(authProvider).user?.name ?? 'User';
+                              return Text(
+                                userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: AppColors.primaryColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              );
+                            },
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            role.isNotEmpty
-                                ? role == 'Laboratory'
-                                      ? 'Lab Technician'
-                                      : role == 'Pharmacy'
-                                      ? 'Pharmacist'
-                                      : role[0].toUpperCase() +
-                                            role.substring(1)
-                                : role,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              role.isNotEmpty
+                                  ? role == 'Laboratory'
+                                        ? 'Lab Technician'
+                                        : role == 'Pharmacy'
+                                        ? 'Pharmacist'
+                                        : role[0].toUpperCase() +
+                                              role.substring(1)
+                                  : role,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.primaryColor,
-                    size: 18,
-                  ),
-                ],
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.primaryColor,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
           const SizedBox(height: 24),
-
-
 
           // ── Section label ──────────────────────────────────────────────
           Padding(
@@ -1022,12 +1203,18 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
 
           // ── Nav items ──────────────────────────────────────────────────
           Expanded(
-            child: Scrollbar(
-              child: ListView(
+            // Scrollbar with no controller on it OR on the ListView: Flutter
+            // then registers no drag recognisers at all (see DragScroll), so
+            // the bar painted but could never be grabbed - the sidebar the
+            // client kept trying to drag.
+            child: DragScroll(
+              builder: (context, sidebarCtrl) => ListView(
+                controller: sidebarCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
                   ...items.map((item) {
-                    final isSelected = location == item.path ||
+                    final isSelected =
+                        location == item.path ||
                         location.startsWith('${item.path}/');
                     return GestureDetector(
                       onTap: () => context.go(item.path),
@@ -1038,291 +1225,517 @@ class _WebSidebarState extends ConsumerState<_WebSidebar> {
                           horizontal: 16,
                           vertical: 14,
                         ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primaryColor.withValues(alpha: 0.10)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                        border: isSelected
-                            ? Border.all(
-                                color: AppColors.primaryColor.withValues(alpha: 0.20),
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: Icon(
-                              item.icon,
-                              size: 22,
-                              color: isSelected
-                                  ? AppColors.primaryColor
-                                  : const Color(0xFF64748B),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              item.label,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryColor.withValues(alpha: 0.10)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          border: isSelected
+                              ? Border.all(
+                                  color: AppColors.primaryColor.withValues(
+                                    alpha: 0.20,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: Icon(
+                                item.icon,
+                                size: 22,
                                 color: isSelected
                                     ? AppColors.primaryColor
                                     : const Color(0xFF64748B),
                               ),
                             ),
-                          ),
-                          if (isSelected)
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryColor,
-                                shape: BoxShape.circle,
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                item.label,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: isSelected
+                                      ? AppColors.primaryColor
+                                      : const Color(0xFF64748B),
+                                ),
                               ),
                             ),
-                        ],
+                            if (isSelected)
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
+                    );
+                  }),
+
+                  // ── Role-specific extra nav items ──────────────────────────
+                  if (role == 'Patient') ...[
+                    const SizedBox(height: 8),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.calendar_month_outlined,
+                      'My Appointments',
+                      () => context.go('/patient/bookings-history'),
                     ),
-                  );
-                }),
-
-                // ── Role-specific extra nav items ──────────────────────────
-                if (role == 'Patient') ...[
-                  const SizedBox(height: 8),
-                  _buildExtraNavItem(context, Icons.calendar_month_outlined, 'My Appointments', () => context.go('/patient/bookings-history')),
-                  _buildExtraNavItem(context, Icons.storefront_outlined, 'iCare Clinics', () => context.go('/patient/icare-clinics')),
-                  _buildExtraNavItem(context, Icons.medication_liquid_outlined, 'My Prescriptions', () => context.go('/patient/prescriptions')),
-                  _buildExtraNavItem(context, Icons.medication_outlined, 'Order Medicines', () => context.go('/patient/pharmacies')),
-                  _buildExtraNavItem(context, Icons.science_outlined, 'Book a Lab Test', () => context.go('/patient/book-lab')),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(context, Icons.history_outlined, 'Health Journey', () => context.go('/patient/health-journey')),
-                  _buildExtraNavItem(context, Icons.monitor_heart_outlined, 'Health Tracker', () => context.go('/patient/health-tracker')),
-                  _buildExtraNavItem(context, Icons.biotech_outlined, 'Lab Results/Reports', () => context.go('/patient/lab-reports')),
-                  _buildExtraNavItem(context, Icons.alarm_outlined, 'Reminders', () => context.go('/reminders')),
-                  _buildExtraNavItem(context, Icons.people_outline_rounded, 'Health Community', () => context.go('/community')),
-                  _buildExtraNavItem(context, Icons.emoji_events_outlined, 'Achievements & Rewards', () => context.go('/rewards')),
-                  _buildExtraNavItem(context, Icons.settings_outlined, 'Settings', () => context.go('/settings')),
-                ],
-
-                if (role == 'Doctor') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(context, Icons.schedule_outlined, 'My Schedule', () => context.go('/doctor/schedule')),
-                  _buildExtraNavItem(context, Icons.analytics_outlined, 'Analytics', () => context.go('/doctor/analytics')),
-                  _buildExtraNavItem(context, Icons.people_outline_rounded, 'Health Community', () => context.go('/community')),
-                  _buildExtraNavItem(context, Icons.event_available_outlined, 'Availability', () => context.go('/doctor/availability')),
-                  _buildExtraNavItem(context, Icons.notifications_outlined, 'Notifications', () => context.go('/doctor/notifications')),
-                  _buildExtraNavItem(context, Icons.help_outline_rounded, 'Help & Support', () => context.go('/help')),
-                  _buildExtraNavItem(context, Icons.settings_outlined, 'Settings', () => context.go('/settings')),
-                ],
-
-                if (role == 'Instructor') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(context, Icons.library_books_outlined, 'Manage Courses', () => context.go('/instructor/manage-courses')),
-                  _buildExtraNavItem(context, Icons.group_outlined, 'Assigned Learners', () => context.go('/instructor/assigned-learners')),
-                  _buildExtraNavItem(context, Icons.health_and_safety_outlined, 'Health Precautions', () => context.go('/instructor/precautions')),
-                  _buildExtraNavItem(context, Icons.analytics_outlined, 'Educational Analytics', () => context.go('/instructor/analytics')),
-                  _buildExtraNavItem(context, Icons.settings_outlined, 'Settings', () => context.go('/settings')),
-                ],
-
-                if (role == 'Laboratory') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(context, Icons.list_alt_outlined, 'Orders', () => context.go('/lab/bookings')),
-                  _buildExtraNavItem(context, Icons.science_outlined, 'Test Catalog', () => context.go('/lab/tests')),
-                  _buildExtraNavItem(context, Icons.receipt_long_outlined, 'Invoices', () => context.go('/lab/invoices')),
-                  _buildExtraNavItem(context, Icons.analytics_outlined, 'Analytics', () => context.go('/lab/analytics')),
-                  _buildExtraNavItem(context, Icons.settings_outlined, 'Settings', () => context.go('/settings')),
-                  _buildExtraNavItem(context, Icons.support_agent_outlined, 'iCare Lab Support', () => context.go('/help')),
-                ],
-
-                if (role == 'Pharmacy') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(context, Icons.hourglass_empty_outlined, 'Awaiting Fulfillment', () => context.go('/pharmacy/active-orders')),
-                  _buildExtraNavItem(context, Icons.receipt_long_outlined, 'Invoices', () => context.go('/pharmacy/invoices')),
-                  _buildExtraNavItem(context, Icons.analytics_outlined, 'Analytics', () => context.go('/pharmacy/analytics')),
-                  _buildExtraNavItem(context, Icons.settings_outlined, 'Settings', () => context.go('/settings')),
-                  _buildExtraNavItem(context, Icons.support_agent_outlined, 'iCare Pharmacist Support', () => context.go('/help')),
-                ],
-
-                if (role == 'Student') ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
+                    _buildExtraNavItem(
+                      context,
+                      Icons.storefront_outlined,
+                      'iCare Clinics',
+                      () => context.go('/patient/icare-clinics'),
                     ),
-                    child: Divider(
-                      color: const Color(0xFFE8ECF5),
-                      height: 1,
+                    _buildExtraNavItem(
+                      context,
+                      Icons.medication_liquid_outlined,
+                      'My Prescriptions',
+                      () => context.go('/patient/prescriptions'),
                     ),
-                  ),
-                  _buildExtraNavItem(context, Icons.class_outlined, 'Open Classroom', () => context.go('/student/classroom')),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.travel_explore_outlined,
-                    'Browse Courses',
-                    () => context.go('/student/browse'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.workspace_premium_outlined,
-                    'My Certificates',
-                    () => context.go('/student/certificates'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.task_alt_outlined,
-                    'Assessments',
-                    () => context.go('/student/assessments'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.settings_outlined,
-                    'Settings',
-                    () => context.go('/settings'),
-                  ),
-                ],
+                    _buildExtraNavItem(
+                      context,
+                      Icons.medication_outlined,
+                      'Order Medicines',
+                      () => context.go('/patient/pharmacies'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.science_outlined,
+                      'Book a Lab Test',
+                      () => context.go('/patient/book-lab'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.history_outlined,
+                      'Health Journey',
+                      () => context.go('/patient/health-journey'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.monitor_heart_outlined,
+                      'Health Tracker',
+                      () => context.go('/patient/health-tracker'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.biotech_outlined,
+                      'Lab Results/Reports',
+                      () => context.go('/patient/lab-reports'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.alarm_outlined,
+                      'Reminders',
+                      () => context.go('/reminders'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.people_outline_rounded,
+                      'Health Community',
+                      () => context.go('/community'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.emoji_events_outlined,
+                      'Achievements & Rewards',
+                      () => context.go('/rewards'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                  ],
 
-                if (role == 'Admin') ...[
-                  const SizedBox(height: 8),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.verified_user_outlined,
-                    'Verify Applications',
-                    () => context.go('/admin/dashboard?adminTab=Pending'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.medical_services_outlined,
-                    'Manage Doctors',
-                    () => context.go('/admin/dashboard?adminTab=Doctor'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.school_outlined,
-                    'Manage Students',
-                    () => context.go('/admin/dashboard?adminTab=Student'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.local_pharmacy_outlined,
-                    'Manage Pharmacies',
-                    () => context.go('/admin/dashboard?adminTab=Pharmacy'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.biotech_outlined,
-                    'Manage Laboratories',
-                    () => context.go('/admin/dashboard?adminTab=Laboratory'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.person_add_outlined,
-                    'Manage Instructors',
-                    () => context.go('/admin/dashboard?adminTab=Instructor'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.support_agent_outlined,
-                    'Manage Receptionists',
-                    () => context.go('/admin/receptionists'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.storefront_outlined,
-                    'iCare Clinics',
-                    () => context.go('/admin/clinics'),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.analytics_outlined,
-                    'Platform Analytics',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const AnalyticsDashboardScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.payments_outlined,
-                    'Payments & Revenue',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const AdminPaymentsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.security_outlined,
-                    'Security Audit Logs',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const SecurityAuditLogScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.settings_outlined,
-                    'Settings',
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                  if (role == 'Doctor') ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.schedule_outlined,
+                      'My Schedule',
+                      () => context.go('/doctor/schedule'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.analytics_outlined,
+                      'Analytics',
+                      () => context.go('/doctor/analytics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.people_outline_rounded,
+                      'Health Community',
+                      () => context.go('/community'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.event_available_outlined,
+                      'Availability',
+                      () => context.go('/doctor/availability'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.notifications_outlined,
+                      'Notifications',
+                      () => context.go('/doctor/notifications'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.help_outline_rounded,
+                      'Help & Support',
+                      () => context.go('/help'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                  ],
 
-                // Shown only when this account has more than one role
-                // (e.g. Doctor + Instructor) to switch to — matches the
-                // gating already used by the mobile drawer's equivalent item.
-                if (_availableRoles.length > 1) ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Divider(color: const Color(0xFFE8ECF5), height: 1),
-                  ),
-                  _buildExtraNavItem(
-                    context,
-                    Icons.swap_horiz_rounded,
-                    'Switch Role',
-                    () => _showSwitchRoleSheet(context),
-                  ),
-                ],
+                  if (role == 'Instructor') ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.library_books_outlined,
+                      'Manage Courses',
+                      () => context.go('/instructor/manage-courses'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.group_outlined,
+                      'Assigned Learners',
+                      () => context.go('/instructor/assigned-learners'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.health_and_safety_outlined,
+                      'Health Precautions',
+                      () => context.go('/instructor/precautions'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.analytics_outlined,
+                      'Educational Analytics',
+                      () => context.go('/instructor/analytics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                  ],
+
+                  if (role == 'Laboratory') ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.list_alt_outlined,
+                      'Orders',
+                      () => context.go('/lab/bookings'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.science_outlined,
+                      'Test Catalog',
+                      () => context.go('/lab/tests'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.receipt_long_outlined,
+                      'Invoices',
+                      () => context.go('/lab/invoices'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.analytics_outlined,
+                      'Analytics',
+                      () => context.go('/lab/analytics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.support_agent_outlined,
+                      'iCare Lab Support',
+                      () => context.go('/help'),
+                    ),
+                  ],
+
+                  if (role == 'Pharmacy') ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.hourglass_empty_outlined,
+                      'Awaiting Fulfillment',
+                      () => context.go('/pharmacy/active-orders'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.receipt_long_outlined,
+                      'Invoices',
+                      () => context.go('/pharmacy/invoices'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.analytics_outlined,
+                      'Analytics',
+                      () => context.go('/pharmacy/analytics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.support_agent_outlined,
+                      'iCare Pharmacist Support',
+                      () => context.go('/help'),
+                    ),
+                  ],
+
+                  if (role == 'Student') ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    // "Open Classroom" per the client: the classroom is what
+                    // students think of as "My Courses". Matches drawer.dart.
+                    _buildExtraNavItem(
+                      context,
+                      Icons.class_outlined,
+                      'My Courses',
+                      () => context.go('/student/classroom'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.explore_outlined,
+                      'Browse Courses',
+                      () => context.go('/student/browse'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.workspace_premium_outlined,
+                      'My Certificates',
+                      () => context.go('/student/certificates'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.task_alt_outlined,
+                      'Assessments',
+                      () => context.go('/student/assessments'),
+                    ),
+                    // These three exist in the mobile drawer but were never
+                    // added to the web sidebar, so the same account showed a
+                    // different menu depending on the screen it was opened on.
+                    _buildExtraNavItem(
+                      context,
+                      Icons.local_offer_outlined,
+                      'Promotions & Offers',
+                      () => context.go('/promotions'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.people_outline,
+                      'Instructors',
+                      () => context.go('/student/instructors'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.local_hospital_outlined,
+                      'iCare Clinics',
+                      () => context.go('/icare-clinics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.video_call_outlined,
+                      'Telehealth',
+                      () => context.go('/doctors'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () => context.go('/settings'),
+                    ),
+                  ],
+
+                  if (role == 'Admin') ...[
+                    const SizedBox(height: 8),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.verified_user_outlined,
+                      'Verify Applications',
+                      () => context.go('/admin/dashboard?adminTab=Pending'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.medical_services_outlined,
+                      'Manage Doctors',
+                      () => context.go('/admin/dashboard?adminTab=Doctor'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.school_outlined,
+                      'Manage Students',
+                      () => context.go('/admin/dashboard?adminTab=Student'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.local_pharmacy_outlined,
+                      'Manage Pharmacies',
+                      () => context.go('/admin/dashboard?adminTab=Pharmacy'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.biotech_outlined,
+                      'Manage Laboratories',
+                      () => context.go('/admin/dashboard?adminTab=Laboratory'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.person_add_outlined,
+                      'Manage Instructors',
+                      () => context.go('/admin/dashboard?adminTab=Instructor'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.support_agent_outlined,
+                      'Manage Receptionists',
+                      () => context.go('/admin/receptionists'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.storefront_outlined,
+                      'iCare Clinics',
+                      () => context.go('/admin/clinics'),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.analytics_outlined,
+                      'Platform Analytics',
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const AnalyticsDashboardScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.payments_outlined,
+                      'Payments & Revenue',
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const AdminPaymentsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.security_outlined,
+                      'Security Audit Logs',
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const SecurityAuditLogScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.settings_outlined,
+                      'Settings',
+                      () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
+                  // Shown only when this account has more than one role
+                  // (e.g. Doctor + Instructor) to switch to — matches the
+                  // gating already used by the mobile drawer's equivalent item.
+                  if (_availableRoles.length > 1) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Divider(color: const Color(0xFFE8ECF5), height: 1),
+                    ),
+                    _buildExtraNavItem(
+                      context,
+                      Icons.swap_horiz_rounded,
+                      'Switch Role',
+                      () => _showSwitchRoleSheet(context),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1408,7 +1821,9 @@ class _HoverableNavItemState extends State<_HoverableNavItem> {
                         width: 22,
                         height: 22,
                         colorFilter: ColorFilter.mode(
-                          _isHovered ? AppColors.primaryColor : const Color(0xFF64748B),
+                          _isHovered
+                              ? AppColors.primaryColor
+                              : const Color(0xFF64748B),
                           BlendMode.srcIn,
                         ),
                       )
@@ -1435,7 +1850,10 @@ class _HoverableNavItemState extends State<_HoverableNavItem> {
               ),
               if (widget.badgeCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(20),
@@ -1472,7 +1890,37 @@ class _WebTopBar extends ConsumerStatefulWidget {
 
 class _WebTopBarState extends ConsumerState<_WebTopBar> {
   String get role => widget.role;
-  int get notifUnreadCount => widget.notifUnreadCount;
+
+  // Opening the bell counts as seeing the notifications, so the badge has to
+  // go to zero straight away - not after a "Mark all read" press, and not on
+  // the next poll. The parent owns the real count, so this records the value
+  // that was acknowledged; anything higher means genuinely new ones arrived
+  // and the badge comes back on its own.
+  int _seenAt = -1;
+
+  int get notifUnreadCount =>
+      widget.notifUnreadCount <= _seenAt ? 0 : widget.notifUnreadCount;
+
+  /// True only on a role's landing dashboard. Every other route inside the
+  /// shell renders its own title, so the fixed header would be a duplicate.
+  bool _isDashboardRoute(BuildContext context) {
+    final path = GoRouterState.of(context).uri.path;
+    return path.endsWith('/dashboard') || path == '/home' || path == '/';
+  }
+
+  void _openNotifications() {
+    setState(() => _seenAt = widget.notifUnreadCount);
+    // Fire-and-forget: the badge is already clear on screen, and a failed call
+    // just means the server still has them unread for the next poll.
+    NotificationService().markAllAsRead();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) => role == 'Doctor'
+            ? const DoctorNotifications()
+            : NotificationScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1491,7 +1939,12 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         children: [
-          // Page title
+          // "Dashboard - Welcome back! Here's your overview." was
+          // hardcoded here, so it sat above every page in the shell:
+          // iCare Academy, My Courses, Browse Courses, Certificates,
+          // Assessments, Settings - all of which carry their own
+          // heading. Only the actual dashboard should introduce itself.
+          if (_isDashboardRoute(context))
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1517,19 +1970,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
           const Spacer(),
           // Notification bell
           GestureDetector(
-            onTap: () {
-              if (role == 'Doctor') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => const DoctorNotifications(),
-                  ),
-                );
-              } else {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (ctx) => NotificationScreen()),
-                );
-              }
-            },
+            onTap: _openNotifications,
             child: Container(
               width: 42,
               height: 42,
@@ -1551,15 +1992,25 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
                       top: 4,
                       right: 4,
                       child: Container(
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.redAccent,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           notifUnreadCount > 99 ? '99+' : '$notifUnreadCount',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -1571,122 +2022,182 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
           const SizedBox(width: 16),
           // Avatar + greeting (with dropdown for Patient)
           PopupMenuButton<String>(
-              offset: const Offset(0, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              color: Colors.white,
-              elevation: 4,
-              onSelected: (value) {
-                if (value == 'edit') {
-                  // Navigate to role-specific profile edit page
-                  if (role == 'Doctor') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const DoctorProfileSetup()),
-                    );
-                  } else if (role == 'Pharmacy') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const PharmacyProfileSetup()),
-                    );
-                  } else if (role == 'Laboratory') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const LabProfileSetup()),
-                    );
-                  } else if (role == 'Student') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const StudentProfileSetup()),
-                    );
-                  } else if (role == 'Instructor') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => InstructorProfileSetupScreen()),
-                    );
-                  } else {
-                    // Patient or other roles - use generic profile edit
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const ProfileEditScreen()),
-                    );
-                  }
-                } else if (value == 'logout') {
-                  ref.read(authProvider.notifier).setUserLogout();
-                  context.go('/login');
+            offset: const Offset(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            color: Colors.white,
+            elevation: 4,
+            onSelected: (value) {
+              if (value == 'edit') {
+                // Navigate to role-specific profile edit page
+                if (role == 'Doctor') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const DoctorProfileSetup(),
+                    ),
+                  );
+                } else if (role == 'Pharmacy') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const PharmacyProfileSetup(),
+                    ),
+                  );
+                } else if (role == 'Laboratory') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const LabProfileSetup(),
+                    ),
+                  );
+                } else if (role == 'Student') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const StudentProfileSetup(),
+                    ),
+                  );
+                } else if (role == 'Instructor') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => InstructorProfileSetupScreen(),
+                    ),
+                  );
+                } else {
+                  // Patient or other roles - use generic profile edit
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => const ProfileEditScreen(),
+                    ),
+                  );
                 }
-              },
-              itemBuilder: (ctx) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: const [
-                      Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                      SizedBox(width: 10),
-                      Text('Edit Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
+              } else if (value == 'logout') {
+                ref.read(authProvider.notifier).setUserLogout();
+                context.go('/login');
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: Color(0xFF64748B),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: const [
-                      Icon(Icons.logout_rounded, size: 18, color: Colors.redAccent),
-                      SizedBox(width: 10),
-                      Text('Logout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.redAccent)),
-                    ],
-                  ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.logout_rounded,
+                      size: 18,
+                      color: Colors.redAccent,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            child: Row(
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final userName =
+                            ref.watch(authProvider).user?.name ?? 'User';
+                        return Text(
+                          userName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        );
+                      },
+                    ),
+                    Text(
+                      role.isNotEmpty
+                          ? role == 'Laboratory'
+                                ? 'Lab Technician'
+                                : role == 'Pharmacy'
+                                ? 'Pharmacist'
+                                : role[0].toUpperCase() + role.substring(1)
+                          : role,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 10),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final user = ref.watch(authProvider).user;
+                    final imgProvider = buildProfileImageProvider(
+                      user?.profilePicture,
+                    );
+                    final initial = (user != null && user.name.isNotEmpty)
+                        ? user.name[0].toUpperCase()
+                        : 'U';
+                    return CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.primaryColor.withValues(
+                        alpha: 0.1,
+                      ),
+                      child: ClipOval(
+                        child: imgProvider != null
+                            ? Image(
+                                image: imgProvider,
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Text(
+                                  initial,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                initial,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                      ),
+                    );
+                  },
                 ),
               ],
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Consumer(
-                        builder: (context, ref, child) {
-                          final userName =
-                              ref.watch(authProvider).user?.name ?? 'User';
-                          return Text(
-                            userName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          );
-                        },
-                      ),
-                      Text(
-                        role.isNotEmpty
-                            ? role == 'Laboratory'
-                                  ? 'Lab Technician'
-                                  : role == 'Pharmacy'
-                                  ? 'Pharmacist'
-                                  : role[0].toUpperCase() + role.substring(1)
-                            : role,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF888888),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 10),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final user = ref.watch(authProvider).user;
-                      final imgProvider = buildProfileImageProvider(user?.profilePicture);
-                      final initial = (user != null && user.name.isNotEmpty) ? user.name[0].toUpperCase() : 'U';
-                      return CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                        child: ClipOval(
-                          child: imgProvider != null
-                            ? Image(image: imgProvider, width: 40, height: 40, fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Text(initial, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryColor)))
-                            : Text(initial, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
             ),
+          ),
         ],
       ),
     );
@@ -1696,6 +2207,7 @@ class _WebTopBarState extends ConsumerState<_WebTopBar> {
 class _SidebarItem {
   final IconData icon;
   final String label;
+
   /// Route this item navigates to, e.g. `/doctor/appointments`.
   final String path;
   const _SidebarItem({
@@ -1717,12 +2229,17 @@ class _NotificationBanner extends StatefulWidget {
   final String title;
   final String message;
   final VoidCallback onDismiss;
-  const _NotificationBanner({required this.title, required this.message, required this.onDismiss});
+  const _NotificationBanner({
+    required this.title,
+    required this.message,
+    required this.onDismiss,
+  });
   @override
   State<_NotificationBanner> createState() => _NotificationBannerState();
 }
 
-class _NotificationBannerState extends State<_NotificationBanner> with SingleTickerProviderStateMixin {
+class _NotificationBannerState extends State<_NotificationBanner>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<Offset> _slide;
   late final Animation<double> _fade;
@@ -1730,9 +2247,14 @@ class _NotificationBannerState extends State<_NotificationBanner> with SingleTic
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
-    _slide = Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
     _ctrl.forward();
   }
@@ -1758,32 +2280,76 @@ class _NotificationBannerState extends State<_NotificationBanner> with SingleTic
             child: GestureDetector(
               onTap: widget.onDismiss,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0B2D6E),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
-                    child: const Icon(Icons.notifications_rounded, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if (widget.message.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(widget.message, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                  ])),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: widget.onDismiss,
-                    child: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.7), size: 18),
-                  ),
-                ]),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.notifications_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (widget.message.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.message,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 12,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: widget.onDismiss,
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1792,5 +2358,3 @@ class _NotificationBannerState extends State<_NotificationBanner> with SingleTic
     );
   }
 }
-
-

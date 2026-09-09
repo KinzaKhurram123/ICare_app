@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart';
@@ -87,9 +89,25 @@ class _InstructorLmsCreateCourseScreenState
   String _targetAudience = 'Patient';
   String _difficulty = 'Beginner';
   List<Map<String, dynamic>> _categories = [];
-  final _durationDaysController = TextEditingController();
-  final _durationWeeksController = TextEditingController();
-  final _durationMonthsController = TextEditingController();
+  // One number plus a unit, not three boxes. The client's complaint was that
+  // "3 months" forced you to type zeros into Days and Weeks:
+  // "isko is tarah se ho ki udhar aage OPTION aa jaye - yahan pe NUMBER likhe
+  // ho aur yahan pe woh neeche kar ke DAYS/WEEKS/MONTHS SELECT kar le."
+  final _durationController = TextEditingController();
+  String _durationUnit = 'months'; // 'days' | 'weeks' | 'months'
+
+  /// Course duration in days, which is what the API stores.
+  int get _durationInDays {
+    final n = int.tryParse(_durationController.text.trim()) ?? 0;
+    switch (_durationUnit) {
+      case 'days':
+        return n;
+      case 'weeks':
+        return n * 7;
+      default:
+        return n * 30;
+    }
+  }
   DateTime? _startDate;
   String _courseType = 'self-paced'; // 'self-paced' or 'pragmatic'
   bool _isPublished = true;
@@ -155,19 +173,25 @@ class _InstructorLmsCreateCourseScreenState
                   color: Color(0xFFEEF0FF),
                   shape: BoxShape.circle,
                 ),
-                child: Text('${i + 1}',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6366F1))),
+                child: Text(
+                  '${i + 1}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF6366F1),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               // Amount
               Expanded(
                 flex: 3,
                 child: TextField(
+                  maxLength: 9,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: _installments[i].amount,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: (_) => setState(() {}),
                   decoration: const InputDecoration(
                     labelText: 'Amount (PKR)',
@@ -187,13 +211,20 @@ class _InstructorLmsCreateCourseScreenState
                           isDense: true,
                           border: OutlineInputBorder(),
                         ),
-                        child: Text('On enrollment',
-                            style: TextStyle(
-                                fontSize: 13, color: Color(0xFF64748B))),
+                        child: Text(
+                          'On enrollment',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
                       )
                     : TextField(
+                        maxLength: 9,
+                        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                         controller: _installments[i].days,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: (_) => setState(() {}),
                         decoration: const InputDecoration(
                           labelText: 'Days after enrollment',
@@ -205,8 +236,11 @@ class _InstructorLmsCreateCourseScreenState
               // Remove (keep at least 2 installments)
               if (i > 0 && _installments.length > 2)
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline_rounded,
-                      color: Color(0xFFEF4444), size: 20),
+                  icon: const Icon(
+                    Icons.remove_circle_outline_rounded,
+                    color: Color(0xFFEF4444),
+                    size: 20,
+                  ),
                   onPressed: () => setState(() {
                     _installments[i].dispose();
                     _installments.removeAt(i);
@@ -311,6 +345,7 @@ class _InstructorLmsCreateCourseScreenState
     _titleController.dispose();
     _descriptionController.dispose();
     _thumbnailController.dispose();
+    _durationController.dispose();
     _pageController.dispose();
     _priceController.dispose();
     _voucherController.dispose();
@@ -368,17 +403,25 @@ class _InstructorLmsCreateCourseScreenState
         int prevDays = -1;
         for (int i = 0; i < _installments.length; i++) {
           final amt = double.tryParse(_installments[i].amount.text) ?? 0;
-          final days = i == 0 ? 0 : (int.tryParse(_installments[i].days.text) ?? -1);
-          if (amt <= 0) { err = 'Installment ${i + 1}: enter an amount'; break; }
+          final days = i == 0
+              ? 0
+              : (int.tryParse(_installments[i].days.text) ?? -1);
+          if (amt <= 0) {
+            err = 'Installment ${i + 1}: enter an amount';
+            break;
+          }
           if (i > 0 && days <= prevDays) {
-            err = 'Installment ${i + 1}: days must be more than the previous one';
+            err =
+                'Installment ${i + 1}: days must be more than the previous one';
             break;
           }
           prevDays = days;
         }
       }
       if (err != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(err)));
         return;
       }
     }
@@ -398,10 +441,7 @@ class _InstructorLmsCreateCourseScreenState
         'category': _category,
         'targetAudience': _targetAudience,
         'difficulty': _difficulty,
-        'duration':
-            (int.tryParse(_durationDaysController.text) ?? 0) +
-            (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
-            (int.tryParse(_durationMonthsController.text) ?? 0) * 30,
+        'duration': _durationInDays,
         if (_startDate != null) 'startDate': _startDate!.toIso8601String(),
         'courseType': _courseType,
         'isPublished': _isPublished,
@@ -435,8 +475,9 @@ class _InstructorLmsCreateCourseScreenState
             for (int i = 0; i < _installments.length; i++)
               {
                 'amount': double.tryParse(_installments[i].amount.text) ?? 0,
-                'daysAfterEnrollment':
-                    i == 0 ? 0 : (int.tryParse(_installments[i].days.text) ?? 0),
+                'daysAfterEnrollment': i == 0
+                    ? 0
+                    : (int.tryParse(_installments[i].days.text) ?? 0),
               },
           ],
       };
@@ -460,7 +501,7 @@ class _InstructorLmsCreateCourseScreenState
     }
   }
 
-  void _nextStep() {
+  void _nextStep({bool publish = true}) {
     if (_currentStep < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -468,6 +509,7 @@ class _InstructorLmsCreateCourseScreenState
       );
       setState(() => _currentStep++);
     } else {
+      _isPublished = publish;
       _submitCourse();
     }
   }
@@ -769,14 +811,21 @@ class _InstructorLmsCreateCourseScreenState
 
         TextFormField(
           controller: _titleController,
+          // Capped per the client: "Title likha, Description ki... HAR JAGAH
+          // PAR woh LIMIT lagayein - CHARACTERS ki."
+          maxLength: 120,
           decoration: const InputDecoration(
             labelText: 'Course Title *',
             hintText: 'e.g., Introduction to Diabetes Management',
             border: OutlineInputBorder(),
+            counterText: '',
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (value == null || value.trim().isEmpty) {
               return 'Please enter a course title';
+            }
+            if (value.trim().length < 5) {
+              return 'Course title is too short';
             }
             return null;
           },
@@ -785,6 +834,7 @@ class _InstructorLmsCreateCourseScreenState
 
         TextFormField(
           controller: _descriptionController,
+          maxLength: 2000,
           decoration: const InputDecoration(
             labelText: 'Course Description *',
             hintText: 'Describe what students will learn...',
@@ -792,8 +842,11 @@ class _InstructorLmsCreateCourseScreenState
           ),
           maxLines: 5,
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (value == null || value.trim().isEmpty) {
               return 'Please enter a description';
+            }
+            if (value.trim().length < 20) {
+              return 'Describe the course in a little more detail';
             }
             return null;
           },
@@ -836,6 +889,8 @@ class _InstructorLmsCreateCourseScreenState
           children: [
             Expanded(
               child: TextFormField(
+                maxLength: 500,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                 controller: _thumbnailController,
                 onChanged: (v) => setState(
                   () => _thumbnailUrl = v.trim().isEmpty ? null : v.trim(),
@@ -1032,38 +1087,38 @@ class _InstructorLmsCreateCourseScreenState
             Row(
               children: [
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
-                    controller: _durationDaysController,
+                    controller: _durationController,
                     decoration: const InputDecoration(
-                      labelText: 'Days',
+                      labelText: 'Duration',
+                      hintText: 'e.g. 3',
                       border: OutlineInputBorder(),
-                      suffixText: 'd',
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxLength: 3,
+                    buildCounter:
+                        (_, {required currentLength, required isFocused, maxLength}) =>
+                            null,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: TextFormField(
-                    controller: _durationWeeksController,
+                  flex: 3,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _durationUnit,
                     decoration: const InputDecoration(
-                      labelText: 'Weeks',
+                      labelText: 'Unit',
                       border: OutlineInputBorder(),
-                      suffixText: 'w',
                     ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationMonthsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Months',
-                      border: OutlineInputBorder(),
-                      suffixText: 'm',
-                    ),
-                    keyboardType: TextInputType.number,
+                    items: const [
+                      DropdownMenuItem(value: 'days', child: Text('Days')),
+                      DropdownMenuItem(value: 'weeks', child: Text('Weeks')),
+                      DropdownMenuItem(value: 'months', child: Text('Months')),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _durationUnit = v ?? 'months'),
                   ),
                 ),
               ],
@@ -1137,10 +1192,7 @@ class _InstructorLmsCreateCourseScreenState
               const SizedBox(height: 8),
               Builder(
                 builder: (context) {
-                  final totalDays =
-                      (int.tryParse(_durationDaysController.text) ?? 0) +
-                      (int.tryParse(_durationWeeksController.text) ?? 0) * 7 +
-                      (int.tryParse(_durationMonthsController.text) ?? 0) * 30;
+                  final totalDays = _durationInDays;
                   if (totalDays == 0) return const SizedBox.shrink();
                   final endDate = _startDate!.add(Duration(days: totalDays));
                   return Container(
@@ -1299,27 +1351,10 @@ class _InstructorLmsCreateCourseScreenState
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: SwitchListTile(
-                title: const Text(
-                  'Publish immediately',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                subtitle: const Text(
-                  'Make this course visible to students',
-                  style: TextStyle(fontSize: 12),
-                ),
-                value: _isPublished,
-                onChanged: (value) => setState(() => _isPublished = value),
-                activeThumbColor: AppColors.primaryColor,
-              ),
-            ),
+            // The "Publish immediately" switch used to sit here, mid-form.
+            // Moved to the final step as two explicit buttons at the client's
+            // request: "yeh udhar se HATA do aur isko END par le jao - ya to
+            // 'Save as Draft' aa jaye ya 'Publish' aa jaye."
           ],
         ),
 
@@ -1382,8 +1417,11 @@ class _InstructorLmsCreateCourseScreenState
                   children: [
                     Expanded(
                       child: TextFormField(
+                        maxLength: 9,
+                        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                         controller: _priceController,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: const InputDecoration(
                           labelText: 'Course Price (PKR)',
                           hintText: 'e.g. 10000',
@@ -1529,8 +1567,11 @@ class _InstructorLmsCreateCourseScreenState
                 if (_earlyBirdEnabled) ...[
                   const SizedBox(height: 12),
                   TextFormField(
+                    maxLength: 5,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _earlyBirdAmountController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(
                       labelText: 'Early Bird discount (flat PKR off)',
                       hintText: 'e.g. 2000',
@@ -1620,8 +1661,11 @@ class _InstructorLmsCreateCourseScreenState
                   const SizedBox(height: 12),
                   if (_earlyBirdMode == 'days')
                     TextFormField(
+                      maxLength: 9,
+                      buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                       controller: _earlyBirdDaysController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Days from course creation',
                         hintText: 'e.g. 7',
@@ -1759,14 +1803,20 @@ class _InstructorLmsCreateCourseScreenState
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
-                      onPressed: () => setState(
-                          () => _installments.add(_InstallmentRow())),
-                      icon: const Icon(Icons.add_circle_outline_rounded,
-                          size: 20, color: Color(0xFF6366F1)),
-                      label: const Text('Add Installment',
-                          style: TextStyle(
-                              color: Color(0xFF6366F1),
-                              fontWeight: FontWeight.w700)),
+                      onPressed: () =>
+                          setState(() => _installments.add(_InstallmentRow())),
+                      icon: const Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 20,
+                        color: Color(0xFF6366F1),
+                      ),
+                      label: const Text(
+                        'Add Installment',
+                        style: TextStyle(
+                          color: Color(0xFF6366F1),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1782,8 +1832,11 @@ class _InstructorLmsCreateCourseScreenState
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline_rounded,
-                                size: 18, color: Color(0xFF64748B)),
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              size: 18,
+                              color: Color(0xFF64748B),
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Total installments: PKR ${total.round()}',
@@ -2159,8 +2212,30 @@ class _InstructorLmsCreateCourseScreenState
               ),
             ),
           ),
+          // On the last step the single "Create Course" button becomes the
+          // publish decision itself, so a draft is a real choice rather than a
+          // switch the instructor has to remember to set earlier in the form.
+          if (_currentStep == 2 && !_isSubmitting) ...[
+            OutlinedButton.icon(
+              onPressed: () => _nextStep(publish: false),
+              icon: const Icon(Icons.drafts_outlined, size: 18),
+              label: const Text('Save as Draft'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryColor,
+                side: BorderSide(color: AppColors.primaryColor),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
           ElevatedButton.icon(
-            onPressed: _isSubmitting ? null : _nextStep,
+            onPressed: _isSubmitting ? null : () => _nextStep(),
             icon: _isSubmitting
                 ? const SizedBox(
                     width: 16,
@@ -2173,13 +2248,13 @@ class _InstructorLmsCreateCourseScreenState
                 : Icon(
                     _currentStep < 2
                         ? Icons.arrow_forward_rounded
-                        : Icons.check_rounded,
+                        : Icons.publish_rounded,
                     size: 18,
                   ),
             label: Text(
               _isSubmitting
-                  ? 'Creating...'
-                  : (_currentStep < 2 ? 'Next Step' : 'Create Course'),
+                  ? 'Saving...'
+                  : (_currentStep < 2 ? 'Next Step' : 'Publish'),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
@@ -2356,126 +2431,136 @@ class _ModuleEditorPageState extends State<_ModuleEditorPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 700),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _titleCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Module Title *',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _descCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Module Description (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _durationDaysCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Module Duration (days) — for timeline',
-                    border: OutlineInputBorder(),
-                    suffixText: 'days',
-                    hintText: 'e.g. 7',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.play_lesson_rounded,
-                      color: AppColors.primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Lessons',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_lessonForms.length} added',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ..._lessonForms.asMap().entries.map((entry) {
-                  final i = entry.key;
-                  final form = entry.value;
-                  return _LmsInlineLessonWidget(
-                    key: ObjectKey(form),
-                    form: form,
-                    number: i + 1,
-                    onRemove: _lessonForms.length > 1
-                        ? () => setState(() {
-                            form.dispose();
-                            _lessonForms.removeAt(i);
-                          })
-                        : null,
-                    onChanged: () => setState(() {}),
-                  );
-                }),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        setState(() => _lessonForms.add(_LmsLessonForm())),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add Another Lesson'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryColor,
-                      side: const BorderSide(color: AppColors.primaryColor),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    maxLength: 120,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    controller: _titleCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Module Title *',
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    maxLength: 2000,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    controller: _descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Module Description (optional)',
+                      border: OutlineInputBorder(),
                     ),
-                    child: const Text(
-                      'Save Module',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    maxLength: 5,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    controller: _durationDaysCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Module Duration (days) — for timeline',
+                      border: OutlineInputBorder(),
+                      suffixText: 'days',
+                      hintText: 'e.g. 7',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.play_lesson_rounded,
+                        color: AppColors.primaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Lessons',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_lessonForms.length} added',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ..._lessonForms.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final form = entry.value;
+                    return _LmsInlineLessonWidget(
+                      key: ObjectKey(form),
+                      form: form,
+                      number: i + 1,
+                      onRemove: _lessonForms.length > 1
+                          ? () => setState(() {
+                              form.dispose();
+                              _lessonForms.removeAt(i);
+                            })
+                          : null,
+                      onChanged: () => setState(() {}),
+                    );
+                  }),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          setState(() => _lessonForms.add(_LmsLessonForm())),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Add Another Lesson'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryColor,
+                        side: const BorderSide(color: AppColors.primaryColor),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Save Module',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -2696,6 +2781,8 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
+                  maxLength: 120,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: f.titleCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Lesson Title *',
@@ -2704,6 +2791,8 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  maxLength: 200,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: f.contentCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Notes (optional)',
@@ -2713,6 +2802,8 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  maxLength: 5,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: f.durationCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Duration (minutes)',
@@ -2720,6 +2811,7 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
                     suffixText: 'min',
                   ),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
                 const SizedBox(height: 14),
                 _uploadTile(
@@ -2866,6 +2958,8 @@ class _LmsInlineLessonWidgetState extends State<_LmsInlineLessonWidget> {
                 if (f.liveSessionDateTime != null) ...[
                   const SizedBox(height: 8),
                   TextField(
+                    maxLength: 200,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: f.liveNoteCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Live session note (optional)',

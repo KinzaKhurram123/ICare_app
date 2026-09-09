@@ -24,6 +24,75 @@ class _AssessmentsScreenState extends State<AssessmentsScreen>
   bool _loadingAssignments = true;
   bool _loadingQuizzes = true;
 
+  // This screen showed every assignment and quiz from every course at once.
+  // The client's point: "yeh to khaali ek course ki nahi hai na - yeh to SAB
+  // COURSE ke liye use hoga... to is mein PEHLE COURSE aana chahiye, aur us
+  // course ko click kare to phir uske assignments aane chahiyein."
+  // null = All courses.
+  String? _courseFilter;
+
+  /// Course id -> title, built from whatever the loaded items reference, so it
+  /// stays correct without a second round-trip.
+  Map<String, String> get _courseOptions {
+    final map = <String, String>{};
+    for (final item in [..._assignments, ..._quizzes]) {
+      if (item is! Map) continue;
+      final id = item['courseId']?.toString() ?? '';
+      if (id.isEmpty) continue;
+      // courseName is the field the cards themselves render (see
+      // _buildAssignmentCard / _buildQuizCard); reading course['title'] here
+      // instead made every option say "Untitled course".
+      final course = item['course'];
+      final title = (item['courseName'] ??
+                  item['courseTitle'] ??
+                  (course is Map ? course['title'] : null))
+              ?.toString() ??
+          '';
+      if (title.trim().isEmpty) continue;
+      map[id] = title.trim();
+    }
+    return map;
+  }
+
+  List<dynamic> _applyCourseFilter(List<dynamic> items) {
+    if (_courseFilter == null) return items;
+    return items
+        .where((i) => i is Map && i['courseId']?.toString() == _courseFilter)
+        .toList();
+  }
+
+  Widget _buildCourseSelector() {
+    final options = _courseOptions;
+    if (options.length < 2) return const SizedBox.shrink();
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: DropdownButtonFormField<String?>(
+        initialValue: _courseFilter,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: 'Course',
+          prefixIcon: const Icon(Icons.menu_book_rounded),
+          isDense: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        items: [
+          const DropdownMenuItem<String?>(
+            value: null,
+            child: Text('All courses'),
+          ),
+          ...options.entries.map(
+            (e) => DropdownMenuItem<String?>(
+              value: e.key,
+              child: Text(e.value, overflow: TextOverflow.ellipsis),
+            ),
+          ),
+        ],
+        onChanged: (v) => setState(() => _courseFilter = v),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -141,11 +210,18 @@ class _AssessmentsScreenState extends State<AssessmentsScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildAssignmentsTab(),
-          _buildQuizzesTab(),
+          _buildCourseSelector(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAssignmentsTab(),
+                _buildQuizzesTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -155,15 +231,16 @@ class _AssessmentsScreenState extends State<AssessmentsScreen>
     if (_loadingAssignments) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_assignments.isEmpty) {
+    final assignments = _applyCourseFilter(_assignments);
+    if (assignments.isEmpty) {
       return _buildEmpty('No assignments found', Icons.assignment_outlined);
     }
     return RefreshIndicator(
       onRefresh: _loadAssignments,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _assignments.length,
-        itemBuilder: (_, i) => _buildAssignmentCard(_assignments[i]),
+        itemCount: assignments.length,
+        itemBuilder: (_, i) => _buildAssignmentCard(assignments[i]),
       ),
     );
   }
@@ -301,15 +378,16 @@ class _AssessmentsScreenState extends State<AssessmentsScreen>
     if (_loadingQuizzes) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_quizzes.isEmpty) {
+    final quizzes = _applyCourseFilter(_quizzes);
+    if (quizzes.isEmpty) {
       return _buildEmpty('No quizzes found', Icons.quiz_outlined);
     }
     return RefreshIndicator(
       onRefresh: _loadQuizzes,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _quizzes.length,
-        itemBuilder: (_, i) => _buildQuizCard(_quizzes[i]),
+        itemCount: quizzes.length,
+        itemBuilder: (_, i) => _buildQuizCard(quizzes[i]),
       ),
     );
   }

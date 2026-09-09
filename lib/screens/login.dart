@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ import 'package:icare/screens/student_profile_setup.dart';
 import 'package:icare/services/auth_service.dart';
 import 'package:icare/services/biometric_service.dart';
 import 'package:icare/services/face_auth_service.dart';
-import 'package:icare/screens/face_capture_screen.dart';
+import 'package:icare/screens/face_capture.dart';
 import 'package:icare/services/user_service.dart';
 import 'package:icare/screens/email_otp_screen.dart';
 import 'package:icare/utils/shared_pref.dart';
@@ -1154,7 +1155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                               ),
                                               recognizer: TapGestureRecognizer()
                                                 ..onTap = () {
-                                                  context.go('/terms');
+                                                  context.push('/terms');
                                                 },
                                             ),
                                             const TextSpan(text: " and "),
@@ -1167,7 +1168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                               ),
                                               recognizer: TapGestureRecognizer()
                                                 ..onTap = () {
-                                                  context.go('/privacypolicy');
+                                                  context.push('/privacypolicy');
                                                 },
                                             ),
                                           ],
@@ -1694,7 +1695,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                           ),
                                           recognizer: TapGestureRecognizer()
                                             ..onTap = () {
-                                              context.go('/terms');
+                                              context.push('/terms');
                                             },
                                         ),
                                         const TextSpan(text: " and "),
@@ -1707,7 +1708,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                           ),
                                           recognizer: TapGestureRecognizer()
                                             ..onTap = () {
-                                              context.go('/privacypolicy');
+                                              context.push('/privacypolicy');
                                             },
                                         ),
                                       ],
@@ -1907,8 +1908,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ],
           ],
         ),
-        // Face ID (camera) or hardware biometric sign-in
-        if (_faceEnabled || (_biometricAvailable && _biometricEnabled)) ...[
+        // Face ID (camera) or hardware biometric sign-in — neither exists on web
+        if (!kIsWeb &&
+            (_faceEnabled || (_biometricAvailable && _biometricEnabled))) ...[
           const SizedBox(height: 12),
           _buildBiometricButton(isDesktop: false),
         ],
@@ -1919,8 +1921,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildBiometricButton({required bool isDesktop}) {
     return Column(
       children: [
-        // Face ID button (camera-based, works on all Android devices)
-        if (_faceEnabled) ...[
+        // Face ID button (camera-based). Phone only: the client asked for
+        // Face ID to be removed from the web build and kept on mobile.
+        if (_faceEnabled && !kIsWeb) ...[
           _authButton(
             icon: Icons.face_retouching_natural,
             label: 'Sign in with Face ID',
@@ -2188,7 +2191,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
-        child: Padding(
+        // Bounded so the role list actually has something to scroll inside:
+        // an unbounded sheet just grows to fit and the bar never appears, and
+        // on a short window the lower roles fell off the screen with no way to
+        // reach them.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+          ),
+          child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2204,13 +2215,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Login As',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-              const SizedBox(height: 4),
-              const Text('Your account has multiple roles. Choose how you want to continue.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              // The sheet is isDismissible: false so a stray tap outside can't
+              // strand the login half-done, but that left no way out at all.
+              // Closing returns null, which the caller already treats as
+              // "cancelled" and simply stops the sign-in.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Login As',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A))),
+                        SizedBox(height: 4),
+                        Text(
+                            'Your account has multiple roles. Choose how you want to continue.',
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close_rounded,
+                        color: Color(0xFF64748B)),
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
-              ...roles.map((r) {
+              Flexible(
+                child: DragScroll(
+                  builder: (context, roleScrollCtrl) => ListView(
+                    controller: roleScrollCtrl,
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      ...roles.map((r) {
                 final key = r.toLowerCase();
                 final isActive = key == activeRole.toLowerCase();
                 return Padding(
@@ -2264,7 +2309,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                 );
               }),
+                    ],
+                  ),
+                ),
+              ),
             ],
+          ),
           ),
         ),
       ),

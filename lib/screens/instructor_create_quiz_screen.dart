@@ -270,6 +270,8 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
                   if (widget.courseId == null) const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 120,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _titleController,
                     decoration: const InputDecoration(
                       labelText: 'Quiz Title *',
@@ -281,6 +283,8 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 2000,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _descriptionController,
                     decoration: const InputDecoration(
                       labelText: 'Description',
@@ -303,6 +307,8 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
                     children: [
                       Expanded(
                         child: TextFormField(
+                          maxLength: 5,
+                          buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                           initialValue: _timeLimit.toString(),
                           decoration: const InputDecoration(
                             labelText: 'Time Limit (minutes)',
@@ -315,6 +321,8 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
+                          maxLength: 200,
+                          buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                           initialValue: _passingScore.toString(),
                           decoration: const InputDecoration(
                             labelText: 'Passing Score (%)',
@@ -329,6 +337,8 @@ class _InstructorCreateQuizScreenState extends State<InstructorCreateQuizScreen>
                   const SizedBox(height: 16),
 
                   TextFormField(
+                    maxLength: 200,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     initialValue: _maxAttempts.toString(),
                     decoration: const InputDecoration(
                       labelText: 'Maximum Attempts',
@@ -747,6 +757,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
               const SizedBox(height: 16),
 
               TextField(
+                maxLength: 500,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                 controller: _questionController,
                 decoration: const InputDecoration(
                   labelText: 'Question *',
@@ -757,6 +769,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
               const SizedBox(height: 16),
 
               TextField(
+                maxLength: 5,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                 controller: TextEditingController(text: _points.toString()),
                 decoration: const InputDecoration(
                   labelText: 'Points',
@@ -772,6 +786,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 const SizedBox(height: 8),
                 for (int i = 0; i < 4; i++) ...[
                   TextField(
+                    maxLength: 200,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     controller: _optionControllers[i],
                     decoration: InputDecoration(
                       labelText: 'Option ${i + 1}',
@@ -815,6 +831,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 ),
               ] else if (_type == 'short_answer') ...[
                 TextField(
+                  maxLength: 1000,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: TextEditingController(text: _correctAnswer),
                   decoration: const InputDecoration(
                     labelText: 'Correct Answer',
@@ -825,6 +843,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
               ] else if (_type == 'clinical_scenario') ...[
                 // Image URL field
                 TextField(
+                  maxLength: 500,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: _optionControllers[0],
                   decoration: const InputDecoration(
                     labelText: 'Image URL (Clinical Scenario)',
@@ -880,6 +900,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  maxLength: 1000,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: TextEditingController(text: _correctAnswer),
                   decoration: const InputDecoration(
                     labelText: 'Expected Answer/Diagnosis',
@@ -915,6 +937,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 const SizedBox(height: 10),
                 // OR paste video URL
                 TextField(
+                  maxLength: 500,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: TextEditingController(text: _options.isNotEmpty ? _options[0] : ''),
                   decoration: const InputDecoration(
                     labelText: 'OR paste Video URL',
@@ -932,6 +956,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  maxLength: 1000,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: TextEditingController(text: _correctAnswer),
                   decoration: const InputDecoration(
                     labelText: 'Expected Answer',
@@ -943,6 +969,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 ),
               ] else if (_type == 'osce_station') ...[
                 TextField(
+                  maxLength: 4000,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   // Reuse the persistent option controllers (_options reads
                   // from these). Building a throwaway TextEditingController
                   // here reset the cursor on every keystroke — text came out
@@ -959,6 +987,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  maxLength: 200,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   controller: _optionControllers[1],
                   textDirection: TextDirection.ltr,
                   decoration: const InputDecoration(
@@ -1000,6 +1030,8 @@ class _QuestionDialogState extends State<_QuestionDialog> {
               ),
               const SizedBox(height: 12),
               TextField(
+                maxLength: 500,
+                buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                 controller: _explanationController,
                 decoration: const InputDecoration(
                   labelText: 'Explanation (optional)',

@@ -189,8 +189,14 @@ class _CoursesState extends ConsumerState<Courses>
                     CoursesList(searchQuery: _searchQuery, priceFilter: 'paid'),
                     CoursesList(searchQuery: _searchQuery, priceFilter: 'free'),
                   ] else if (isStudent) ...[
+                    // The tabs are labelled "All Courses" / "Enrolled Courses"
+                    // but the panes were the wrong way round: the All tab was
+                    // showing purchased courses and the Enrolled tab showed the
+                    // progress list. That is why searching "All Courses" only
+                    // ever found courses the student was already in
+                    // ("yahan pe to woh POORE DUNIYA ke courses search kare na").
+                    CoursesList(searchQuery: _searchQuery),
                     CoursesList(mypurchased: true, searchQuery: _searchQuery),
-                    _WebProgressList(searchQuery: _searchQuery),
                   ] else ...[
                     CoursesList(searchQuery: _searchQuery),
                     if (role != "Instructor") ...[

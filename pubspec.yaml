@@ -2,7 +2,7 @@ name: icare
 description: "iCare Virtual Hospital — Your complete healthcare platform."
 publish_to: 'none'
 
-version: 1.0.5+8
+version: 1.0.6+9
 
 environment:
   sdk: ^3.9.0
@@ -17,7 +17,6 @@ dependencies:
   google_fonts: ^6.3.2
   flutter_screenutil: ^5.9.3
   intro_slider: ^4.2.5
-  path: ^1.9.1
   flutter_svg: ^2.2.1
   agora_rtc_engine: 6.5.3
   # Zego removed: calls run on Jitsi now and no Dart file imports zego_*,
@@ -32,13 +31,10 @@ dependencies:
   dotted_border: ^3.1.0
   flutter_switch: ^0.3.2
   uuid: ^4.5.2
-  flutter_chat_ui: ^2.9.1
-  flutter_chat_types: ^3.6.2
   simple_numpad: ^1.0.5
   flutter_smart_dialog: ^4.9.8+9
   easy_date_timeline: ^2.0.9
   flutter_rating_bar: ^4.0.1
-  flutter_steps: ^1.0.5
   dio: ^5.9.0
   responsive_framework: ^1.5.1
   firebase_messaging: ^15.2.5
@@ -62,8 +58,6 @@ dependencies:
   qr_flutter: ^4.1.0
   sign_in_with_apple: ^8.1.0
   video_player: ^2.9.2
-  path_provider: ^2.1.4
-  open_file: ^3.5.7
   flutter_inappwebview: ^6.1.5
 
 dev_dependencies:

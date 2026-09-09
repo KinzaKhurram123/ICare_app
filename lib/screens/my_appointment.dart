@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -18,376 +19,386 @@ class MyAppointment extends StatelessWidget {
     if (isDesktop) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8FAFD),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back button
-                  TapArea(
-        behavior: HitTestBehavior.opaque,
-                    onTap: () => goBackOrHome(context),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: AppColors.primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          "Back to Dashboard",
-                          style: TextStyle(
+        body: DragScroll(
+          builder: (context, dragScrollCtrl) => SingleChildScrollView(
+            controller: dragScrollCtrl,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back button
+                    TapArea(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => goBackOrHome(context),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 16,
                             color: AppColors.primaryColor,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "Back to Dashboard",
+                            style: TextStyle(
+                              color: AppColors.primaryColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Appointment Details",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Review your scheduled appointment information and payment summary.",
+                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 32),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left Column
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: const DecorationImage(
+                                          image: AssetImage(ImagePaths.user1),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 24),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                "Emily Jordan",
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                              TextButton.icon(
+                                                onPressed: () {},
+                                                icon: const Icon(
+                                                  Icons.visibility_outlined,
+                                                  size: 18,
+                                                ),
+                                                label: const Text(
+                                                  "View Full Details",
+                                                ),
+                                                style: TextButton.styleFrom(
+                                                  foregroundColor:
+                                                      AppColors.primaryColor,
+                                                  textStyle: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Color(
+                                                0xFF10B981,
+                                              ).withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.check_circle,
+                                                  size: 14,
+                                                  color: Color(0xFF10B981),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "Confirmed",
+                                                  style: TextStyle(
+                                                    color: Color(0xFF10B981),
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_rounded,
+                                                size: 16,
+                                                color: Color(0xFF94A3B8),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              const Text(
+                                                "20 Cooper Square, USA",
+                                                style: TextStyle(
+                                                  color: Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryColor
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.qr_code_scanner_rounded,
+                                                  size: 14,
+                                                  color: AppColors.primaryColor,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  "Booking ID: #DR452SA54",
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.primaryColor,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              GridView(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 24,
+                                      mainAxisSpacing: 24,
+                                      mainAxisExtent: 220,
+                                    ),
+                                children: [
+                                  _WebInfoCard(
+                                    title: "Scheduled Appointment",
+                                    icon: Icons.calendar_today_rounded,
+                                    accentColor: const Color(0xFF6366F1),
+                                    data: {
+                                      "Date": "December, 05, 2025",
+                                      "Time": "10:00 AM – 10:30 AM",
+                                      "Duration": "30 minutes",
+                                      "Booking for": "Self",
+                                    },
+                                  ),
+                                  _WebInfoCard(
+                                    title: "Patient Info",
+                                    icon: Icons.person_outline_rounded,
+                                    accentColor: const Color(0xFF0EA5E9),
+                                    data: {
+                                      "Gender": "Female",
+                                      "Age": "32",
+                                      "Guardians": "Guardians",
+                                      "Problem": "N/A",
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 32),
+                        // Right Column
+                        SizedBox(
+                          width: 340,
+                          child: Container(
+                            padding: const EdgeInsets.all(28),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Payment Summary",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                _WebPaymentRow(
+                                  label: "Consultation Fee",
+                                  value: "PKR 2,000",
+                                ),
+                                _WebPaymentRow(
+                                  label: "Service Charges",
+                                  value: "PKR 100",
+                                ),
+                                _WebPaymentRow(
+                                  label: "App Deduction",
+                                  value: "-PKR 200",
+                                  isNegative: true,
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Divider(height: 1),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      "Total Balance",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const Text(
+                                      "PKR 1,900",
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {},
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 18,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: const Text(
+                                      "Proceed to Payment",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    onPressed: () {},
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(
+                                        color: Colors.redAccent,
+                                        width: 1,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 18,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "Cancel Appointment",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Appointment Details",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Review your scheduled appointment information and payment summary.",
-                    style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 32),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left Column
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.04),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 100,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: const DecorationImage(
-                                        image: AssetImage(ImagePaths.user1),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              "Emily Jordan",
-                                              style: TextStyle(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                            TextButton.icon(
-                                              onPressed: () {},
-                                              icon: const Icon(
-                                                Icons.visibility_outlined,
-                                                size: 18,
-                                              ),
-                                              label: const Text("View Full Details"),
-                                              style: TextButton.styleFrom(
-                                                foregroundColor:
-                                                    AppColors.primaryColor,
-                                                textStyle: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFF10B981).withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.check_circle,
-                                                size: 14,
-                                                color: Color(0xFF10B981),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                "Confirmed",
-                                                style: TextStyle(
-                                                  color: Color(0xFF10B981),
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on_rounded,
-                                              size: 16,
-                                              color: Color(0xFF94A3B8),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            const Text(
-                                              "20 Cooper Square, USA",
-                                              style: TextStyle(
-                                                color: Color(0xFF64748B),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryColor
-                                                .withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.qr_code_scanner_rounded,
-                                                size: 14,
-                                                color: AppColors.primaryColor,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              const Text(
-                                                "Booking ID: #DR452SA54",
-                                                style: TextStyle(
-                                                  color: AppColors.primaryColor,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            GridView(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 24,
-                                    mainAxisSpacing: 24,
-                                    mainAxisExtent: 220,
-                                  ),
-                              children: [
-                                _WebInfoCard(
-                                  title: "Scheduled Appointment",
-                                  icon: Icons.calendar_today_rounded,
-                                  accentColor: const Color(0xFF6366F1),
-                                  data: {
-                                    "Date": "December, 05, 2025",
-                                    "Time": "10:00 AM – 10:30 AM",
-                                    "Duration": "30 minutes",
-                                    "Booking for": "Self",
-                                  },
-                                ),
-                                _WebInfoCard(
-                                  title: "Patient Info",
-                                  icon: Icons.person_outline_rounded,
-                                  accentColor: const Color(0xFF0EA5E9),
-                                  data: {
-                                    "Gender": "Female",
-                                    "Age": "32",
-                                    "Guardians": "Guardians",
-                                    "Problem": "N/A",
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 32),
-                      // Right Column
-                      SizedBox(
-                        width: 340,
-                        child: Container(
-                          padding: const EdgeInsets.all(28),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 24,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Payment Summary",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              _WebPaymentRow(
-                                label: "Consultation Fee",
-                                value: "PKR 2,000",
-                              ),
-                              _WebPaymentRow(
-                                label: "Service Charges",
-                                value: "PKR 100",
-                              ),
-                              _WebPaymentRow(
-                                label: "App Deduction",
-                                value: "-PKR 200",
-                                isNegative: true,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Divider(height: 1),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "Total Balance",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                  const Text(
-                                    "PKR 1,900",
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.primaryColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryColor,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    "Proceed to Payment",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  onPressed: () {},
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.redAccent,
-                                    side: const BorderSide(
-                                      color: Colors.redAccent,
-                                      width: 1,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    "Cancel Appointment",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -409,56 +420,59 @@ class MyAppointment extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            ProfileInfoWidget(),
-            DetailsInfoWidget(
-              title: "Scheduled Appointment",
-              data: {
-                "Date": "December, 05, 2025",
-                "Time": "10:00 AM – 10:30 AM (30 minutes)",
-                "Booking for": "Self",
-              },
-            ),
-            DetailsInfoWidget(
-              title: "Patient Info",
-              data: {
-                "Gender": "Female",
-                "Age": "32",
-                "Patient Guardians": "Guardians",
-                "Problem": "N/A",
-              },
-            ),
-            SizedBox(height: ScallingConfig.scale(10)),
-            AmountContainer(leadingText: "PKR", trailingText: "2000"),
-            SizedBox(height: ScallingConfig.scale(20)),
-            HorizontalText(
-              padding: EdgeInsets.symmetric(
-                horizontal: ScallingConfig.scale(15),
-                vertical: ScallingConfig.scale(10),
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Column(
+            children: [
+              ProfileInfoWidget(),
+              DetailsInfoWidget(
+                title: "Scheduled Appointment",
+                data: {
+                  "Date": "December, 05, 2025",
+                  "Time": "10:00 AM – 10:30 AM (30 minutes)",
+                  "Booking for": "Self",
+                },
               ),
-              leadingText: "Service charges",
-              trailingText: "PKR 2000",
-            ),
-            HorizontalText(
-              padding: EdgeInsets.symmetric(
-                horizontal: ScallingConfig.scale(15),
-                vertical: ScallingConfig.scale(10),
+              DetailsInfoWidget(
+                title: "Patient Info",
+                data: {
+                  "Gender": "Female",
+                  "Age": "32",
+                  "Patient Guardians": "Guardians",
+                  "Problem": "N/A",
+                },
               ),
-              leadingText: "App Deduction (20%)",
-              trailingText: "-PKR 200",
-            ),
-            HorizontalText(
-              padding: EdgeInsets.symmetric(
-                horizontal: ScallingConfig.scale(15),
-                vertical: ScallingConfig.scale(10),
+              SizedBox(height: ScallingConfig.scale(10)),
+              AmountContainer(leadingText: "PKR", trailingText: "2000"),
+              SizedBox(height: ScallingConfig.scale(20)),
+              HorizontalText(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(15),
+                  vertical: ScallingConfig.scale(10),
+                ),
+                leadingText: "Service charges",
+                trailingText: "PKR 2000",
               ),
-              leadingText: "Total Balance",
-              trailingText: "PKR 1800",
-            ),
-            SizedBox(height: ScallingConfig.scale(20)),
-          ],
+              HorizontalText(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(15),
+                  vertical: ScallingConfig.scale(10),
+                ),
+                leadingText: "App Deduction (20%)",
+                trailingText: "-PKR 200",
+              ),
+              HorizontalText(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ScallingConfig.scale(15),
+                  vertical: ScallingConfig.scale(10),
+                ),
+                leadingText: "Total Balance",
+                trailingText: "PKR 1800",
+              ),
+              SizedBox(height: ScallingConfig.scale(20)),
+            ],
+          ),
         ),
       ),
     );
@@ -504,7 +518,10 @@ class ProfileInfoWidget extends StatelessWidget {
                 ),
                 SizedBox(height: ScallingConfig.scale(6)),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -512,7 +529,11 @@ class ProfileInfoWidget extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle, size: 12, color: Color(0xFF10B981)),
+                      Icon(
+                        Icons.check_circle,
+                        size: 12,
+                        color: Color(0xFF10B981),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         "Confirmed",

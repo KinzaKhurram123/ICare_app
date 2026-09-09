@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:icare/screens/doctors_list.dart' deferred as d_doctors_list;
+import 'package:icare/screens/promotions_screen.dart' deferred as d_promotions;
+import 'package:icare/screens/instructors_list_screen.dart' deferred as d_instructors_list;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
@@ -7,133 +10,229 @@ import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/email_otp_screen.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/screens/book_appointment.dart';
-import 'package:icare/screens/reception_dashboard.dart';
-import 'package:icare/screens/reception_records_screen.dart';
-import 'package:icare/screens/admin_receptionist_management.dart';
-import 'package:icare/screens/admin_clinic_management.dart';
-import 'package:icare/screens/clinic_admin_dashboard.dart';
-import 'package:icare/screens/icare_clinics_list_screen.dart';
+import 'package:icare/screens/reception_dashboard.dart'
+    deferred as d_reception_dashboard;
+import 'package:icare/screens/reception_records_screen.dart'
+    deferred as d_reception_records_screen;
+import 'package:icare/screens/admin_receptionist_management.dart'
+    deferred as d_admin_receptionist_management;
+import 'package:icare/screens/admin_clinic_management.dart'
+    deferred as d_admin_clinic_management;
+import 'package:icare/screens/clinic_admin_dashboard.dart'
+    deferred as d_clinic_admin_dashboard;
+import 'package:icare/screens/icare_clinics_list_screen.dart'
+    deferred as d_icare_clinics_list_screen;
 import 'package:icare/screens/public_home.dart';
 import 'package:icare/screens/signup.dart';
 import 'package:icare/screens/splash.dart';
 import 'package:icare/screens/tabs.dart';
 import 'package:icare/screens/doctor_appointments.dart';
-import 'package:icare/screens/doctor_dashboard.dart';
-import 'package:icare/screens/student_profile_setup.dart';
+import 'package:icare/screens/doctor_dashboard.dart'
+    deferred as d_doctor_dashboard;
+import 'package:icare/screens/student_profile_setup.dart'
+    deferred as d_student_profile_setup;
 import 'package:icare/navigators/deferred_route.dart';
 import 'package:icare/screens/admin_dashboard.dart' deferred as admin_dashboard;
-import 'package:icare/screens/profile.dart';
-import 'package:icare/screens/work_with_us_signup.dart';
+import 'package:icare/screens/profile.dart' deferred as d_profile;
+import 'package:icare/screens/work_with_us_signup.dart'
+    deferred as d_work_with_us_signup;
 import 'package:icare/screens/lms_public_catalog.dart';
-import 'package:icare/screens/admin_verification_panel.dart' deferred as admin_verification;
-import 'package:icare/screens/instructor_lms_dashboard.dart' deferred as i_lms_dash;
-import 'package:icare/screens/instructor_lms_courses.dart' deferred as i_lms_courses;
-import 'package:icare/screens/instructor_lms_create_course.dart' deferred as i_create_course;
-import 'package:icare/screens/instructor_create_quiz_screen.dart' deferred as i_quiz;
-import 'package:icare/screens/instructor_create_assignment_screen.dart' deferred as i_assign;
-import 'package:icare/screens/instructor_grading_screen.dart' deferred as i_grading;
-import 'package:icare/screens/instructor_schedule_session_screen.dart' deferred as i_session;
-import 'package:icare/screens/instructor_student_progress_screen.dart' deferred as i_progress;
-import 'package:icare/screens/instructor_course_content_screen.dart' deferred as i_content;
-import 'package:icare/screens/instructor_course_analytics_screen.dart' deferred as i_analytics;
-import 'package:icare/screens/instructor_course_stream_screen.dart' deferred as i_stream;
-import 'package:icare/screens/instructor_feedback_screen.dart' deferred as i_feedback;
+import 'package:icare/screens/admin_verification_panel.dart'
+    deferred as admin_verification;
+import 'package:icare/screens/instructor_lms_dashboard.dart'
+    deferred as i_lms_dash;
+import 'package:icare/screens/instructor_lms_courses.dart'
+    deferred as i_lms_courses;
+import 'package:icare/screens/instructor_lms_create_course.dart'
+    deferred as i_create_course;
+import 'package:icare/screens/instructor_create_quiz_screen.dart'
+    deferred as i_quiz;
+import 'package:icare/screens/instructor_create_assignment_screen.dart'
+    deferred as i_assign;
+import 'package:icare/screens/instructor_grading_screen.dart'
+    deferred as i_grading;
+import 'package:icare/screens/instructor_schedule_session_screen.dart'
+    deferred as i_session;
+import 'package:icare/screens/instructor_student_progress_screen.dart'
+    deferred as i_progress;
+import 'package:icare/screens/instructor_course_content_screen.dart'
+    deferred as i_content;
+import 'package:icare/screens/instructor_course_analytics_screen.dart'
+    deferred as i_analytics;
+import 'package:icare/screens/instructor_course_stream_screen.dart'
+    deferred as i_stream;
+import 'package:icare/screens/instructor_feedback_screen.dart'
+    deferred as i_feedback;
 import 'package:icare/screens/certificate_verification_page.dart';
-import 'package:icare/screens/otp_verification_screen.dart';
+import 'package:icare/screens/otp_verification_screen.dart'
+    deferred as d_otp_verification_screen;
 import 'package:icare/screens/lms_public_course_detail.dart';
-import 'package:icare/screens/privacy_policy.dart';
-import 'package:icare/screens/terms_and_conditions.dart';
-import 'package:icare/screens/refund_policy.dart';
-import 'package:icare/screens/tasks.dart';
-import 'package:icare/screens/bookings.dart';
-import 'package:icare/screens/reminder_list.dart';
-import 'package:icare/screens/help_and_support.dart';
-import 'package:icare/screens/wallet.dart';
-import 'package:icare/screens/courses.dart';
-import 'package:icare/screens/laboratory_dashboard.dart';
+import 'package:icare/screens/privacy_policy.dart' deferred as d_privacy_policy;
+import 'package:icare/screens/terms_and_conditions.dart'
+    deferred as d_terms_and_conditions;
+import 'package:icare/screens/refund_policy.dart' deferred as d_refund_policy;
+import 'package:icare/screens/tasks.dart' deferred as d_tasks;
+import 'package:icare/screens/bookings.dart' deferred as d_bookings;
+import 'package:icare/screens/reminder_list.dart' deferred as d_reminder_list;
+import 'package:icare/screens/help_and_support.dart'
+    deferred as d_help_and_support;
+import 'package:icare/screens/wallet.dart' deferred as d_wallet;
+import 'package:icare/screens/courses.dart' deferred as d_courses;
+import 'package:icare/screens/laboratory_dashboard.dart'
+    deferred as d_laboratory_dashboard;
 import 'package:icare/screens/lab_bookings_management.dart';
-import 'package:icare/screens/lab_reports_screen.dart';
-import 'package:icare/screens/lab_tests_management.dart';
-import 'package:icare/screens/payment_invoices.dart';
-import 'package:icare/screens/lab_analytics.dart';
-import 'package:icare/screens/settings.dart';
-import 'package:icare/screens/bookings_history.dart';
-import 'package:icare/screens/patient_prescriptions.dart';
-import 'package:icare/screens/pharmacies.dart';
-import 'package:icare/screens/patient_book_lab_flow.dart';
-import 'package:icare/screens/my_learning.dart';
-import 'package:icare/screens/health_journey_screen.dart';
-import 'package:icare/screens/lifestyle_tracker_screen.dart';
-import 'package:icare/screens/emergency_contacts_screen.dart';
-import 'package:icare/screens/health_community.dart';
-import 'package:icare/screens/gamification_screen.dart';
-import 'package:icare/screens/patient_records_list.dart';
-import 'package:icare/screens/doctor_schedule_calendar.dart';
-import 'package:icare/screens/doctor_analytics.dart';
-import 'package:icare/screens/doctor_availability.dart';
-import 'package:icare/screens/doctor_notifications.dart';
-import 'package:icare/screens/pharmacist_dashboard.dart';
-import 'package:icare/screens/pharmacy_orders.dart';
-import 'package:icare/screens/pharmacy_inventory.dart';
-import 'package:icare/screens/pharmacy_analytics.dart';
-import 'package:icare/screens/instructor_dashboard.dart';
-import 'package:icare/screens/instructor_courses_management.dart';
-import 'package:icare/screens/instructor_learners_screen.dart';
-import 'package:icare/screens/instructor_precautions_management.dart';
-import 'package:icare/screens/instructor_analytics.dart';
-import 'package:icare/screens/instructor_profile_setup.dart';
-import 'package:icare/screens/student_dashboard.dart';
-import 'package:icare/screens/student_lms_dashboard.dart';
-import 'package:icare/screens/certificates_screen.dart';
-import 'package:icare/screens/assessments_screen.dart';
-import 'package:icare/screens/admin_lms_payments_screen.dart';
-import 'package:icare/screens/admin_payments_screen.dart';
-import 'package:icare/screens/payment_success_screen.dart';
-import 'package:icare/screens/about_us.dart';
+import 'package:icare/screens/lab_reports_screen.dart'
+    deferred as d_lab_reports_screen;
+import 'package:icare/screens/lab_tests_management.dart'
+    deferred as d_lab_tests_management;
+import 'package:icare/screens/payment_invoices.dart'
+    deferred as d_payment_invoices;
+import 'package:icare/screens/lab_analytics.dart' deferred as d_lab_analytics;
+import 'package:icare/screens/settings.dart' deferred as d_settings;
+import 'package:icare/screens/bookings_history.dart'
+    deferred as d_bookings_history;
+import 'package:icare/screens/patient_prescriptions.dart'
+    deferred as d_patient_prescriptions;
+import 'package:icare/screens/pharmacies.dart' deferred as d_pharmacies;
+import 'package:icare/screens/patient_book_lab_flow.dart'
+    deferred as d_patient_book_lab_flow;
+import 'package:icare/screens/my_learning.dart' deferred as d_my_learning;
+import 'package:icare/screens/health_journey_screen.dart'
+    deferred as d_health_journey_screen;
+import 'package:icare/screens/lifestyle_tracker_screen.dart'
+    deferred as d_lifestyle_tracker_screen;
+import 'package:icare/screens/emergency_contacts_screen.dart'
+    deferred as d_emergency_contacts_screen;
+import 'package:icare/screens/health_community.dart'
+    deferred as d_health_community;
+import 'package:icare/screens/gamification_screen.dart'
+    deferred as d_gamification_screen;
+import 'package:icare/screens/patient_records_list.dart'
+    deferred as d_patient_records_list;
+import 'package:icare/screens/doctor_schedule_calendar.dart'
+    deferred as d_doctor_schedule_calendar;
+import 'package:icare/screens/doctor_analytics.dart'
+    deferred as d_doctor_analytics;
+import 'package:icare/screens/doctor_availability.dart'
+    deferred as d_doctor_availability;
+import 'package:icare/screens/doctor_notifications.dart'
+    deferred as d_doctor_notifications;
+import 'package:icare/screens/pharmacist_dashboard.dart'
+    deferred as d_pharmacist_dashboard;
+import 'package:icare/screens/pharmacy_orders.dart'
+    deferred as d_pharmacy_orders;
+import 'package:icare/screens/pharmacy_inventory.dart'
+    deferred as d_pharmacy_inventory;
+import 'package:icare/screens/pharmacy_analytics.dart'
+    deferred as d_pharmacy_analytics;
+import 'package:icare/screens/instructor_dashboard.dart'
+    deferred as d_instructor_dashboard;
+import 'package:icare/screens/instructor_courses_management.dart'
+    deferred as d_instructor_courses_management;
+import 'package:icare/screens/instructor_learners_screen.dart'
+    deferred as d_instructor_learners_screen;
+import 'package:icare/screens/instructor_precautions_management.dart'
+    deferred as d_instructor_precautions_management;
+import 'package:icare/screens/instructor_analytics.dart'
+    deferred as d_instructor_analytics;
+import 'package:icare/screens/instructor_profile_setup.dart'
+    deferred as d_instructor_profile_setup;
+import 'package:icare/screens/student_dashboard.dart'
+    deferred as d_student_dashboard;
+import 'package:icare/screens/student_lms_dashboard.dart'
+    deferred as d_student_lms_dashboard;
+import 'package:icare/screens/certificates_screen.dart'
+    deferred as d_certificates_screen;
+import 'package:icare/screens/assessments_screen.dart'
+    deferred as d_assessments_screen;
+import 'package:icare/screens/admin_lms_payments_screen.dart'
+    deferred as d_admin_lms_payments_screen;
+import 'package:icare/screens/admin_payments_screen.dart'
+    deferred as d_admin_payments_screen;
+import 'package:icare/screens/payment_success_screen.dart'
+    deferred as d_payment_success_screen;
+import 'package:icare/screens/about_us.dart' deferred as d_about_us;
 import 'package:icare/screens/consultation_chat_screen_v2.dart';
-import 'package:icare/screens/doctor_revenue_analytics_screen.dart';
-import 'package:icare/screens/patient_profile.dart';
-import 'package:icare/screens/patient_home_dashboard.dart';
-import 'package:icare/screens/patient_medical_records.dart';
-import 'package:icare/screens/patient_lab_orders.dart';
-import 'package:icare/screens/patient_addresses_screen.dart';
-import 'package:icare/screens/pharmacy_home.dart';
-import 'package:icare/screens/pharmacy_management.dart';
-import 'package:icare/screens/pharmacy_profile_setup.dart';
-import 'package:icare/screens/pharmacy_filter.dart';
-import 'package:icare/screens/product_details.dart';
-import 'package:icare/screens/my_orders.dart';
-import 'package:icare/screens/active_orders.dart';
-import 'package:icare/screens/lab_profile_setup.dart';
-import 'package:icare/screens/laboratories.dart';
-import 'package:icare/screens/lab_appointment.dart';
-import 'package:icare/screens/lab_filters.dart';
-import 'package:icare/screens/lab_supplies_management.dart';
-import 'package:icare/screens/lab_settings_screen.dart';
-import 'package:icare/screens/lab_tests_directory_screen.dart';
-import 'package:icare/screens/instructor_lms_screen.dart';
-import 'package:icare/screens/instructor_assigned_learners.dart';
-import 'package:icare/screens/instructor_earnings_screen.dart';
-import 'package:icare/screens/instructor_voucher_screen.dart';
-import 'package:icare/screens/instructor_qa_center_screen.dart';
-import 'package:icare/screens/resource_library_screen.dart';
-import 'package:icare/screens/community_forum_screen.dart';
-import 'package:icare/screens/admin_panel_screen.dart';
-import 'package:icare/screens/demo_users_screen.dart';
-import 'package:icare/screens/security_audit_log_screen.dart';
-import 'package:icare/screens/clinical_audit_dashboard_screen.dart';
-import 'package:icare/screens/clinical_audit_screen.dart';
-import 'package:icare/screens/security_settings_screen.dart';
-import 'package:icare/screens/login_activity_screen.dart';
-import 'package:icare/screens/credential_vault_screen.dart';
-import 'package:icare/screens/change_password.dart';
-import 'package:icare/screens/forget_password.dart';
-import 'package:icare/screens/select_user_type.dart';
-import 'package:icare/screens/chat_list_screen.dart';
-import 'package:icare/screens/notification_settings.dart';
-import 'package:icare/screens/manage_dependents_screen.dart';
-import 'package:icare/screens/star_click_game.dart';
-import 'package:icare/screens/walkthrough.dart';
+import 'package:icare/screens/doctor_revenue_analytics_screen.dart'
+    deferred as d_doctor_revenue_analytics_screen;
+import 'package:icare/screens/patient_profile.dart'
+    deferred as d_patient_profile;
+import 'package:icare/screens/patient_home_dashboard.dart'
+    deferred as d_patient_home_dashboard;
+import 'package:icare/screens/patient_medical_records.dart'
+    deferred as d_patient_medical_records;
+import 'package:icare/screens/patient_lab_orders.dart'
+    deferred as d_patient_lab_orders;
+import 'package:icare/screens/patient_addresses_screen.dart'
+    deferred as d_patient_addresses_screen;
+import 'package:icare/screens/pharmacy_home.dart' deferred as d_pharmacy_home;
+import 'package:icare/screens/pharmacy_management.dart'
+    deferred as d_pharmacy_management;
+import 'package:icare/screens/pharmacy_profile_setup.dart'
+    deferred as d_pharmacy_profile_setup;
+import 'package:icare/screens/pharmacy_filter.dart'
+    deferred as d_pharmacy_filter;
+import 'package:icare/screens/product_details.dart'
+    deferred as d_product_details;
+import 'package:icare/screens/my_orders.dart' deferred as d_my_orders;
+import 'package:icare/screens/active_orders.dart' deferred as d_active_orders;
+import 'package:icare/screens/lab_profile_setup.dart'
+    deferred as d_lab_profile_setup;
+import 'package:icare/screens/laboratories.dart' deferred as d_laboratories;
+import 'package:icare/screens/lab_appointment.dart'
+    deferred as d_lab_appointment;
+import 'package:icare/screens/lab_filters.dart' deferred as d_lab_filters;
+import 'package:icare/screens/lab_supplies_management.dart'
+    deferred as d_lab_supplies_management;
+import 'package:icare/screens/lab_settings_screen.dart'
+    deferred as d_lab_settings_screen;
+import 'package:icare/screens/lab_tests_directory_screen.dart'
+    deferred as d_lab_tests_directory_screen;
+import 'package:icare/screens/instructor_lms_screen.dart'
+    deferred as d_instructor_lms_screen;
+import 'package:icare/screens/instructor_assigned_learners.dart'
+    deferred as d_instructor_assigned_learners;
+import 'package:icare/screens/instructor_earnings_screen.dart'
+    deferred as d_instructor_earnings_screen;
+import 'package:icare/screens/instructor_voucher_screen.dart'
+    deferred as d_instructor_voucher_screen;
+import 'package:icare/screens/instructor_qa_center_screen.dart'
+    deferred as d_instructor_qa_center_screen;
+import 'package:icare/screens/resource_library_screen.dart'
+    deferred as d_resource_library_screen;
+import 'package:icare/screens/community_forum_screen.dart'
+    deferred as d_community_forum_screen;
+import 'package:icare/screens/admin_panel_screen.dart'
+    deferred as d_admin_panel_screen;
+import 'package:icare/screens/demo_users_screen.dart'
+    deferred as d_demo_users_screen;
+import 'package:icare/screens/security_audit_log_screen.dart'
+    deferred as d_security_audit_log_screen;
+import 'package:icare/screens/clinical_audit_dashboard_screen.dart'
+    deferred as d_clinical_audit_dashboard_screen;
+import 'package:icare/screens/clinical_audit_screen.dart'
+    deferred as d_clinical_audit_screen;
+import 'package:icare/screens/security_settings_screen.dart'
+    deferred as d_security_settings_screen;
+import 'package:icare/screens/login_activity_screen.dart'
+    deferred as d_login_activity_screen;
+import 'package:icare/screens/credential_vault_screen.dart'
+    deferred as d_credential_vault_screen;
+import 'package:icare/screens/change_password.dart'
+    deferred as d_change_password;
+import 'package:icare/screens/forget_password.dart'
+    deferred as d_forget_password;
+import 'package:icare/screens/select_user_type.dart'
+    deferred as d_select_user_type;
+import 'package:icare/screens/chat_list_screen.dart'
+    deferred as d_chat_list_screen;
+import 'package:icare/screens/notification_settings.dart'
+    deferred as d_notification_settings;
+import 'package:icare/screens/manage_dependents_screen.dart'
+    deferred as d_manage_dependents_screen;
+import 'package:icare/screens/star_click_game.dart'
+    deferred as d_star_click_game;
+import 'package:icare/screens/walkthrough.dart' deferred as d_walkthrough;
 import 'package:icare/models/appointment_detail.dart';
 import 'package:icare/utils/shared_pref.dart';
 import 'package:icare/utils/app_keys.dart';
@@ -169,7 +268,25 @@ final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {
 });
 
 /// Public paths that don't require authentication.
-const _publicPaths = ['/home', '/login', '/signup', '/work-with-us', '/splash', '/lms/catalog', '/verify', '/lms/course', '/privacypolicy', '/terms', '/refund-policy', '/about-us', '/help', '/payment-success', '/payment-cancelled', '/select-user-type', '/forget-password'];
+const _publicPaths = [
+  '/home',
+  '/login',
+  '/signup',
+  '/work-with-us',
+  '/splash',
+  '/lms/catalog',
+  '/verify',
+  '/lms/course',
+  '/privacypolicy',
+  '/terms',
+  '/refund-policy',
+  '/about-us',
+  '/help',
+  '/payment-success',
+  '/payment-cancelled',
+  '/select-user-type',
+  '/forget-password',
+];
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Trigger auth init as soon as router is created.
@@ -191,7 +308,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = auth.isLoggedIn;
       final user = auth.user;
       final path = state.matchedLocation;
-      final isPublic = _publicPaths.any((p) => path == p || path.startsWith('$p/'));
+      final isPublic = _publicPaths.any(
+        (p) => path == p || path.startsWith('$p/'),
+      );
 
       // Not logged in trying to access protected route → home.
       if (!isLoggedIn && !isPublic) return '/home';
@@ -205,8 +324,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Email and phone have separate screens, so route to the one that
         // actually needs doing. Email is checked first: web signup verifies
         // by emailed code, and the backend refuses login until it's entered.
-        if (!user.isEmailVerified && path != '/verify-email') return '/verify-email';
-        if (!user.isPhoneVerified && path != '/verify-otp') return '/verify-otp';
+        if (!user.isEmailVerified && path != '/verify-email')
+          return '/verify-email';
+        if (!user.isPhoneVerified && path != '/verify-otp')
+          return '/verify-otp';
 
         // Fully verified user landing on either OTP screen → dashboard.
         if (!needsVerification &&
@@ -217,13 +338,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Logged in visiting any other public route → dashboard.
         // /lms/catalog, /lms/course/*, /verify, and the legal pages remain
         // accessible to everyone regardless of login state.
-        const alwaysAccessible = ['/lms/catalog', '/verify', '/privacypolicy', '/terms', '/refund-policy', '/about-us', '/help', '/payment-success', '/payment-cancelled'];
+        const alwaysAccessible = [
+          '/lms/catalog',
+          '/verify',
+          '/privacypolicy',
+          '/terms',
+          '/refund-policy',
+          '/about-us',
+          '/help',
+          '/payment-success',
+          '/payment-cancelled',
+        ];
         // Prefix match (not exact) — /payment-success/<pid> carries our own
         // payment id as a path segment and must stay reachable for logged-in
         // users too, otherwise they get bounced to /dashboard before the
         // screen even mounts.
-        final isAlwaysAccessible = alwaysAccessible.any((p) => path == p || path.startsWith('$p/'));
-        if (isPublic && path != '/splash' && !isAlwaysAccessible &&
+        final isAlwaysAccessible = alwaysAccessible.any(
+          (p) => path == p || path.startsWith('$p/'),
+        );
+        if (isPublic &&
+            path != '/splash' &&
+            !isAlwaysAccessible &&
             !path.startsWith('/lms/course')) {
           return '/dashboard';
         }
@@ -250,7 +385,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
         for (final entry in rolePrefixes.entries) {
           if (path.startsWith(entry.value) && role != entry.key) {
-            debugPrint('🚦 ROUTER BLOCK: path=$path role=$role needs=${entry.key} → /dashboard');
+            debugPrint(
+              '🚦 ROUTER BLOCK: path=$path role=$role needs=${entry.key} → /dashboard',
+            );
             return '/dashboard';
           }
         }
@@ -271,20 +408,42 @@ final routerProvider = Provider<GoRouter>((ref) {
       // a query-param pid into an unparsable "?pid=xxx?tracker=yyy" mess.
       GoRoute(
         path: '/payment-success/:pid',
-        builder: (_, state) => PaymentSuccessScreen(paymentId: state.pathParameters['pid']),
+        builder: (_, state) => DeferredScreen(
+          loader: d_payment_success_screen.loadLibrary,
+          builder: () => d_payment_success_screen.PaymentSuccessScreen(
+            paymentId: state.pathParameters['pid'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/payment-cancelled/:pid',
-        builder: (_, state) => PaymentSuccessScreen(cancelled: true, paymentId: state.pathParameters['pid']),
+        builder: (_, state) => DeferredScreen(
+          loader: d_payment_success_screen.loadLibrary,
+          builder: () => d_payment_success_screen.PaymentSuccessScreen(
+            cancelled: true,
+            paymentId: state.pathParameters['pid'],
+          ),
+        ),
       ),
       // Fallback for any old links without the pid segment.
       GoRoute(
         path: '/payment-success',
-        builder: (_, state) => PaymentSuccessScreen(paymentId: state.uri.queryParameters['pid']),
+        builder: (_, state) => DeferredScreen(
+          loader: d_payment_success_screen.loadLibrary,
+          builder: () => d_payment_success_screen.PaymentSuccessScreen(
+            paymentId: state.uri.queryParameters['pid'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/payment-cancelled',
-        builder: (_, state) => PaymentSuccessScreen(cancelled: true, paymentId: state.uri.queryParameters['pid']),
+        builder: (_, state) => DeferredScreen(
+          loader: d_payment_success_screen.loadLibrary,
+          builder: () => d_payment_success_screen.PaymentSuccessScreen(
+            cancelled: true,
+            paymentId: state.uri.queryParameters['pid'],
+          ),
+        ),
       ),
       // A real GoRoute for the live consultation — so the URL bar actually
       // reflects "you're in a consultation" (instead of staying frozen on
@@ -314,10 +473,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (_, state) {
-          final redirectDoctorId = state.uri.queryParameters['redirectDoctorId'];
+          final redirectDoctorId =
+              state.uri.queryParameters['redirectDoctorId'];
           // Set when the sign-in was prompted from a clinic page, so the
           // booking it returns to is still priced as a clinic visit.
-          final redirectClinicId = state.uri.queryParameters['redirectClinicId'];
+          final redirectClinicId =
+              state.uri.queryParameters['redirectClinicId'];
           return LoginScreen(
             redirectDoctorId: redirectDoctorId,
             redirectClinicId: redirectClinicId,
@@ -328,8 +489,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/signup',
         builder: (_, state) {
           final role = state.uri.queryParameters['role'] ?? 'Patient';
-          final redirectDoctorId = state.uri.queryParameters['redirectDoctorId'];
-          final redirectClinicId = state.uri.queryParameters['redirectClinicId'];
+          final redirectDoctorId =
+              state.uri.queryParameters['redirectDoctorId'];
+          final redirectClinicId =
+              state.uri.queryParameters['redirectClinicId'];
           return SignupScreen(
             role: role,
             redirectDoctorId: redirectDoctorId,
@@ -344,15 +507,33 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Present when the booking was opened from a clinic page — that is
           // what makes it a clinic visit for pricing.
           final clinicId = state.uri.queryParameters['clinicId'];
-          return BookAppointmentRouteLoader(doctorId: doctorId, clinicId: clinicId);
+          return BookAppointmentRouteLoader(
+            doctorId: doctorId,
+            clinicId: clinicId,
+          );
         },
       ),
-      GoRoute(path: '/work-with-us', builder: (_, _) => const WorkWithUsSignup()),
-      GoRoute(path: '/select-user-type', builder: (_, _) => const SelectUserType()),
-      GoRoute(path: '/forget-password', builder: (_, _) => const ForgetPassword()),
-      GoRoute(path: '/privacypolicy', builder: (_, _) => const PrivacyPolicy()),
-      GoRoute(path: '/terms', builder: (_, _) => const TermsAndConditions()),
-      GoRoute(path: '/refund-policy', builder: (_, _) => const RefundPolicy()),
+      GoRoute(
+        path: '/work-with-us',
+        builder: (_, _) => DeferredScreen(
+          loader: d_work_with_us_signup.loadLibrary,
+          builder: () => d_work_with_us_signup.WorkWithUsSignup(),
+        ),
+      ),
+      GoRoute(
+        path: '/select-user-type',
+        builder: (_, _) => DeferredScreen(
+          loader: d_select_user_type.loadLibrary,
+          builder: () => d_select_user_type.SelectUserType(),
+        ),
+      ),
+      GoRoute(
+        path: '/forget-password',
+        builder: (_, _) => DeferredScreen(
+          loader: d_forget_password.loadLibrary,
+          builder: () => d_forget_password.ForgetPassword(),
+        ),
+      ),
       // Legacy /dashboard — bookmarks & old links land here. Redirect to the
       // role's real home so it never shows a URL-less shared screen again.
       GoRoute(
@@ -368,12 +549,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             'Laboratory' => '/lab/dashboard',
             'Pharmacy' => '/pharmacy/dashboard',
             'Receptionist' => '/reception/dashboard',
-            'Admin' => adminTab != null ? '/admin/dashboard?adminTab=$adminTab' : '/admin/dashboard',
+            'Admin' =>
+              adminTab != null
+                  ? '/admin/dashboard?adminTab=$adminTab'
+                  : '/admin/dashboard',
             _ => '/patient/home',
           };
         },
       ),
-      GoRoute(path: '/verify-otp', builder: (_, _) => const OtpVerificationScreen()),
+      GoRoute(
+        path: '/verify-otp',
+        builder: (_, _) => DeferredScreen(
+          loader: d_otp_verification_screen.loadLibrary,
+          builder: () => d_otp_verification_screen.OtpVerificationScreen(),
+        ),
+      ),
       // Email verification lives on its own route so the router's redirect
       // can land on it directly. Pushing it from signup.dart alone did not
       // survive: setUserToken() runs first, the router then sees a logged-in
@@ -381,9 +571,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verify-email',
         builder: (context, state) {
-          final email = (state.extra as Map<String, dynamic>?)?['email']?.toString()
-              ?? ref.read(authProvider).user?.email
-              ?? '';
+          final email =
+              (state.extra as Map<String, dynamic>?)?['email']?.toString() ??
+              ref.read(authProvider).user?.email ??
+              '';
           return EmailOtpScreen(
             email: email,
             onVerified: (verifiedToken) async {
@@ -406,7 +597,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/lms/catalog',
         builder: (_, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return LmsPublicCatalog(audienceFilter: extra?['audienceFilter'] as String?);
+          return LmsPublicCatalog(
+            audienceFilter: extra?['audienceFilter'] as String?,
+          );
         },
       ),
       GoRoute(
@@ -432,33 +625,185 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: () => admin_verification.AdminVerificationPanel(),
         ),
       ),
-      GoRoute(path: '/admin/receptionists', builder: (_, _) => const AdminReceptionistManagement()),
-      GoRoute(path: '/admin/clinics', builder: (_, _) => const AdminClinicManagement()),
-      GoRoute(path: '/clinic-admin/dashboard', builder: (_, _) => const ClinicAdminDashboard()),
-      GoRoute(path: '/admin/lms-payments', builder: (_, _) => const AdminLmsPaymentsScreen()),
-      GoRoute(path: '/admin/payments', builder: (_, _) => const AdminPaymentsScreen()),
-      GoRoute(path: '/admin/panel', builder: (_, _) => const AdminPanelScreen()),
-      GoRoute(path: '/admin/demo-users', builder: (_, _) => const DemoUsersScreen()),
-      GoRoute(path: '/admin/security-audit-log', builder: (_, _) => const SecurityAuditLogScreen()),
-      GoRoute(path: '/admin/clinical-audit-dashboard', builder: (_, _) => const ClinicalAuditDashboardScreen()),
-      GoRoute(path: '/admin/clinical-audit', builder: (_, _) => const ClinicalAuditScreen()),
+      GoRoute(
+        path: '/admin/receptionists',
+        builder: (_, _) => DeferredScreen(
+          loader: d_admin_receptionist_management.loadLibrary,
+          builder: () =>
+              d_admin_receptionist_management.AdminReceptionistManagement(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/clinics',
+        builder: (_, _) => DeferredScreen(
+          loader: d_admin_clinic_management.loadLibrary,
+          builder: () => d_admin_clinic_management.AdminClinicManagement(),
+        ),
+      ),
+      GoRoute(
+        path: '/clinic-admin/dashboard',
+        builder: (_, _) => DeferredScreen(
+          loader: d_clinic_admin_dashboard.loadLibrary,
+          builder: () => d_clinic_admin_dashboard.ClinicAdminDashboard(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/lms-payments',
+        builder: (_, _) => DeferredScreen(
+          loader: d_admin_lms_payments_screen.loadLibrary,
+          builder: () => d_admin_lms_payments_screen.AdminLmsPaymentsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/payments',
+        builder: (_, _) => DeferredScreen(
+          loader: d_admin_payments_screen.loadLibrary,
+          builder: () => d_admin_payments_screen.AdminPaymentsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/panel',
+        builder: (_, _) => DeferredScreen(
+          loader: d_admin_panel_screen.loadLibrary,
+          builder: () => d_admin_panel_screen.AdminPanelScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/demo-users',
+        builder: (_, _) => DeferredScreen(
+          loader: d_demo_users_screen.loadLibrary,
+          builder: () => d_demo_users_screen.DemoUsersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/security-audit-log',
+        builder: (_, _) => DeferredScreen(
+          loader: d_security_audit_log_screen.loadLibrary,
+          builder: () => d_security_audit_log_screen.SecurityAuditLogScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/clinical-audit-dashboard',
+        builder: (_, _) => DeferredScreen(
+          loader: d_clinical_audit_dashboard_screen.loadLibrary,
+          builder: () =>
+              d_clinical_audit_dashboard_screen.ClinicalAuditDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/clinical-audit',
+        builder: (_, _) => DeferredScreen(
+          loader: d_clinical_audit_screen.loadLibrary,
+          builder: () => d_clinical_audit_screen.ClinicalAuditScreen(),
+        ),
+      ),
 
       // Shared / cross-role routes
-      GoRoute(path: '/tasks', builder: (_, _) => const TaskScreen()),
-      GoRoute(path: '/bookings', builder: (_, _) => const BookingsScreen()),
-      GoRoute(path: '/about-us', builder: (_, _) => const AboutUs()),
-      GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
-      GoRoute(path: '/courses', builder: (_, _) => const Courses()),
-      GoRoute(path: '/payment-invoices', builder: (_, _) => const PaymentInvoices()),
-      GoRoute(path: '/change-password', builder: (_, _) => const ChangePassword()),
-      GoRoute(path: '/notification-settings', builder: (_, _) => const NotificationSettings()),
-      GoRoute(path: '/security-settings', builder: (_, _) => const SecuritySettingsScreen()),
-      GoRoute(path: '/login-activity', builder: (_, _) => const LoginActivityScreen()),
-      GoRoute(path: '/credential-vault', builder: (_, _) => const CredentialVaultScreen()),
-      GoRoute(path: '/manage-dependents', builder: (_, _) => const ManageDependentsScreen()),
-      GoRoute(path: '/chat', builder: (_, _) => const ChatListScreen()),
-      GoRoute(path: '/rewards/game', builder: (_, _) => const StarClickGame()),
-      GoRoute(path: '/walkthrough', builder: (_, _) => const Walkthrough()),
+      GoRoute(
+        path: '/tasks',
+        builder: (_, _) => DeferredScreen(
+          loader: d_tasks.loadLibrary,
+          builder: () => d_tasks.TaskScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/bookings',
+        builder: (_, _) => DeferredScreen(
+          loader: d_bookings.loadLibrary,
+          builder: () => d_bookings.BookingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/about-us',
+        builder: (_, _) => DeferredScreen(
+          loader: d_about_us.loadLibrary,
+          builder: () => d_about_us.AboutUs(),
+        ),
+      ),
+      GoRoute(
+        path: '/wallet',
+        builder: (_, _) => DeferredScreen(
+          loader: d_wallet.loadLibrary,
+          builder: () => d_wallet.WalletScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/courses',
+        builder: (_, _) => DeferredScreen(
+          loader: d_courses.loadLibrary,
+          builder: () => d_courses.Courses(),
+        ),
+      ),
+      GoRoute(
+        path: '/payment-invoices',
+        builder: (_, _) => DeferredScreen(
+          loader: d_payment_invoices.loadLibrary,
+          builder: () => d_payment_invoices.PaymentInvoices(),
+        ),
+      ),
+      GoRoute(
+        path: '/change-password',
+        builder: (_, _) => DeferredScreen(
+          loader: d_change_password.loadLibrary,
+          builder: () => d_change_password.ChangePassword(),
+        ),
+      ),
+      GoRoute(
+        path: '/notification-settings',
+        builder: (_, _) => DeferredScreen(
+          loader: d_notification_settings.loadLibrary,
+          builder: () => d_notification_settings.NotificationSettings(),
+        ),
+      ),
+      GoRoute(
+        path: '/security-settings',
+        builder: (_, _) => DeferredScreen(
+          loader: d_security_settings_screen.loadLibrary,
+          builder: () => d_security_settings_screen.SecuritySettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/login-activity',
+        builder: (_, _) => DeferredScreen(
+          loader: d_login_activity_screen.loadLibrary,
+          builder: () => d_login_activity_screen.LoginActivityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/credential-vault',
+        builder: (_, _) => DeferredScreen(
+          loader: d_credential_vault_screen.loadLibrary,
+          builder: () => d_credential_vault_screen.CredentialVaultScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/manage-dependents',
+        builder: (_, _) => DeferredScreen(
+          loader: d_manage_dependents_screen.loadLibrary,
+          builder: () => d_manage_dependents_screen.ManageDependentsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/chat',
+        builder: (_, _) => DeferredScreen(
+          loader: d_chat_list_screen.loadLibrary,
+          builder: () => d_chat_list_screen.ChatListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/rewards/game',
+        builder: (_, _) => DeferredScreen(
+          loader: d_star_click_game.loadLibrary,
+          builder: () => d_star_click_game.StarClickGame(),
+        ),
+      ),
+      GoRoute(
+        path: '/walkthrough',
+        builder: (_, _) => DeferredScreen(
+          loader: d_walkthrough.loadLibrary,
+          builder: () => d_walkthrough.Walkthrough(),
+        ),
+      ),
 
       // ── Logged-in shell: sidebar/bottom-nav stays put, only the inner
       // screen changes with the URL (see TabsScreen). ──────────────────
@@ -469,32 +814,158 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
         routes: [
           // Shared sidebar targets (must stay inside the shell)
-          GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
-          GoRoute(path: '/help', builder: (_, _) => const HelpAndSupport()),
+          // The three policy pages live here rather than at the top level so
+          // they keep the sidebar and header, the way Settings does. Opening
+          // one used to swap the whole screen for a bare full-width page.
+          GoRoute(
+            path: '/privacypolicy',
+            builder: (_, _) => DeferredScreen(
+              loader: d_privacy_policy.loadLibrary,
+              builder: () => d_privacy_policy.PrivacyPolicy(),
+            ),
+          ),
+          GoRoute(
+            path: '/terms',
+            builder: (_, _) => DeferredScreen(
+              loader: d_terms_and_conditions.loadLibrary,
+              builder: () => d_terms_and_conditions.TermsAndConditions(),
+            ),
+          ),
+          GoRoute(
+            path: '/refund-policy',
+            builder: (_, _) => DeferredScreen(
+              loader: d_refund_policy.loadLibrary,
+              builder: () => d_refund_policy.RefundPolicy(),
+            ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (_, _) => DeferredScreen(
+              loader: d_settings.loadLibrary,
+              builder: () => d_settings.SettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/help',
+            builder: (_, _) => DeferredScreen(
+              loader: d_help_and_support.loadLibrary,
+              builder: () => d_help_and_support.HelpAndSupport(),
+            ),
+          ),
           // Shared (unprefixed) so a Student can open it too — the existing
           // /patient/icare-clinics is gated by the role guard above and would
           // bounce any non-Patient straight to /dashboard.
-          GoRoute(path: '/icare-clinics', builder: (_, _) => const ICareClinicsListScreen()),
-          GoRoute(path: '/reminders', builder: (_, _) => const ReminderList()),
-          GoRoute(path: '/community', builder: (_, _) => const HealthCommunityScreen()),
-          GoRoute(path: '/rewards', builder: (_, _) => const GamificationScreen()),
-          GoRoute(path: '/doctor/appointments', builder: (_, state) {
-            final filter = state.uri.queryParameters['filter'] ?? 'all';
-            return DoctorAppointmentsScreen(initialFilter: filter);
-          }),
+          GoRoute(
+            path: '/icare-clinics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_icare_clinics_list_screen.loadLibrary,
+              builder: () =>
+                  d_icare_clinics_list_screen.ICareClinicsListScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/reminders',
+            builder: (_, _) => DeferredScreen(
+              loader: d_reminder_list.loadLibrary,
+              builder: () => d_reminder_list.ReminderList(),
+            ),
+          ),
+          GoRoute(
+            path: '/community',
+            builder: (_, _) => DeferredScreen(
+              loader: d_health_community.loadLibrary,
+              builder: () => d_health_community.HealthCommunityScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/rewards',
+            builder: (_, _) => DeferredScreen(
+              loader: d_gamification_screen.loadLibrary,
+              builder: () => d_gamification_screen.GamificationScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/doctor/appointments',
+            builder: (_, state) {
+              final filter = state.uri.queryParameters['filter'] ?? 'all';
+              return DoctorAppointmentsScreen(initialFilter: filter);
+            },
+          ),
           // Missing role-home / sidebar targets (added for URL routing)
-          GoRoute(path: '/doctor/dashboard', builder: (_, _) => const DoctorDashboard()),
-          GoRoute(path: '/patient/lab-reports', builder: (_, _) => LabReportsScreen()),
-          GoRoute(path: '/lab/invoices', builder: (_, _) => const PaymentInvoices()),
-          GoRoute(path: '/pharmacy/invoices', builder: (_, _) => const PaymentInvoices(isPharmacy: true)),
-          GoRoute(path: '/student/courses', builder: (_, _) => Courses()),
-          GoRoute(path: '/student/browse', builder: (_, _) => const Courses(browse: true)),
-          GoRoute(path: '/student/profile', builder: (_, _) => const StudentProfileSetup()),
+          GoRoute(
+            path: '/doctor/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_dashboard.loadLibrary,
+              builder: () => d_doctor_dashboard.DoctorDashboard(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/lab-reports',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_reports_screen.loadLibrary,
+              builder: () => d_lab_reports_screen.LabReportsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/invoices',
+            builder: (_, _) => DeferredScreen(
+              loader: d_payment_invoices.loadLibrary,
+              builder: () => d_payment_invoices.PaymentInvoices(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/invoices',
+            builder: (_, _) => DeferredScreen(
+              loader: d_payment_invoices.loadLibrary,
+              builder: () =>
+                  d_payment_invoices.PaymentInvoices(isPharmacy: true),
+            ),
+          ),
+          GoRoute(
+            path: '/student/courses',
+            builder: (_, _) => DeferredScreen(
+              loader: d_courses.loadLibrary,
+              builder: () => d_courses.Courses(),
+            ),
+          ),
+          GoRoute(
+            path: '/student/browse',
+            builder: (_, _) => DeferredScreen(
+              loader: d_courses.loadLibrary,
+              builder: () => d_courses.Courses(browse: true),
+            ),
+          ),
+          GoRoute(
+            path: '/student/profile',
+            builder: (_, _) => DeferredScreen(
+              loader: d_student_profile_setup.loadLibrary,
+              builder: () => d_student_profile_setup.StudentProfileSetup(),
+            ),
+          ),
           // Reception (front-desk) routes
-          GoRoute(path: '/reception/dashboard', builder: (_, _) => const ReceptionDashboard()),
-          GoRoute(path: '/reception/records', builder: (_, _) => const ReceptionRecordsScreen()),
+          GoRoute(
+            path: '/reception/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_reception_dashboard.loadLibrary,
+              builder: () => d_reception_dashboard.ReceptionDashboard(),
+            ),
+          ),
+          GoRoute(
+            path: '/reception/records',
+            builder: (_, _) => DeferredScreen(
+              loader: d_reception_records_screen.loadLibrary,
+              builder: () =>
+                  d_reception_records_screen.ReceptionRecordsScreen(),
+            ),
+          ),
           // Laboratory routes
-          GoRoute(path: '/lab/dashboard', builder: (_, _) => const LaboratoryDashboard()),
+          GoRoute(
+            path: '/lab/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_laboratory_dashboard.loadLibrary,
+              builder: () => d_laboratory_dashboard.LaboratoryDashboard(),
+            ),
+          ),
           GoRoute(
             path: '/lab/bookings',
             builder: (_, state) {
@@ -503,76 +974,462 @@ final routerProvider = Provider<GoRouter>((ref) {
               return LabBookingsManagement(title: title, initialFilter: filter);
             },
           ),
-          GoRoute(path: '/lab/reports', builder: (_, _) => const LabReportsScreen()),
-          GoRoute(path: '/lab/tests', builder: (_, _) => const LabTestsManagement()),
-          GoRoute(path: '/lab/analytics', builder: (_, _) => const LabAnalytics()),
+          GoRoute(
+            path: '/lab/reports',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_reports_screen.loadLibrary,
+              builder: () => d_lab_reports_screen.LabReportsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/tests',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_tests_management.loadLibrary,
+              builder: () => d_lab_tests_management.LabTestsManagement(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/analytics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_analytics.loadLibrary,
+              builder: () => d_lab_analytics.LabAnalytics(),
+            ),
+          ),
 
           // Patient routes
-          GoRoute(path: '/patient/bookings-history', builder: (_, _) => const BookingsHistoryScreen()),
-          GoRoute(path: '/patient/prescriptions', builder: (_, _) => const PatientPrescriptions()),
-          GoRoute(path: '/patient/pharmacies', builder: (_, _) => const PharmaciesScreen()),
-          GoRoute(path: '/patient/book-lab', builder: (_, _) => const PatientBookLabFlow()),
-          GoRoute(path: '/patient/icare-clinics', builder: (_, _) => const ICareClinicsListScreen()),
-          GoRoute(path: '/patient/my-learning', builder: (_, _) => const MyLearningScreen()),
-          GoRoute(path: '/patient/health-journey', builder: (_, _) => const HealthJourneyScreen()),
-          GoRoute(path: '/patient/health-tracker', builder: (_, _) => const LifestyleTrackerScreen()),
-          GoRoute(path: '/patient/emergency-contacts', builder: (_, _) => const EmergencyContactsScreen()),
-          GoRoute(path: '/patient/records', builder: (_, _) => const PatientRecordsListScreen()),
-          GoRoute(path: '/patient/profile', builder: (_, _) => const PatientProfile()),
-          GoRoute(path: '/patient/home', builder: (_, _) => const PatientHomeDashboard()),
-          GoRoute(path: '/patient/medical-records', builder: (_, _) => const PatientMedicalRecords()),
-          GoRoute(path: '/patient/lab-orders', builder: (_, _) => const PatientLabOrdersScreen()),
-          GoRoute(path: '/patient/addresses', builder: (_, _) => const PatientAddressesScreen()),
-          GoRoute(path: '/community/forum', builder: (_, _) => const CommunityForumScreen()),
+          GoRoute(
+            path: '/patient/bookings-history',
+            builder: (_, _) => DeferredScreen(
+              loader: d_bookings_history.loadLibrary,
+              builder: () => d_bookings_history.BookingsHistoryScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/prescriptions',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_prescriptions.loadLibrary,
+              builder: () => d_patient_prescriptions.PatientPrescriptions(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/pharmacies',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacies.loadLibrary,
+              builder: () => d_pharmacies.PharmaciesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/book-lab',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_book_lab_flow.loadLibrary,
+              builder: () => d_patient_book_lab_flow.PatientBookLabFlow(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/icare-clinics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_icare_clinics_list_screen.loadLibrary,
+              builder: () =>
+                  d_icare_clinics_list_screen.ICareClinicsListScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/my-learning',
+            builder: (_, _) => DeferredScreen(
+              loader: d_my_learning.loadLibrary,
+              builder: () => d_my_learning.MyLearningScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/health-journey',
+            builder: (_, _) => DeferredScreen(
+              loader: d_health_journey_screen.loadLibrary,
+              builder: () => d_health_journey_screen.HealthJourneyScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/health-tracker',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lifestyle_tracker_screen.loadLibrary,
+              builder: () =>
+                  d_lifestyle_tracker_screen.LifestyleTrackerScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/emergency-contacts',
+            builder: (_, _) => DeferredScreen(
+              loader: d_emergency_contacts_screen.loadLibrary,
+              builder: () =>
+                  d_emergency_contacts_screen.EmergencyContactsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/records',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_records_list.loadLibrary,
+              builder: () => d_patient_records_list.PatientRecordsListScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/profile',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_profile.loadLibrary,
+              builder: () => d_patient_profile.PatientProfile(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/home',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_home_dashboard.loadLibrary,
+              builder: () => d_patient_home_dashboard.PatientHomeDashboard(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/medical-records',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_medical_records.loadLibrary,
+              builder: () => d_patient_medical_records.PatientMedicalRecords(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/lab-orders',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_lab_orders.loadLibrary,
+              builder: () => d_patient_lab_orders.PatientLabOrdersScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/patient/addresses',
+            builder: (_, _) => DeferredScreen(
+              loader: d_patient_addresses_screen.loadLibrary,
+              builder: () =>
+                  d_patient_addresses_screen.PatientAddressesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/community/forum',
+            builder: (_, _) => DeferredScreen(
+              loader: d_community_forum_screen.loadLibrary,
+              builder: () => d_community_forum_screen.CommunityForumScreen(),
+            ),
+          ),
 
           // Doctor routes
-          GoRoute(path: '/doctor/schedule', builder: (_, _) => const DoctorScheduleCalendar()),
-          GoRoute(path: '/doctor/analytics', builder: (_, _) => const DoctorAnalytics()),
-          GoRoute(path: '/doctor/availability', builder: (_, _) => const DoctorAvailability()),
-          GoRoute(path: '/doctor/notifications', builder: (_, _) => const DoctorNotifications()),
-          GoRoute(path: '/doctor/revenue', builder: (_, _) => const DoctorRevenueAnalyticsScreen()),
+          GoRoute(
+            path: '/doctor/schedule',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_schedule_calendar.loadLibrary,
+              builder: () =>
+                  d_doctor_schedule_calendar.DoctorScheduleCalendar(),
+            ),
+          ),
+          GoRoute(
+            path: '/doctor/analytics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_analytics.loadLibrary,
+              builder: () => d_doctor_analytics.DoctorAnalytics(),
+            ),
+          ),
+          GoRoute(
+            path: '/doctor/availability',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_availability.loadLibrary,
+              builder: () => d_doctor_availability.DoctorAvailability(),
+            ),
+          ),
+          GoRoute(
+            path: '/doctor/notifications',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_notifications.loadLibrary,
+              builder: () => d_doctor_notifications.DoctorNotifications(),
+            ),
+          ),
+          GoRoute(
+            path: '/doctor/revenue',
+            builder: (_, _) => DeferredScreen(
+              loader: d_doctor_revenue_analytics_screen.loadLibrary,
+              builder: () =>
+                  d_doctor_revenue_analytics_screen.DoctorRevenueAnalyticsScreen(),
+            ),
+          ),
 
           // Pharmacy routes
-          GoRoute(path: '/pharmacy/dashboard', builder: (_, _) => const PharmacistDashboard()),
-          GoRoute(path: '/pharmacy/orders', builder: (_, _) => const PharmacyOrders()),
-          GoRoute(path: '/pharmacy/inventory', builder: (_, _) => const PharmacyInventory()),
-          GoRoute(path: '/pharmacy/analytics', builder: (_, _) => const PharmacyAnalytics()),
-          GoRoute(path: '/pharmacy/home', builder: (_, _) => const PharmacyHome()),
-          GoRoute(path: '/pharmacy/management', builder: (_, _) => const PharmacyManagementScreen()),
-          GoRoute(path: '/pharmacy/profile-setup', builder: (_, _) => const PharmacyProfileSetup()),
-          GoRoute(path: '/pharmacy/filter', builder: (_, _) => const PharmacyFilterScreen()),
-          GoRoute(path: '/pharmacy/product', builder: (_, _) => const ProductDetailsScreen()),
-          GoRoute(path: '/pharmacy/my-orders', builder: (_, _) => const MyOrdersScreen()),
-          GoRoute(path: '/pharmacy/active-orders', builder: (_, _) => const ActiveOrdersScreen()),
+          GoRoute(
+            path: '/pharmacy/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacist_dashboard.loadLibrary,
+              builder: () => d_pharmacist_dashboard.PharmacistDashboard(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/orders',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_orders.loadLibrary,
+              builder: () => d_pharmacy_orders.PharmacyOrders(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/inventory',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_inventory.loadLibrary,
+              builder: () => d_pharmacy_inventory.PharmacyInventory(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/analytics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_analytics.loadLibrary,
+              builder: () => d_pharmacy_analytics.PharmacyAnalytics(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/home',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_home.loadLibrary,
+              builder: () => d_pharmacy_home.PharmacyHome(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/management',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_management.loadLibrary,
+              builder: () => d_pharmacy_management.PharmacyManagementScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/profile-setup',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_profile_setup.loadLibrary,
+              builder: () => d_pharmacy_profile_setup.PharmacyProfileSetup(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/filter',
+            builder: (_, _) => DeferredScreen(
+              loader: d_pharmacy_filter.loadLibrary,
+              builder: () => d_pharmacy_filter.PharmacyFilterScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/product',
+            builder: (_, _) => DeferredScreen(
+              loader: d_product_details.loadLibrary,
+              builder: () => d_product_details.ProductDetailsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/my-orders',
+            builder: (_, _) => DeferredScreen(
+              loader: d_my_orders.loadLibrary,
+              builder: () => d_my_orders.MyOrdersScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/pharmacy/active-orders',
+            builder: (_, _) => DeferredScreen(
+              loader: d_active_orders.loadLibrary,
+              builder: () => d_active_orders.ActiveOrdersScreen(),
+            ),
+          ),
 
           // Lab routes (additional)
-          GoRoute(path: '/lab/profile-setup', builder: (_, _) => const LabProfileSetup()),
-          GoRoute(path: '/lab/list', builder: (_, _) => const LaboratoriesScreen()),
-          GoRoute(path: '/lab/appointments', builder: (_, _) => const LabAppointments()),
-          GoRoute(path: '/lab/filters', builder: (_, _) => const LabFilters()),
-          GoRoute(path: '/lab/supplies', builder: (_, _) => const LabSuppliesManagement()),
-          GoRoute(path: '/lab/settings', builder: (_, _) => const LabSettingsScreen()),
-          GoRoute(path: '/lab/tests-directory', builder: (_, _) => const LabTestsDirectoryScreen()),
+          GoRoute(
+            path: '/lab/profile-setup',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_profile_setup.loadLibrary,
+              builder: () => d_lab_profile_setup.LabProfileSetup(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/list',
+            builder: (_, _) => DeferredScreen(
+              loader: d_laboratories.loadLibrary,
+              builder: () => d_laboratories.LaboratoriesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/appointments',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_appointment.loadLibrary,
+              builder: () => d_lab_appointment.LabAppointments(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/filters',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_filters.loadLibrary,
+              builder: () => d_lab_filters.LabFilters(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/supplies',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_supplies_management.loadLibrary,
+              builder: () => d_lab_supplies_management.LabSuppliesManagement(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/settings',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_settings_screen.loadLibrary,
+              builder: () => d_lab_settings_screen.LabSettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/lab/tests-directory',
+            builder: (_, _) => DeferredScreen(
+              loader: d_lab_tests_directory_screen.loadLibrary,
+              builder: () =>
+                  d_lab_tests_directory_screen.LabTestsDirectoryScreen(),
+            ),
+          ),
 
           // Instructor (non-LMS-content) routes
-          GoRoute(path: '/instructor/dashboard', builder: (_, _) => InstructorDashboardScreen()),
-          GoRoute(path: '/instructor/manage-courses', builder: (_, _) => InstructorCoursesManagementScreen()),
-          GoRoute(path: '/instructor/learners', builder: (_, _) => InstructorLearnersScreen()),
-          GoRoute(path: '/instructor/precautions', builder: (_, _) => InstructorPrecautionsManagementScreen()),
-          GoRoute(path: '/instructor/analytics', builder: (_, _) => InstructorAnalytics()),
-          GoRoute(path: '/instructor/profile-setup', builder: (_, _) => InstructorProfileSetupScreen()),
-          GoRoute(path: '/instructor/lms-home', builder: (_, _) => const InstructorLmsScreen()),
-          GoRoute(path: '/instructor/assigned-learners', builder: (_, _) => const InstructorAssignedLearners()),
-          GoRoute(path: '/instructor/earnings', builder: (_, _) => const InstructorEarningsScreen()),
-          GoRoute(path: '/instructor/vouchers', builder: (_, _) => const InstructorVoucherScreen()),
-          GoRoute(path: '/instructor/qa-center', builder: (_, _) => const InstructorQACenterScreen()),
-          GoRoute(path: '/instructor/resources', builder: (_, _) => const ResourceLibraryScreen()),
+          GoRoute(
+            path: '/instructor/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_dashboard.loadLibrary,
+              builder: () => d_instructor_dashboard.InstructorDashboardScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/manage-courses',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_courses_management.loadLibrary,
+              builder: () =>
+                  d_instructor_courses_management.InstructorCoursesManagementScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/learners',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_learners_screen.loadLibrary,
+              builder: () =>
+                  d_instructor_learners_screen.InstructorLearnersScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/precautions',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_precautions_management.loadLibrary,
+              builder: () =>
+                  d_instructor_precautions_management.InstructorPrecautionsManagementScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/analytics',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_analytics.loadLibrary,
+              builder: () => d_instructor_analytics.InstructorAnalytics(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/profile-setup',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_profile_setup.loadLibrary,
+              builder: () =>
+                  d_instructor_profile_setup.InstructorProfileSetupScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/lms-home',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_lms_screen.loadLibrary,
+              builder: () => d_instructor_lms_screen.InstructorLmsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/assigned-learners',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_assigned_learners.loadLibrary,
+              builder: () =>
+                  d_instructor_assigned_learners.InstructorAssignedLearners(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/earnings',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_earnings_screen.loadLibrary,
+              builder: () =>
+                  d_instructor_earnings_screen.InstructorEarningsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/vouchers',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_voucher_screen.loadLibrary,
+              builder: () =>
+                  d_instructor_voucher_screen.InstructorVoucherScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/qa-center',
+            builder: (_, _) => DeferredScreen(
+              loader: d_instructor_qa_center_screen.loadLibrary,
+              builder: () =>
+                  d_instructor_qa_center_screen.InstructorQACenterScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/instructor/resources',
+            builder: (_, _) => DeferredScreen(
+              loader: d_resource_library_screen.loadLibrary,
+              builder: () => d_resource_library_screen.ResourceLibraryScreen(),
+            ),
+          ),
 
           // Student routes
-          GoRoute(path: '/student/dashboard', builder: (_, _) => const StudentDashboard()),
-          GoRoute(path: '/student/classroom', builder: (_, _) => const StudentLmsDashboard()),
-          GoRoute(path: '/student/certificates', builder: (_, _) => const CertificatesScreen()),
-          GoRoute(path: '/student/assessments', builder: (_, _) => const AssessmentsScreen()),
+          GoRoute(
+            path: '/student/dashboard',
+            builder: (_, _) => DeferredScreen(
+              loader: d_student_dashboard.loadLibrary,
+              builder: () => d_student_dashboard.StudentDashboard(),
+            ),
+          ),
+          GoRoute(
+            path: '/student/classroom',
+            builder: (_, _) => DeferredScreen(
+              loader: d_student_lms_dashboard.loadLibrary,
+              builder: () => d_student_lms_dashboard.StudentLmsDashboard(),
+            ),
+          ),
+          GoRoute(
+        // Telehealth entry point. /book-appointment needs a specific doctor and
+        // errors out without one, which is what the sidebar link used to hit.
+        path: '/doctors',
+        builder: (_, _) => DeferredScreen(
+          loader: d_doctors_list.loadLibrary,
+          builder: () => d_doctors_list.DoctorsList(),
+        ),
+      ),
+      GoRoute(
+        path: '/promotions',
+        builder: (_, _) => DeferredScreen(
+          loader: d_promotions.loadLibrary,
+          builder: () => d_promotions.PromotionsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/student/instructors',
+        builder: (_, _) => DeferredScreen(
+          loader: d_instructors_list.loadLibrary,
+          builder: () => d_instructors_list.InstructorsListScreen(),
+        ),
+      ),
+      GoRoute(
+            path: '/student/certificates',
+            builder: (_, _) => DeferredScreen(
+              loader: d_certificates_screen.loadLibrary,
+              builder: () => d_certificates_screen.CertificatesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/student/assessments',
+            builder: (_, _) => DeferredScreen(
+              loader: d_assessments_screen.loadLibrary,
+              builder: () => d_assessments_screen.AssessmentsScreen(),
+            ),
+          ),
 
           // Admin
           GoRoute(
@@ -584,7 +1441,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ),
           ),
-          GoRoute(path: '/admin/profile', builder: (_, _) => ProfileScreen()),
+          GoRoute(
+            path: '/admin/profile',
+            builder: (_, _) => DeferredScreen(
+              loader: d_profile.loadLibrary,
+              builder: () => d_profile.ProfileScreen(),
+            ),
+          ),
         ],
       ),
       // Instructor LMS Routes
@@ -616,7 +1479,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: () => i_create_course.InstructorLmsCreateCourseScreen(),
         ),
       ),
-      
+
       // Quiz routes
       GoRoute(
         path: '/instructor/lms/create-quiz',
@@ -624,7 +1487,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final courseId = state.uri.queryParameters['courseId'];
           return DeferredScreen(
             loader: i_quiz.loadLibrary,
-            builder: () => i_quiz.InstructorCreateQuizScreen(courseId: courseId),
+            builder: () =>
+                i_quiz.InstructorCreateQuizScreen(courseId: courseId),
           );
         },
       ),
@@ -638,7 +1502,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       // Assignment routes
       GoRoute(
         path: '/instructor/lms/create-assignment',
@@ -646,7 +1510,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final courseId = state.uri.queryParameters['courseId'];
           return DeferredScreen(
             loader: i_assign.loadLibrary,
-            builder: () => i_assign.InstructorCreateAssignmentScreen(courseId: courseId),
+            builder: () =>
+                i_assign.InstructorCreateAssignmentScreen(courseId: courseId),
           );
         },
       ),
@@ -664,7 +1529,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       // Live session routes
       GoRoute(
         path: '/instructor/lms/schedule-session',
@@ -672,11 +1537,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           final courseId = state.uri.queryParameters['courseId'];
           return DeferredScreen(
             loader: i_session.loadLibrary,
-            builder: () => i_session.InstructorScheduleSessionScreen(courseId: courseId),
+            builder: () =>
+                i_session.InstructorScheduleSessionScreen(courseId: courseId),
           );
         },
       ),
-      
+
       // Student progress routes
       GoRoute(
         path: '/instructor/lms/course/:id/students',
@@ -692,7 +1558,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       // Content management routes
       GoRoute(
         path: '/instructor/lms/course/:id/content',
@@ -700,11 +1566,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           final courseId = state.pathParameters['id']!;
           return DeferredScreen(
             loader: i_content.loadLibrary,
-            builder: () => i_content.InstructorCourseContentScreen(courseId: courseId),
+            builder: () =>
+                i_content.InstructorCourseContentScreen(courseId: courseId),
           );
         },
       ),
-      
+
       // Analytics routes
       GoRoute(
         path: '/instructor/lms/course/:id/analytics',
@@ -720,7 +1587,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       // Stream/Announcements routes
       GoRoute(
         path: '/instructor/lms/course/:id/stream',
@@ -736,7 +1603,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       // Course detail page
       GoRoute(
         path: '/instructor/lms/course/:id',
@@ -745,7 +1612,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           // This will need the course data - for now redirect to content
           return DeferredScreen(
             loader: i_content.loadLibrary,
-            builder: () => i_content.InstructorCourseContentScreen(courseId: courseId),
+            builder: () =>
+                i_content.InstructorCourseContentScreen(courseId: courseId),
           );
         },
       ),

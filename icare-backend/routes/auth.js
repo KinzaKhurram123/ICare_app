@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getUserProfile, forgotPassword, verifyOTP, resetPassword, googleLogin, appleLogin, checkEmail, checkEmailAvailable, verifyEmailOtp, resendEmailOtp } = require('../controllers/authController');
+const { register, login, getUserProfile, forgotPassword, verifyOTP, resetPassword, changePassword, googleLogin, appleLogin, checkEmail, checkEmailAvailable, verifyEmailOtp, resendEmailOtp } = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/auth');
 
 // Public routes
@@ -20,6 +20,9 @@ router.post('/reset_password', resetPassword);
 
 // Protected routes
 router.get('/profile', authMiddleware, getUserProfile);
+// Signed-in password change (Settings > Change Password). Distinct from
+// /reset_password, which is the OTP-based forgot-password flow.
+router.post('/change_password', authMiddleware, changePassword);
 
 // ── Switch role (multi-role accounts) ─────────────────────────────────────────
 // Body: { role } — must be one of the account's approved roles.

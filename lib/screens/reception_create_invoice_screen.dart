@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:icare/screens/reception_dashboard.dart';
 import 'package:icare/services/reception_service.dart';
@@ -14,10 +15,12 @@ class ReceptionCreateInvoiceScreen extends StatefulWidget {
   const ReceptionCreateInvoiceScreen({super.key});
 
   @override
-  State<ReceptionCreateInvoiceScreen> createState() => _ReceptionCreateInvoiceScreenState();
+  State<ReceptionCreateInvoiceScreen> createState() =>
+      _ReceptionCreateInvoiceScreenState();
 }
 
-class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScreen> {
+class _ReceptionCreateInvoiceScreenState
+    extends State<ReceptionCreateInvoiceScreen> {
   final ReceptionService _service = ReceptionService();
   final _clientNameCtrl = TextEditingController();
   final _taxRateCtrl = TextEditingController(text: '15');
@@ -33,8 +36,12 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
     super.dispose();
   }
 
-  double get _subtotal => _items.fold<double>(0, (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0));
-  double get _taxRate => _taxEnabled ? (double.tryParse(_taxRateCtrl.text.trim()) ?? 0) : 0;
+  double get _subtotal => _items.fold<double>(
+    0,
+    (sum, i) => sum + ((i['price'] as num?)?.toDouble() ?? 0),
+  );
+  double get _taxRate =>
+      _taxEnabled ? (double.tryParse(_taxRateCtrl.text.trim()) ?? 0) : 0;
   double get _taxAmount => _subtotal * (_taxRate / 100);
   double get _total => _subtotal + _taxAmount;
 
@@ -47,7 +54,9 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -62,10 +71,20 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
                         color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.add_shopping_cart_outlined, color: AppColors.primaryColor, size: 22),
+                      child: Icon(
+                        Icons.add_shopping_cart_outlined,
+                        color: AppColors.primaryColor,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    const Text('Add Item', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const Text(
+                      'Add Item',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -74,7 +93,9 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
                   decoration: InputDecoration(
                     labelText: 'Item name',
                     prefixIcon: const Icon(Icons.edit_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -84,18 +105,26 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
                   decoration: InputDecoration(
                     labelText: 'Price (PKR)',
                     prefixIcon: const Icon(Icons.payments_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
                 if (dialogError != null) ...[
                   const SizedBox(height: 12),
-                  Text(dialogError!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                  Text(
+                    dialogError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
                 ],
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {
@@ -111,7 +140,9 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: const Text('Add'),
                     ),
@@ -181,25 +212,34 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Text('Client Name', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _clientNameCtrl,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 20),
-          const Text('Items', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          if (_items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('No items added yet.', style: TextStyle(color: Color(0xFF64748B))),
-            )
-          else
-            ..._items.asMap().entries.map((e) => Card(
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => ListView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          children: [
+            const Text(
+              'Client Name',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _clientNameCtrl,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 20),
+            const Text('Items', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (_items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No items added yet.',
+                  style: TextStyle(color: Color(0xFF64748B)),
+                ),
+              )
+            else
+              ..._items.asMap().entries.map(
+                (e) => Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -213,88 +253,121 @@ class _ReceptionCreateInvoiceScreenState extends State<ReceptionCreateInvoiceScr
                         color: AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.receipt_outlined, color: AppColors.primaryColor, size: 18),
+                      child: Icon(
+                        Icons.receipt_outlined,
+                        color: AppColors.primaryColor,
+                        size: 18,
+                      ),
                     ),
-                    title: Text(e.value['name']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('PKR ${(e.value['price'] as num?)?.toStringAsFixed(0) ?? '0'}'),
+                    title: Text(
+                      e.value['name']?.toString() ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'PKR ${(e.value['price'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                    ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
                       onPressed: () => setState(() => _items.removeAt(e.key)),
                     ),
                   ),
-                )),
-          OutlinedButton.icon(
-            onPressed: _addItem,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Item'),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('SRB Sales Tax', style: TextStyle(fontWeight: FontWeight.w600)),
-              Switch(
-                value: _taxEnabled,
-                onChanged: (v) => setState(() => _taxEnabled = v),
+                ),
+              ),
+            OutlinedButton.icon(
+              onPressed: _addItem,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Item'),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'SRB Sales Tax',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Switch(
+                  value: _taxEnabled,
+                  onChanged: (v) => setState(() => _taxEnabled = v),
+                ),
+              ],
+            ),
+            if (_taxEnabled) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [8, 15].map((preset) {
+                  final selected =
+                      double.tryParse(_taxRateCtrl.text.trim()) ==
+                      preset.toDouble();
+                  return ChoiceChip(
+                    label: Text('$preset%'),
+                    selected: selected,
+                    onSelected: (_) =>
+                        setState(() => _taxRateCtrl.text = preset.toString()),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _taxRateCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Custom rate (%)',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
             ],
-          ),
-          if (_taxEnabled) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [8, 15].map((preset) {
-                final selected = double.tryParse(_taxRateCtrl.text.trim()) == preset.toDouble();
-                return ChoiceChip(
-                  label: Text('$preset%'),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _taxRateCtrl.text = preset.toString()),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _taxRateCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Custom rate (%)', border: OutlineInputBorder()),
-              onChanged: (_) => setState(() {}),
-            ),
-          ],
-          const SizedBox(height: 20),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _summaryRow('Subtotal', _subtotal),
-                  if (_taxEnabled) _summaryRow('SRB Sales Tax (${_taxRate.toStringAsFixed(0)}%)', _taxAmount),
-                  const Divider(),
-                  _summaryRow('Total', _total, bold: true),
-                ],
+            const SizedBox(height: 20),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _summaryRow('Subtotal', _subtotal),
+                    if (_taxEnabled)
+                      _summaryRow(
+                        'SRB Sales Tax (${_taxRate.toStringAsFixed(0)}%)',
+                        _taxAmount,
+                      ),
+                    const Divider(),
+                    _summaryRow('Total', _total, bold: true),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-          ],
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _submitting ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+            ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Generate Invoice'),
               ),
-              child: _submitting
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Generate Invoice'),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -370,24 +443,42 @@ class ReceptionInvoiceSummaryScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.green,
+                      size: 56,
+                    ),
                     const SizedBox(height: 12),
-                    Text(clientName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                    const Text('Invoice generated', style: TextStyle(color: Color(0xFF64748B))),
+                    Text(
+                      clientName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Text(
+                      'Invoice generated',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => _openUrl(context, '${ApiConfig.baseUrl}/invoices/standalone/$invoiceId/pdf'),
+              onPressed: () => _openUrl(
+                context,
+                '${ApiConfig.baseUrl}/invoices/standalone/$invoiceId/pdf',
+              ),
               icon: const Icon(Icons.receipt_long_outlined),
               label: const Text('Print Invoice'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             const SizedBox(height: 24),

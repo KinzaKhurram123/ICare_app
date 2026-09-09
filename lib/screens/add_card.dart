@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/confirm_details.dart';
@@ -37,133 +38,136 @@ class _AddCardState extends State<AddCard> {
         automaticallyImplyLeading: false,
         title: CustomText(text: "Add Card".tr()),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              SizedBox(height: ScallingConfig.scale(8)),
-              CustomText(
-                text: "Add CreditCard ",
-                width: Utils.windowWidth(context) * 0.9,
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                fontWeight: FontWeight.bold,
-              ),
-              SizedBox(height: ScallingConfig.scale(8)),
-              CustomInputField(
-                title: "Card Type",
-                hintText: "Card Type",
-                titleColor: AppColors.tertiaryColor,
-                titleFontSize: ScallingConfig.moderateScale(14.78),
-                hintStyle: TextStyle(
-                  color: AppColors.grayColor,
-                  fontFamily: "Gilroy-SemiBold",
-                  fontSize: 14,
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                SizedBox(height: ScallingConfig.scale(8)),
+                CustomText(
+                  text: "Add CreditCard ",
+                  width: Utils.windowWidth(context) * 0.9,
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  fontWeight: FontWeight.bold,
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _cardType = value;
-                  });
-                },
-                borderRadius: 30,
-                borderColor: AppColors.grayColor.withAlpha(70),
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-              CustomInputField(
-                title: "Name on Card",
-                hintText: "Name on Card",
-                titleColor: AppColors.tertiaryColor,
-                titleFontSize: ScallingConfig.moderateScale(14.78),
-                hintStyle: TextStyle(
-                  color: AppColors.grayColor,
-                  fontFamily: "Gilroy-SemiBold",
-                  fontSize: 14,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _nameOnCard = value;
-                  });
-                },
-                borderRadius: 30,
-                borderColor: AppColors.grayColor.withAlpha(70),
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-              CustomInputField(
-                title: "Card Number",
-                hintText: "9900 **07 *7550",
-                titleColor: AppColors.tertiaryColor,
-                titleFontSize: ScallingConfig.moderateScale(14.78),
-                hintStyle: TextStyle(
-                  color: AppColors.darkGreyColor,
-                  fontFamily: "Gilroy-SemiBold",
-                  fontSize: 14,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _cardNumber = value;
-                  });
-                },
-                borderRadius: 30,
-                borderColor: AppColors.grayColor.withAlpha(70),
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-              SizedBox(height: ScallingConfig.scale(7)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CustomInputField(
-                    title: "Expriy",
-                    hintText: "MM/YY",
-                    hintStyle: TextStyle(
-                      color: AppColors.grayColor,
-                      fontFamily: "Gilroy-SemiBold",
-                      fontSize: 14,
-                    ),
-                    titleColor: AppColors.tertiaryColor,
-                    titleFontSize: ScallingConfig.moderateScale(14.78),
-                    onChanged: (value) {
-                      setState(() {
-                        _expiry = value;
-                      });
-                    },
-                    borderRadius: 30,
-                    borderColor: AppColors.grayColor.withAlpha(70),
-                    width: Utils.windowWidth(context) * 0.44,
+                SizedBox(height: ScallingConfig.scale(8)),
+                CustomInputField(
+                  title: "Card Type",
+                  hintText: "Card Type",
+                  titleColor: AppColors.tertiaryColor,
+                  titleFontSize: ScallingConfig.moderateScale(14.78),
+                  hintStyle: TextStyle(
+                    color: AppColors.grayColor,
+                    fontFamily: "Gilroy-SemiBold",
+                    fontSize: 14,
                   ),
-                  SizedBox(width: ScallingConfig.scale(8)),
-                  CustomInputField(
-                    title: "CVV",
-                    titleColor: AppColors.tertiaryColor,
-                    titleFontSize: ScallingConfig.moderateScale(14.78),
-                    hintText: "CVV",
-                    hintStyle: TextStyle(
-                      color: AppColors.grayColor,
-                      fontFamily: "Gilroy-SemiBold",
-                      fontSize: 14,
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _cvv = value;
-                      });
-                    },
-                    borderRadius: 30,
-                    borderColor: AppColors.grayColor.withAlpha(70),
-                    width: Utils.windowWidth(context) * 0.44,
+                  onChanged: (value) {
+                    setState(() {
+                      _cardType = value;
+                    });
+                  },
+                  borderRadius: 30,
+                  borderColor: AppColors.grayColor.withAlpha(70),
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+                CustomInputField(
+                  title: "Name on Card",
+                  hintText: "Name on Card",
+                  titleColor: AppColors.tertiaryColor,
+                  titleFontSize: ScallingConfig.moderateScale(14.78),
+                  hintStyle: TextStyle(
+                    color: AppColors.grayColor,
+                    fontFamily: "Gilroy-SemiBold",
+                    fontSize: 14,
                   ),
-                ],
-              ),
-              SizedBox(height: ScallingConfig.scale(30)),
-              CustomButton(
-                label: "Add Card",
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (ctx) => ConfirmDetails()));
-                },
-                borderRadius: 30,
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-            ],
+                  onChanged: (value) {
+                    setState(() {
+                      _nameOnCard = value;
+                    });
+                  },
+                  borderRadius: 30,
+                  borderColor: AppColors.grayColor.withAlpha(70),
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+                CustomInputField(
+                  title: "Card Number",
+                  hintText: "9900 **07 *7550",
+                  titleColor: AppColors.tertiaryColor,
+                  titleFontSize: ScallingConfig.moderateScale(14.78),
+                  hintStyle: TextStyle(
+                    color: AppColors.darkGreyColor,
+                    fontFamily: "Gilroy-SemiBold",
+                    fontSize: 14,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _cardNumber = value;
+                    });
+                  },
+                  borderRadius: 30,
+                  borderColor: AppColors.grayColor.withAlpha(70),
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+                SizedBox(height: ScallingConfig.scale(7)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomInputField(
+                      title: "Expriy",
+                      hintText: "MM/YY",
+                      hintStyle: TextStyle(
+                        color: AppColors.grayColor,
+                        fontFamily: "Gilroy-SemiBold",
+                        fontSize: 14,
+                      ),
+                      titleColor: AppColors.tertiaryColor,
+                      titleFontSize: ScallingConfig.moderateScale(14.78),
+                      onChanged: (value) {
+                        setState(() {
+                          _expiry = value;
+                        });
+                      },
+                      borderRadius: 30,
+                      borderColor: AppColors.grayColor.withAlpha(70),
+                      width: Utils.windowWidth(context) * 0.44,
+                    ),
+                    SizedBox(width: ScallingConfig.scale(8)),
+                    CustomInputField(
+                      title: "CVV",
+                      titleColor: AppColors.tertiaryColor,
+                      titleFontSize: ScallingConfig.moderateScale(14.78),
+                      hintText: "CVV",
+                      hintStyle: TextStyle(
+                        color: AppColors.grayColor,
+                        fontFamily: "Gilroy-SemiBold",
+                        fontSize: 14,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _cvv = value;
+                        });
+                      },
+                      borderRadius: 30,
+                      borderColor: AppColors.grayColor.withAlpha(70),
+                      width: Utils.windowWidth(context) * 0.44,
+                    ),
+                  ],
+                ),
+                SizedBox(height: ScallingConfig.scale(30)),
+                CustomButton(
+                  label: "Add Card",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (ctx) => ConfirmDetails()),
+                    );
+                  },
+                  borderRadius: 30,
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -280,7 +284,9 @@ class _AddCardState extends State<AddCard> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: AppColors.primaryColor.withValues(alpha: 0.4),
+                      shadowColor: AppColors.primaryColor.withValues(
+                        alpha: 0.4,
+                      ),
                     ),
                     child: const Text(
                       "Save Card Details",

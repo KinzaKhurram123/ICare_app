@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:ui_web' as ui_web;
+
+import 'package:web/web.dart' as web;
 
 /// v2 checkbox widget — bridges to the icare-recaptcha-* CustomEvents set up
 /// in web/index.html (same mechanism as the icare-reminder events already
@@ -37,8 +38,10 @@ void registerRecaptchaView() {
 
   if (!_viewFactoryRegistered) {
     _viewFactoryRegistered = true;
-    ui_web.platformViewRegistry.registerViewFactory(_recaptchaViewType, (int viewId) {
-      final container = html.DivElement()
+    ui_web.platformViewRegistry.registerViewFactory(_recaptchaViewType, (
+      int viewId,
+    ) {
+      final container = web.document.createElement('div') as web.HTMLDivElement
         ..id = recaptchaContainerId
         ..style.width = '304px'
         ..style.height = '78px';
@@ -47,14 +50,24 @@ void registerRecaptchaView() {
   }
 
   void mount() {
-    html.window.dispatchEvent(html.CustomEvent(
-      'icare-recaptcha-mount',
-      detail: jsonEncode({'containerId': recaptchaContainerId, 'generation': generation}),
-    ));
+    web.window.dispatchEvent(
+      web.CustomEvent(
+        'icare-recaptcha-mount',
+        web.CustomEventInit(
+          detail: jsonEncode({
+            'containerId': recaptchaContainerId,
+            'generation': generation,
+          }).toJS,
+        ),
+      ),
+    );
   }
 
   // grecaptcha may already be loaded (fast reload) or may still be loading.
-  html.window.on['icare-recaptcha-ready'].listen((_) => mount());
+  web.window.addEventListener(
+    'icare-recaptcha-ready',
+    ((web.Event _) => mount()).toJS,
+  );
   Timer(const Duration(milliseconds: 300), mount);
 }
 
@@ -64,34 +77,41 @@ String get recaptchaViewType => _recaptchaViewType;
 /// widget not ready / expired). Does not force a re-render.
 Future<String?> getRecaptchaResponse() async {
   final completer = Completer<String?>();
-  StreamSubscription? sub;
+  const eventName = 'icare-recaptcha-result';
+  late final web.EventListener listener;
+  var removed = false;
+  void remove() {
+    if (removed) return;
+    removed = true;
+    web.window.removeEventListener(eventName, listener);
+  }
 
-  sub = html.window.on['icare-recaptcha-result'].listen((event) {
+  listener = ((web.Event event) {
     try {
-      final ce = event as html.CustomEvent;
-      final raw = ce.detail;
-      if (raw is! String) return;
-      final map = jsonDecode(raw) as Map;
+      final raw = (event as web.CustomEvent).detail;
+      if (raw == null || !raw.isA<JSString>()) return;
+      final map = jsonDecode((raw as JSString).toDart) as Map;
       final token = map['token']?.toString();
-      sub?.cancel();
+      remove();
       if (!completer.isCompleted) completer.complete(token);
     } catch (_) {
-      sub?.cancel();
+      remove();
       if (!completer.isCompleted) completer.complete(null);
     }
-  });
+  }).toJS;
+  web.window.addEventListener(eventName, listener);
 
   try {
-    html.window.dispatchEvent(html.CustomEvent('icare-recaptcha-request'));
+    web.window.dispatchEvent(web.CustomEvent('icare-recaptcha-request'));
   } catch (_) {
-    sub.cancel();
+    remove();
     return null;
   }
 
   return completer.future.timeout(
     const Duration(seconds: 5),
     onTimeout: () {
-      sub?.cancel();
+      remove();
       return null;
     },
   );
@@ -99,6 +119,6 @@ Future<String?> getRecaptchaResponse() async {
 
 void resetRecaptcha() {
   try {
-    html.window.dispatchEvent(html.CustomEvent('icare-recaptcha-reset'));
+    web.window.dispatchEvent(web.CustomEvent('icare-recaptcha-reset'));
   } catch (_) {}
 }

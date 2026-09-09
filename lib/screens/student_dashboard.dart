@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:icare/screens/progress_tracking_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/screens/doctors_list.dart';
 import 'package:icare/screens/student_lms_dashboard.dart';
@@ -164,7 +166,7 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          'Open Classroom',
+                                          'My Courses',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 13,
@@ -206,6 +208,8 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
                             _enrolledCount.toString(),
                             Icons.book_outlined,
                             const Color(0xFF3B82F6),
+                            // iCare Academy opens on its Enrolled Courses tab.
+                            onTap: () => context.go('/student/courses'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -215,6 +219,13 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
                             _completedCount.toString(),
                             Icons.check_circle_outline_rounded,
                             const Color(0xFF10B981),
+                            // Completion per course lives on Progress Tracking.
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProgressTrackingScreen(),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -224,6 +235,7 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
                             _certificatesCount.toString(),
                             Icons.workspace_premium_outlined,
                             const Color(0xFFF59E0B),
+                            onTap: () => context.go('/student/certificates'),
                           ),
                         ),
                       ],
@@ -392,6 +404,18 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
                             },
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        // Requested for Quick Actions alongside Telehealth: a
+                        // student is also a patient, and had no route to the
+                        // clinics from their dashboard.
+                        Expanded(
+                          child: _buildActionCard(
+                            'iCare Clinics',
+                            Icons.local_hospital_rounded,
+                            const Color(0xFFEF4444),
+                            () => context.push('/icare-clinics'),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -408,9 +432,12 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
     String label,
     String value,
     IconData icon,
-    Color color,
-  ) {
-    return Container(
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    // The three figures were dead text. Each one has an obvious destination,
+    // so they now navigate ("ye tabs clickable q nh howe ab tk").
+    final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -456,6 +483,13 @@ class _StudentDashboardState extends ConsumerState<StudentDashboard> {
           ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: card,
     );
   }
 

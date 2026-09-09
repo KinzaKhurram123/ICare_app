@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -28,58 +29,61 @@ class UploadCourseScreen extends StatelessWidget {
           color: AppColors.darkGray500,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              CustomText(
-                text: "Upload Your Course Video Here",
-                width: Utils.windowWidth(context) * 0.8,
-                fontSize: 18.78,
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          child: Center(
+            child: Column(
+              children: [
+                CustomText(
+                  text: "Upload Your Course Video Here",
+                  width: Utils.windowWidth(context) * 0.8,
+                  fontSize: 18.78,
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
 
-                fontWeight: FontWeight.w500,
-              ),
-              CustomText(
-                text:
-                    "Upload your courses videos, and help others to grow in this field.",
-                width: Utils.windowWidth(context) * 0.8,
-                fontSize: 12,
-                maxLines: 2,
-                textAlign: TextAlign.left,
-                color: AppColors.themeDarkGrey,
-                fontFamily: "Gilroy-Regular",
-                fontWeight: FontWeight.w500,
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              UploadFile(),
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomInputField(
-                title: "Video Title",
-                margin: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.scale(10),
+                  fontWeight: FontWeight.w500,
                 ),
-                width: Utils.windowWidth(context) * 0.85,
-                hintText: "Enter your video title",
-              ),
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomInputField(
-                margin: EdgeInsets.symmetric(
-                  horizontal: ScallingConfig.scale(10),
+                CustomText(
+                  text:
+                      "Upload your courses videos, and help others to grow in this field.",
+                  width: Utils.windowWidth(context) * 0.8,
+                  fontSize: 12,
+                  maxLines: 2,
+                  textAlign: TextAlign.left,
+                  color: AppColors.themeDarkGrey,
+                  fontFamily: "Gilroy-Regular",
+                  fontWeight: FontWeight.w500,
                 ),
-                title: "Video Caption",
-                width: Utils.windowWidth(context) * 0.85,
-                hintText: "Enter your video Caption",
-              ),
+                SizedBox(height: ScallingConfig.scale(20)),
+                UploadFile(),
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomInputField(
+                  title: "Video Title",
+                  margin: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(10),
+                  ),
+                  width: Utils.windowWidth(context) * 0.85,
+                  hintText: "Enter your video title",
+                ),
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomInputField(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: ScallingConfig.scale(10),
+                  ),
+                  title: "Video Caption",
+                  width: Utils.windowWidth(context) * 0.85,
+                  hintText: "Enter your video Caption",
+                ),
 
-              SizedBox(height: ScallingConfig.scale(20)),
-              CustomButton(
-                label: "Upload",
-                borderRadius: 40,
-                width: Utils.windowWidth(context) * 0.9,
-              ),
-            ],
+                SizedBox(height: ScallingConfig.scale(20)),
+                CustomButton(
+                  label: "Upload",
+                  borderRadius: 40,
+                  width: Utils.windowWidth(context) * 0.9,
+                ),
+              ],
+            ),
           ),
         ),
       ),

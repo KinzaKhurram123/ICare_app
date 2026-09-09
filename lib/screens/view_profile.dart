@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
@@ -95,137 +96,140 @@ class ViewProfile extends ConsumerWidget {
           SizedBox(width: ScallingConfig.scale(20)),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: ScallingConfig.scale(50)),
-        child: Center(
-          child: Column(
-            children: [
-              const profilePicker(),
-              SizedBox(height: ScallingConfig.scale(15)),
-              CustomText(
-                text: name,
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                fontWeight: FontWeight.w400,
-                fontSize: 16.78,
-              ),
-              SizedBox(height: ScallingConfig.scale(40)),
-              if (role != "instructor" && role != "student") ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CustomRecordCard(
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: EdgeInsets.only(bottom: ScallingConfig.scale(50)),
+          child: Center(
+            child: Column(
+              children: [
+                const profilePicker(),
+                SizedBox(height: ScallingConfig.scale(15)),
+                CustomText(
+                  text: name,
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  fontWeight: FontWeight.w400,
+                  fontSize: 16.78,
+                ),
+                SizedBox(height: ScallingConfig.scale(40)),
+                if (role != "instructor" && role != "student") ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CustomRecordCard(
+                        color: AppColors.primaryColor,
+                        icon: SvgWrapper(
+                          assetPath: role == "lab_technician"
+                              ? ImagePaths.lab_tech
+                              : ImagePaths.profile2User,
+                        ),
+                        number: "150",
+                        label: label,
+                      ),
+                      SizedBox(width: ScallingConfig.scale(15)),
+                      CustomRecordCard(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) => RatingAndReviews(),
+                            ),
+                          );
+                        },
+                        icon: SvgWrapper(
+                          assetPath: role == "lab_technician"
+                              ? ImagePaths.lab_tech
+                              : ImagePaths.star,
+                        ),
+                        number: role == "lab_technician" ? "32" : "4.9",
+                        label: role == "lab_technician"
+                            ? "Completed Reports"
+                            : "Ratings",
+                      ),
+                    ],
+                  ),
+                ],
+
+                SizedBox(height: ScallingConfig.scale(10)),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.9,
+                  child: ListTile(
+                    leading: const SvgWrapper(assetPath: ImagePaths.sms),
+                    title: CustomText(
+                      text: email,
+                      color: AppColors.grayColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Gilroy-SemiBold",
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.85,
+                  child: const Divider(),
+                ),
+                SizedBox(height: ScallingConfig.scale(1)),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.9,
+                  child: ListTile(
+                    leading: const SvgWrapper(
+                      assetPath: ImagePaths.calll,
                       color: AppColors.primaryColor,
-                      icon: SvgWrapper(
-                        assetPath: role == "lab_technician"
-                            ? ImagePaths.lab_tech
-                            : ImagePaths.profile2User,
-                      ),
-                      number: "150",
-                      label: label,
                     ),
-                    SizedBox(width: ScallingConfig.scale(15)),
-                    CustomRecordCard(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (ctx) => RatingAndReviews(),
-                          ),
-                        );
-                      },
-                      icon: SvgWrapper(
-                        assetPath: role == "lab_technician"
-                            ? ImagePaths.lab_tech
-                            : ImagePaths.star,
-                      ),
-                      number: role == "lab_technician" ? "32" : "4.9",
-                      label: role == "lab_technician"
-                          ? "Completed Reports"
-                          : "Ratings",
+                    title: CustomText(
+                      text: phone,
+                      color: AppColors.grayColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Gilroy-SemiBold",
                     ),
-                  ],
+                  ),
+                ),
+                SizedBox(
+                  width: Utils.windowWidth(context) * 0.85,
+                  child: const Divider(),
+                ),
+
+                SizedBox(height: ScallingConfig.scale(5)),
+                CustomText(
+                  text: "Bio:",
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary500,
+                  fontFamily: "Gilroy-Bold",
+                  width: Utils.windowWidth(context) * 0.85,
+                ),
+                SizedBox(height: ScallingConfig.scale(5)),
+                CustomText(
+                  text: bio,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.grayColor,
+                  maxLines: 3,
+                  fontFamily: "Gilroy-Medium",
+                  width: Utils.windowWidth(context) * 0.85,
+                ),
+                SizedBox(height: ScallingConfig.scale(10)),
+                infoRowTile(iconPath: ImagePaths.calendar, infoText: dob),
+                infoRowTile(iconPath: ImagePaths.gender, infoText: gender),
+
+                infoRowTile(iconPath: ImagePaths.marker2, infoText: address),
+                if (role == "Student" && qualification.isNotEmpty)
+                  infoRowTile(
+                    iconPath: ImagePaths.certificate,
+                    infoText: qualification,
+                  ),
+                if (role == "Student" && educationLevel.isNotEmpty)
+                  infoRowTile(
+                    iconPath: ImagePaths.certificate,
+                    infoText: educationLevel,
+                  ),
+                const infoRowTile(
+                  iconPath: ImagePaths.card,
+                  infoText: "5678 1234-A",
                 ),
               ],
-
-              SizedBox(height: ScallingConfig.scale(10)),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.9,
-                child: ListTile(
-                  leading: const SvgWrapper(assetPath: ImagePaths.sms),
-                  title: CustomText(
-                    text: email,
-                    color: AppColors.grayColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Gilroy-SemiBold",
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.85,
-                child: const Divider(),
-              ),
-              SizedBox(height: ScallingConfig.scale(1)),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.9,
-                child: ListTile(
-                  leading: const SvgWrapper(
-                    assetPath: ImagePaths.calll,
-                    color: AppColors.primaryColor,
-                  ),
-                  title: CustomText(
-                    text: phone,
-                    color: AppColors.grayColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Gilroy-SemiBold",
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: Utils.windowWidth(context) * 0.85,
-                child: const Divider(),
-              ),
-
-              SizedBox(height: ScallingConfig.scale(5)),
-              CustomText(
-                text: "Bio:",
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary500,
-                fontFamily: "Gilroy-Bold",
-                width: Utils.windowWidth(context) * 0.85,
-              ),
-              SizedBox(height: ScallingConfig.scale(5)),
-              CustomText(
-                text: bio,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: AppColors.grayColor,
-                maxLines: 3,
-                fontFamily: "Gilroy-Medium",
-                width: Utils.windowWidth(context) * 0.85,
-              ),
-              SizedBox(height: ScallingConfig.scale(10)),
-              infoRowTile(iconPath: ImagePaths.calendar, infoText: dob),
-              infoRowTile(iconPath: ImagePaths.gender, infoText: gender),
-
-              infoRowTile(iconPath: ImagePaths.marker2, infoText: address),
-              if (role == "Student" && qualification.isNotEmpty)
-                infoRowTile(
-                  iconPath: ImagePaths.certificate,
-                  infoText: qualification,
-                ),
-              if (role == "Student" && educationLevel.isNotEmpty)
-                infoRowTile(
-                  iconPath: ImagePaths.certificate,
-                  infoText: educationLevel,
-                ),
-              const infoRowTile(
-                iconPath: ImagePaths.card,
-                infoText: "5678 1234-A",
-              ),
-            ],
+            ),
           ),
         ),
       ),

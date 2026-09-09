@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:icare/providers/auth_provider.dart';
 import 'package:icare/screens/connect_now_waiting_screen.dart';
@@ -76,15 +77,31 @@ class _ConsultationDetailsScreenState
         showDialog(
           context: context,
           builder: (c) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Row(children: [
-              Icon(Icons.info_outline_rounded, color: Color(0xFF6366F1)),
-              SizedBox(width: 8),
-              Text('No Doctors Available', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            ]),
-            content: const Text('No doctors are online right now. Please try again later or book an advance appointment.', style: TextStyle(fontSize: 14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: Color(0xFF6366F1)),
+                SizedBox(width: 8),
+                Text(
+                  'No Doctors Available',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            content: const Text(
+              'No doctors are online right now. Please try again later or book an advance appointment.',
+              style: TextStyle(fontSize: 14),
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold))),
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         );
@@ -95,7 +112,8 @@ class _ConsultationDetailsScreenState
     if (mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ConnectNowWaitingScreen(targetDoctorId: widget.targetDoctorId),
+          builder: (_) =>
+              ConnectNowWaitingScreen(targetDoctorId: widget.targetDoctorId),
         ),
       );
     }
@@ -129,336 +147,381 @@ class _ConsultationDetailsScreenState
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Info banner
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.primaryColor.withValues(alpha: 0.2)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.video_call_rounded,
-                      color: AppColors.primaryColor, size: 28),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Connect to a Doctor Now',
+      body: DragScroll(
+        builder: (context, dragScrollCtrl) => SingleChildScrollView(
+          controller: dragScrollCtrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Info banner
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.video_call_rounded,
+                      color: AppColors.primaryColor,
+                      size: 28,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Connect to a Doctor Now',
                             style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primaryColor)),
-                        Text(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          Text(
                             'A doctor will connect with you within 3 minutes',
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF64748B))),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Details card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Consultation For',
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A))),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _chip('Myself', _forMyself, () {
-                        setState(() => _forMyself = true);
-                        _fillMyself();
-                      }),
-                      const SizedBox(width: 10),
-                      _chip('+ Someone else', !_forMyself, () {
-                        setState(() {
-                          _forMyself = false;
-                          _nameController.clear();
-                          _genderController.clear();
-                          _ageController.clear();
-                        });
-                      }),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  _label('Patient Name'),
-                  const SizedBox(height: 8),
-                  _textField(
-                    controller: _nameController,
-                    hint: 'Enter patient name',
-                    icon: Icons.person_outline_rounded,
-                    readOnly: _forMyself,
-                  ),
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label('Gender'),
-                            const SizedBox(height: 8),
-                            if (_forMyself)
-                              // Read-only display for Myself
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                      color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _genderController.text.toLowerCase() == 'female'
-                                          ? Icons.female_rounded
-                                          : _genderController.text.toLowerCase() == 'male'
-                                              ? Icons.male_rounded
-                                              : Icons.wc_rounded,
-                                      size: 16,
-                                      color: const Color(0xFF94A3B8),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _genderController.text.isNotEmpty
-                                          ? _genderController.text
-                                          : 'Not set in profile',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: _genderController.text.isNotEmpty
-                                            ? const Color(0xFF0F172A)
-                                            : const Color(0xFF94A3B8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              // Editable chips for Someone Else
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 6,
-                                children: ['Male', 'Female', 'Other']
-                                    .map((g) {
-                                  final isSelected =
-                                      _genderController.text == g;
-                                  return GestureDetector(
-                                    onTap: () => setState(
-                                        () => _genderController.text = g),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? AppColors.primaryColor
-                                            : const Color(0xFFF1F5F9),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? AppColors.primaryColor
-                                              : const Color(0xFFE2E8F0),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        g,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label('Age'),
-                            const SizedBox(height: 8),
-                            _textField(
-                              controller: _ageController,
-                              hint: _forMyself ? 'Not set in profile' : 'e.g. 30',
-                              keyboardType: TextInputType.number,
-                              readOnly: _forMyself,
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Reason — Optional
-                  Row(
-                    children: [
-                      _label('Reason for Consultation'),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF64748B).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text('Optional',
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF64748B))),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _reasonController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText:
-                          'Describe your symptoms or reason for consultation...',
-                      hintStyle:
-                          const TextStyle(color: Color(0xFF94A3B8)),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0))),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0))),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                              color: AppColors.primaryColor)),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Certification checkbox — above Pay Now button
-            GestureDetector(
-              onTap: () =>
-                  setState(() => _certifyChecked = !_certifyChecked),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: _certifyChecked
-                          ? AppColors.primaryColor
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: _certifyChecked
-                            ? AppColors.primaryColor
-                            : const Color(0xFFCBD5E1),
-                        width: 2,
+                          ),
+                        ],
                       ),
                     ),
-                    child: _certifyChecked
-                        ? const Icon(Icons.check_rounded,
-                            size: 14, color: Colors.white)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'I certify that all the information I provided is correct.',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF334155),
-                          height: 1.4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Pay Now button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _proceed,
-                icon: const Icon(Icons.payment_rounded),
-                label: const Text('Pay Now & Connect',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w800)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+              const SizedBox(height: 24),
+
+              // Details card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Consultation For',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _chip('Myself', _forMyself, () {
+                          setState(() => _forMyself = true);
+                          _fillMyself();
+                        }),
+                        const SizedBox(width: 10),
+                        _chip('+ Someone else', !_forMyself, () {
+                          setState(() {
+                            _forMyself = false;
+                            _nameController.clear();
+                            _genderController.clear();
+                            _ageController.clear();
+                          });
+                        }),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _label('Patient Name'),
+                    const SizedBox(height: 8),
+                    _textField(
+                      controller: _nameController,
+                      hint: 'Enter patient name',
+                      icon: Icons.person_outline_rounded,
+                      readOnly: _forMyself,
+                    ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _label('Gender'),
+                              const SizedBox(height: 8),
+                              if (_forMyself)
+                                // Read-only display for Myself
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _genderController.text.toLowerCase() ==
+                                                'female'
+                                            ? Icons.female_rounded
+                                            : _genderController.text
+                                                      .toLowerCase() ==
+                                                  'male'
+                                            ? Icons.male_rounded
+                                            : Icons.wc_rounded,
+                                        size: 16,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _genderController.text.isNotEmpty
+                                            ? _genderController.text
+                                            : 'Not set in profile',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color:
+                                              _genderController.text.isNotEmpty
+                                              ? const Color(0xFF0F172A)
+                                              : const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                // Editable chips for Someone Else
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: ['Male', 'Female', 'Other'].map((
+                                    g,
+                                  ) {
+                                    final isSelected =
+                                        _genderController.text == g;
+                                    return GestureDetector(
+                                      onTap: () => setState(
+                                        () => _genderController.text = g,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.primaryColor
+                                              : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.primaryColor
+                                                : const Color(0xFFE2E8F0),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          g,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _label('Age'),
+                              const SizedBox(height: 8),
+                              _textField(
+                                controller: _ageController,
+                                hint: _forMyself
+                                    ? 'Not set in profile'
+                                    : 'e.g. 30',
+                                keyboardType: TextInputType.number,
+                                readOnly: _forMyself,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Reason — Optional
+                    Row(
+                      children: [
+                        _label('Reason for Consultation'),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF64748B,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'Optional',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _reasonController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Describe your symptoms or reason for consultation...',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: AppColors.primaryColor),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Certification checkbox — above Pay Now button
+              GestureDetector(
+                onTap: () => setState(() => _certifyChecked = !_certifyChecked),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _certifyChecked
+                            ? AppColors.primaryColor
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: _certifyChecked
+                              ? AppColors.primaryColor
+                              : const Color(0xFFCBD5E1),
+                          width: 2,
+                        ),
+                      ),
+                      child: _certifyChecked
+                          ? const Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'I certify that all the information I provided is correct.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF334155),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Pay Now button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _proceed,
+                  icon: const Icon(Icons.payment_rounded),
+                  label: const Text(
+                    'Pay Now & Connect',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _label(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B)),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF64748B),
+    ),
+  );
 
   Widget _chip(String label, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryColor.withValues(alpha: 0.1)
@@ -474,17 +537,22 @@ class _ConsultationDetailsScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isSelected)
-              Icon(Icons.check_rounded,
-                  size: 14, color: AppColors.primaryColor),
+              Icon(
+                Icons.check_rounded,
+                size: 14,
+                color: AppColors.primaryColor,
+              ),
             if (isSelected) const SizedBox(width: 4),
-            Text(label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? AppColors.primaryColor
-                      : const Color(0xFF64748B),
-                )),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : const Color(0xFF64748B),
+              ),
+            ),
           ],
         ),
       ),
@@ -509,17 +577,19 @@ class _ConsultationDetailsScreenState
             ? Icon(icon, color: const Color(0xFF94A3B8))
             : null,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: AppColors.primaryColor)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: AppColors.primaryColor),
+        ),
         filled: true,
-        fillColor:
-            readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+        fillColor: readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
       ),
     );
   }
