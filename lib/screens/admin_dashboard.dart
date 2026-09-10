@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/admin_promotions_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icare/models/consultation_timer.dart';
@@ -278,6 +279,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
       if (mounted) setState(() => _isLoading = false);
       _fetchFaqs();
     } else if (tab == 'Commission') {
+      if (mounted) setState(() => _isLoading = false);
+    } else if (tab == 'Promotions') {
+      // The panel is a self-contained form; there is no user list to load.
       if (mounted) setState(() => _isLoading = false);
     } else {
       _fetchUsers();
@@ -568,7 +572,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
           : _currentTab != 'Pending' && _currentTab != 'PatientRecords'
               && _currentTab != 'LeaveRequests' && _currentTab != 'Certificates'
               && _currentTab != 'Commission' && _currentTab != 'DoctorTools'
-              && _currentTab != 'CourseCategories'
+              && _currentTab != 'CourseCategories' && _currentTab != 'Promotions'
           ? FloatingActionButton.extended(
               onPressed: () => _showAddUserDialog(),
               backgroundColor: AppColors.primaryColor,
@@ -582,7 +586,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
               ),
             )
           : null,
-      body: _currentTab == 'LeaveRequests'
+      body: _currentTab == 'Promotions'
+          ? AdminPromotionsPanel(api: _apiService)
+          : _currentTab == 'LeaveRequests'
           ? _buildLeaveRequestsTab()
           : _currentTab == 'Certificates'
           ? _buildCertificatesTab()
@@ -1217,6 +1223,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                   _buildTabItem('CourseCategories', Icons.category_rounded),
                   _buildTabItem('Community',      Icons.forum_rounded),
                   _buildTabItem('FAQs',           Icons.help_outline_rounded),
+                  _buildTabItem('Promotions',     Icons.campaign_rounded),
                 ],
               ),
             ),

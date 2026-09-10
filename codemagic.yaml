@@ -49,9 +49,12 @@ workflows:
           xcode-project use-profiles
 
       - name: Build IPA
+        # --build-name is deliberately not passed: hard-coding it meant every
+        # build shipped as 1.0.0 whatever pubspec.yaml said, and App Store
+        # Connect rejects a version no higher than the one already submitted
+        # (1.0.2). Flutter reads pubspec.yaml instead.
         script: |
           flutter build ipa --release \
-            --build-name=1.0.0 \
             --build-number=$PROJECT_BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
@@ -62,5 +65,7 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: false
+        # Without this the build reaches App Store Connect but never lands
+        # on any tester's device.
+        submit_to_testflight: true
         submit_to_app_store: false

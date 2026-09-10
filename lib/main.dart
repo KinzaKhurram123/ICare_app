@@ -138,7 +138,20 @@ class MyApp extends ConsumerWidget {
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             ScallingConfig().init(context);
-            return FlutterSmartDialog.init()(
+            // Phones let the user enlarge system font/display size, and Flutter
+            // honours that multiplier unchanged. With ~292 hard-coded pixel
+            // heights across the app, anything above ~1.3x overflows: cards
+            // clip, rows turn into yellow-and-black stripes. This is why a
+            // screen can look correct on one phone and broken on another with
+            // identical dimensions. Clamping keeps the app readable for people
+            // who need larger text without letting it break the layout.
+            final media = MediaQuery.of(context);
+            final scale = media.textScaler.scale(14) / 14;
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: TextScaler.linear(scale.clamp(0.85, 1.30)),
+              ),
+              child: FlutterSmartDialog.init()(
               context,
               IncomingCallListener(
                 child: DoctorConnectNowListener(
@@ -157,6 +170,7 @@ class MyApp extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
             );
           },
         );

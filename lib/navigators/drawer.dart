@@ -498,22 +498,10 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                       ),
 
                       // Role-specific quick actions
-                      if (selectedRole == 'Patient') ...[
-                        _drawerActionItem(
-                          context,
-                          'Book Appointment',
-                          const Color(0xFF6366F1),
-                          Icons.calendar_month_outlined,
-                          () => context.go('/patient/bookings-history'),
-                        ),
-                        _drawerActionItem(
-                          context,
-                          'View Lab Reports',
-                          const Color(0xFF0EA5E9),
-                          Icons.science_outlined,
-                          () => context.go('/patient/lab-reports'),
-                        ),
-                      ] else if (selectedRole == 'Laboratory') ...[
+                      // Patients had "Book Appointment" and "View Lab Reports"
+                      // shortcuts here; both duplicate entries already in
+                      // MY ACCOUNT below, so the client asked for them to go.
+                      if (selectedRole == 'Laboratory') ...[
                         _drawerActionItem(
                           context,
                           'New Requests',
@@ -735,6 +723,17 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
     );
   }
 
+  /// Close the drawer, then run the item's action.
+  ///
+  /// A GoRouter push does not dismiss a Scaffold drawer: the new screen opens
+  /// *behind* it and the drawer stays sitting on top. Closing first also drops
+  /// the local history entry Flutter adds while a drawer is open, so the
+  /// device back button keeps behaving normally afterwards.
+  void _closeDrawerThen(VoidCallback action) {
+    Scaffold.maybeOf(context)?.closeDrawer();
+    action();
+  }
+
   Widget _drawerItem(
     String title,
     IconData icon,
@@ -780,7 +779,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
                 ),
               )
             : null,
-        onTap: onTap,
+        onTap: () => _closeDrawerThen(onTap),
       ),
     );
   }
@@ -851,7 +850,7 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
-        onTap: onTap,
+        onTap: () => _closeDrawerThen(onTap),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
