@@ -132,6 +132,10 @@ class _InstructorLmsCreateCourseScreenState
   // Installment 1 is the on-enrollment purchase (days fixed at 0). The amounts
   // must total the effective (after early-bird) course price.
   bool _installmentPlanEnabled = false;
+  // Whether the plan is open to every buyer. Off means it exists but is
+  // reached only by redeeming an installment voucher, which is how the
+  // client wanted to offer installments to a few students rather than all.
+  bool _installmentsOpenToAll = true;
   final List<_InstallmentRow> _installments = [
     _InstallmentRow(), // installment 1 (on enrollment)
     _InstallmentRow(), // installment 2
@@ -469,7 +473,11 @@ class _InstructorLmsCreateCourseScreenState
                         )
                       : (_earlyBirdDate ?? DateTime.now()))
                   .toIso8601String(),
-        if (!_isFree && _installmentPlanEnabled) 'installmentPlanEnabled': true,
+        // The plan is saved whenever it is defined. installmentPlanEnabled is
+        // no longer "does a plan exist" but "is it open to everyone" -- with it
+        // off, only holders of an installment voucher can use the plan.
+        if (!_isFree && _installmentPlanEnabled)
+          'installmentPlanEnabled': _installmentsOpenToAll,
         if (!_isFree && _installmentPlanEnabled)
           'installmentPlan': [
             for (int i = 0; i < _installments.length; i++)
@@ -1797,6 +1805,54 @@ class _InstructorLmsCreateCourseScreenState
                   ),
                 ),
                 if (_installmentPlanEnabled) ...[
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => setState(
+                      () => _installmentsOpenToAll = !_installmentsOpenToAll,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Offer to every student',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _installmentsOpenToAll
+                                      ? 'Anyone buying this course can choose installments.'
+                                      : 'Only students you give an installment voucher to can choose installments.',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _installmentsOpenToAll,
+                            onChanged: (v) =>
+                                setState(() => _installmentsOpenToAll = v),
+                            activeThumbColor: const Color(0xFF6366F1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ..._buildInstallmentRows(),
                   const SizedBox(height: 8),

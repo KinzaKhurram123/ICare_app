@@ -967,11 +967,15 @@ class LmsService {
     required int discount,
     String? courseId,
     String? expiresAt,
+    // 'discount' = money off. 'installment' = unlocks that course's
+    // installment plan for whoever redeems the code.
+    String kind = 'discount',
   }) async {
     try {
       final response = await _api.post('/vouchers', {
         'code': code,
-        'discount': discount,
+        'kind': kind,
+        if (kind == 'discount') 'discount': discount,
         if (courseId != null) 'courseId': courseId,
         if (expiresAt != null) 'expiresAt': expiresAt,
       });

@@ -1606,7 +1606,7 @@ class _SettingsPageState extends State<_SettingsPage> {
         const SizedBox(height: 20),
         const Text('Discount Vouchers', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400, color: Color(0xFF202124))),
         const SizedBox(height: 8),
-        const Text('Create one-time discount codes for any course', style: TextStyle(fontSize: 13, color: Color(0xFF5F6368))),
+        const Text('One-time codes: money off, or installments for a single student', style: TextStyle(fontSize: 13, color: Color(0xFF5F6368))),
         const SizedBox(height: 16),
         VoucherManagerWidget(),
       ],
@@ -1665,15 +1665,62 @@ class _VoucherManagerState extends State<VoucherManagerWidget> {
 
   Future<void> _createVoucher() async {
     int selectedPercent = 20;
+    // 'discount' | 'installment'. An installment code has to name its course:
+    // the schedule lives on the course, so "any course" cannot mean anything.
+    String kind = 'discount';
+    String? selectedCourseId;
+    List<dynamic> courses = [];
+    try {
+      final res = await _lms.getInstructorCourses();
+      courses = res['courses'] ?? [];
+    } catch (_) {}
+    if (!mounted) return;
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setLocal) => AlertDialog(
         title: const Row(children: [
           Icon(Icons.local_offer_rounded, color: Color(0xFF1A73E8)),
           SizedBox(width: 10),
-          Text('Create Discount Voucher', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          Text('Create Voucher', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ]),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'discount', label: Text('Discount')),
+              ButtonSegment(value: 'installment', label: Text('Installments')),
+            ],
+            selected: {kind},
+            onSelectionChanged: (v) => setLocal(() => kind = v.first),
+          ),
+          const SizedBox(height: 16),
+          if (kind == 'installment') ...[
+            const Text('Which course is this for?', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: selectedCourseId,
+              isExpanded: true,
+              decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+              hint: const Text('Select a course'),
+              items: courses
+                  .map((c) => DropdownMenuItem<String>(
+                        value: c['_id']?.toString(),
+                        child: Text(c['title']?.toString() ?? 'Untitled',
+                            overflow: TextOverflow.ellipsis),
+                      ))
+                  .toList(),
+              onChanged: (v) => setLocal(() => selectedCourseId = v),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.indigo.shade50, borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                'The student who redeems this code can pay this course in the '
+                'installments you set up on it, instead of all at once.',
+                style: TextStyle(fontSize: 11, color: Colors.indigo.shade900),
+              ),
+            ),
+          ] else ...[
           const Text('Select discount percentage for this one-time voucher:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
           const SizedBox(height: 16),
           Wrap(
@@ -1694,6 +1741,7 @@ class _VoucherManagerState extends State<VoucherManagerWidget> {
               ),
             )).toList(),
           ),
+          ],
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
@@ -1711,13 +1759,27 @@ class _VoucherManagerState extends State<VoucherManagerWidget> {
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A73E8), foregroundColor: Colors.white),
             onPressed: () async {
+              if (kind == 'installment' && selectedCourseId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Pick the course this installment code is for'),
+                  backgroundColor: Colors.red,
+                ));
+                return;
+              }
               Navigator.pop(ctx);
               final code = _generateCode();
-              final result = await _lms.createVoucher(code: code, discount: selectedPercent);
+              final result = await _lms.createVoucher(
+                code: code,
+                discount: selectedPercent,
+                kind: kind,
+                courseId: kind == 'installment' ? selectedCourseId : null,
+              );
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(result['success'] == true
-                      ? 'Voucher created: $code ($selectedPercent% off)'
+                      ? (kind == 'installment'
+                          ? 'Installment voucher created: $code'
+                          : 'Voucher created: $code ($selectedPercent% off)')
                       : result['message'] ?? 'Failed'),
                   backgroundColor: result['success'] == true ? Colors.green : Colors.red,
                   duration: const Duration(seconds: 4),
