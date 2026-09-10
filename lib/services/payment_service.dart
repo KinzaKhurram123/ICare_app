@@ -25,11 +25,16 @@ class PaymentService {
     String? redirectUrl,
     String? cancelUrl,
     int? installmentIndex, // required when type == 'course_installment'
+    // 'full' | 'installment' -- how the student chose to pay a course fee.
+    // The server still decides whether installments are actually open to
+    // them; this only carries the choice.
+    String? payMode,
   }) async {
     final response = await _api.post('/payments/create', {
       'type': type,
       'refId': refId,
       'method': method,
+      if (payMode != null) 'payMode': payMode,
       if (voucherCode != null && voucherCode.isNotEmpty) 'voucherCode': voucherCode,
       if (redirectUrl != null) 'redirectUrl': redirectUrl,
       if (cancelUrl != null) 'cancelUrl': cancelUrl,

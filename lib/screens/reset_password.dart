@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/success_dialog.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/screens/login.dart';
 import 'package:icare/services/auth_service.dart';
@@ -521,113 +522,16 @@ class _ResetPasswordState extends State<ResetPassword> {
     );
   }
 
-  void _showSuccessModal(BuildContext context, {bool isDesktop = false}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 420 : 340),
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Success Icon with glow
-                Container(
-                  height: 90,
-                  width: 90,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.green.withValues(alpha: 0.2),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF2E7D32),
-                      size: 54,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  "Password Changed!".tr(),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0B2D6E),
-                    fontFamily: "Gilroy-Bold",
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "Your password has been successfully updated. You can now log in with your new credentials.".tr(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontFamily: "Gilroy-Medium",
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 36),
-                // Done Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (ctx) => const LoginScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                    child: Text(
-                      "Back to Login".tr(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: "Gilroy-Bold",
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    void _showSuccessModal(BuildContext context, {bool isDesktop = false}) {
+    showSuccessDialog(
+      context,
+      title: "Password Changed!".tr(),
+      message: "Your password has been successfully updated. You can now log in with your new credentials.".tr(),
+      buttonLabel: "Back to Login".tr(),
+      onClose: () => Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+        (route) => false,
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:icare/widgets/drag_scroll.dart';
 import 'package:flutter/material.dart';
+import 'package:icare/widgets/success_dialog.dart';
 import 'package:flutter_size_matters/flutter_size_matters.dart';
 import 'package:icare/utils/imagePaths.dart';
 import 'package:icare/utils/theme.dart';
@@ -423,81 +424,9 @@ class _WebChangePassword extends StatelessWidget {
 }
 
 void _showSuccessModal(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext ctx) {
-      bool isWeb = MediaQuery.of(context).size.width > 600;
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isWeb ? 24 : 20),
-        ),
-        child: Container(
-          constraints: BoxConstraints(maxWidth: isWeb ? 400 : double.infinity),
-          padding: EdgeInsets.all(isWeb ? 40 : 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: isWeb ? 80 : 70,
-                width: isWeb ? 80 : 70,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF10B981),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: isWeb ? 48 : 40,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                "Password Changed".tr(),
-                style: TextStyle(
-                  fontSize: isWeb ? 22 : 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
-                  fontFamily: isWeb ? "Gilroy-Bold" : null,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "You've successfully changed your password".tr(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isWeb ? 15 : 13,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(isWeb ? 12 : 30),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                  },
-                  child: Text(
-                    "Go Back".tr(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
+  showSuccessDialog(
+    context,
+    title: "Password Changed".tr(),
+    message: "You've successfully changed your password".tr(),
   );
 }

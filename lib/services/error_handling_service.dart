@@ -82,6 +82,14 @@ class ErrorHandlingService {
                 style: const TextStyle(fontSize: 14),
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: 'Dismiss',
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
           ],
         ),
         backgroundColor: const Color(0xFFEF4444),
@@ -90,13 +98,6 @@ class ErrorHandlingService {
           borderRadius: BorderRadius.circular(12),
         ),
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
       ),
     );
   }

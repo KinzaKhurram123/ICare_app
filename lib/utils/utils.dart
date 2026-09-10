@@ -49,17 +49,23 @@ class Utils {
                 ),
               ),
             ),
+            // Was a "Retry" action with an empty onPressed -- it looked like a
+            // button and did nothing when tapped. A close control is what this
+            // banner actually needs.
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: 'Dismiss',
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
           ],
         ),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
-        action: SnackBarAction(
-          label: 'Retry',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
       ),
     );
   }

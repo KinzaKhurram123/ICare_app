@@ -37,6 +37,15 @@ class SelectPaymentMethod extends StatefulWidget {
   // confirms cash collection for a purely-online consultation).
   final bool isInstant;
 
+  /// The course's installment rows, when it defines a plan. Drives the
+  /// "Pay in Installments" choice and the figure shown against it.
+  final List<dynamic>? installmentPlan;
+
+  /// True when the course offers installments to every buyer. A student who
+  /// redeems an installment voucher gets the same choice without this being
+  /// set -- that is the whole point of those vouchers.
+  final bool installmentsOpenToAll;
+
   const SelectPaymentMethod({
     super.key,
     this.courseId,
@@ -46,6 +55,8 @@ class SelectPaymentMethod extends StatefulWidget {
     this.onPaymentSuccess,
     this.installmentIndex,
     this.isInstant = false,
+    this.installmentPlan,
+    this.installmentsOpenToAll = false,
   });
 
   @override
@@ -67,7 +78,30 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
   String? _appliedVoucherCode;
   double? _discountedAmount; // null = no voucher applied, use widget.amount
 
+  // 'full' | 'installment'. Courses used to force installments on every buyer
+  // the moment a plan existed; paying the whole fee at once is a choice now.
+  String _payMode = 'full';
+  // Set when the applied voucher is an installment grant rather than a discount.
+  bool _voucherUnlocksInstallments = false;
+
+  List<dynamic> get _plan => widget.installmentPlan ?? const [];
+
+  bool get _installmentsAvailable =>
+      widget.courseId != null &&
+      widget.installmentIndex == null &&
+      _plan.length >= 2 &&
+      (widget.installmentsOpenToAll || _voucherUnlocksInstallments);
+
+  double get _firstInstallmentAmount {
+    if (_plan.isEmpty) return 0;
+    final v = (_plan.first as Map?)?['amount'];
+    return v is num ? v.toDouble() : (double.tryParse('${v ?? ''}') ?? 0);
+  }
+
   double get _finalAmount {
+    if (_payMode == 'installment' && _installmentsAvailable) {
+      return _firstInstallmentAmount;
+    }
     if (_discountedAmount != null) return _discountedAmount!;
     if (_onlineDiscountApplies && _selectedMethod == 'online') return _onlineDiscountedAmount;
     return widget.amount ?? 0;
@@ -106,6 +140,22 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
     setState(() { _applyingVoucher = true; _voucherError = null; });
     try {
       final res = await _courseService.validateVoucher(code, widget.courseId);
+      final kind = res['kind']?.toString() ?? 'discount';
+
+      if (kind == 'installment') {
+        // Not money off -- it opens the course's installment plan to this one
+        // student. Switch them onto it straight away, since redeeming the code
+        // is how they said they wanted to pay.
+        setState(() {
+          _voucherUnlocksInstallments = true;
+          _discountedAmount = null;
+          _payMode = 'installment';
+          _appliedVoucherCode = code;
+          _applyingVoucher = false;
+        });
+        return;
+      }
+
       final discount = (res['discount'] as num?)?.toDouble() ?? 0;
       final discountType = res['discountType']?.toString() ?? 'percent';
       final base = widget.amount ?? 0;
@@ -114,6 +164,8 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
           : (base - (base * discount / 100)).clamp(0, double.infinity);
       setState(() {
         _discountedAmount = discounted.toDouble();
+        // A discount applies to the full fee, not to an installment.
+        _payMode = 'full';
         _appliedVoucherCode = code;
         _applyingVoucher = false;
       });
@@ -131,6 +183,11 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
       _appliedVoucherCode = null;
       _voucherController.clear();
       _voucherError = null;
+      // Whatever the code unlocked goes with it.
+      if (_voucherUnlocksInstallments) {
+        _voucherUnlocksInstallments = false;
+        if (!widget.installmentsOpenToAll) _payMode = 'full';
+      }
     });
   }
 
@@ -239,6 +296,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
       refId: _refId,
       voucherCode: _appliedVoucherCode,
       installmentIndex: widget.installmentIndex,
+      payMode: _paymentType == 'course' ? _payMode : null,
       // Land the checkout tab on our own confirmation page so the user
       // clearly sees the payment succeeded (Safepay's own success flash
       // lasts barely a second before redirecting).
@@ -572,6 +630,7 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                       ..._buildMethodTiles(),
                       if (widget.courseId != null) ...[
                         const SizedBox(height: 12),
+                        _buildPayModeChooser(),
                         _buildVoucherField(),
                       ],
                       const SizedBox(height: 24),
@@ -598,6 +657,109 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  /// Full fee vs installments.
+  ///
+  /// Only drawn when installments are actually open to this student -- either
+  /// the course offers them to everyone, or they redeemed an installment
+  /// voucher. With one option there is nothing to choose, and the total below
+  /// already says what the fee is.
+  Widget _buildPayModeChooser() {
+    if (!_installmentsAvailable) return const SizedBox.shrink();
+
+    final full = _discountedAmount ?? (widget.amount ?? 0);
+    final count = _plan.length;
+
+    Widget option({
+      required String value,
+      required String title,
+      required String subtitle,
+      required IconData icon,
+    }) {
+      final selected = _payMode == value;
+      return InkWell(
+        onTap: () => setState(() => _payMode = value),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primaryColor.withValues(alpha: 0.06)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primaryColor
+                  : const Color(0xFFE2E8F0),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon,
+                  size: 20,
+                  color: selected
+                      ? AppColors.primaryColor
+                      : const Color(0xFF64748B)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 20,
+                color: selected
+                    ? AppColors.primaryColor
+                    : const Color(0xFFCBD5E1),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomText(
+          text: "Choose your payment plan",
+          fontFamily: "Gilroy-Bold",
+          fontSize: 14,
+          color: AppColors.primary500,
+        ),
+        const SizedBox(height: 10),
+        option(
+          value: 'full',
+          title: "Pay Full Fee",
+          subtitle: "PKR ${full.toStringAsFixed(0)} in one payment",
+          icon: Icons.payments_outlined,
+        ),
+        option(
+          value: 'installment',
+          title: "Pay in Installments",
+          subtitle:
+              "First payment PKR ${_firstInstallmentAmount.toStringAsFixed(0)}"
+              " · $count payments in total",
+          icon: Icons.calendar_month_outlined,
+        ),
+        const SizedBox(height: 6),
+      ],
     );
   }
 
@@ -771,7 +933,8 @@ class _SelectPaymentMethodState extends State<SelectPaymentMethod> {
                                   ),
                                   if (widget.courseId != null) ...[
                                     const SizedBox(height: 24),
-                                    _buildVoucherField(),
+                                    _buildPayModeChooser(),
+                        _buildVoucherField(),
                                   ],
                                   const SizedBox(height: 32),
                                   SizedBox(

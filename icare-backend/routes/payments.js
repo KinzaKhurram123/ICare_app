@@ -202,7 +202,7 @@ async function sendAppointmentInvoiceEmail(payment, appt) {
 // Returns { amount, originalAmount, payeeId, description, voucherCode } or throws.
 // payeeId = who receives the money (instructor/doctor/lab/pharmacy) — powers
 // the admin per-entity revenue report.
-async function calculateAmount({ type, refId, voucherCode, userId, installmentIndex, method }) {
+async function calculateAmount({ type, refId, voucherCode, userId, installmentIndex, method, payMode }) {
   if (type === 'course') {
     const course = await Course.findById(refId).lean();
     if (!course) throw new Error('Course not found');
@@ -212,6 +212,7 @@ async function calculateAmount({ type, refId, voucherCode, userId, installmentIn
     const original = computeEffectivePrice(course);
     let amount = original;
     let appliedVoucher = null;
+    let voucherKind = null;
     if (voucherCode) {
       const voucher = await Voucher.findOne({ code: String(voucherCode).trim().toUpperCase() });
       if (!voucher) throw new Error('Invalid voucher code');
@@ -220,22 +221,41 @@ async function calculateAmount({ type, refId, voucherCode, userId, installmentIn
       if (voucher.courseId && voucher.courseId.toString() !== String(refId)) {
         throw new Error('Voucher is not valid for this course');
       }
-      amount = applyVoucherDiscount(voucher, course.price || 0);
+      voucherKind = voucher.kind || 'discount';
+      if (voucherKind === 'discount') {
+        // Discount comes off the price the student would pay today, not off
+        // course.price. Applying it to the raw price meant that on a course
+        // which already had a discount or an early bird, using a voucher could
+        // cost MORE than not using one -- and the app showed the lower figure
+        // while the server charged the higher.
+        amount = applyVoucherDiscount(voucher, original);
+      }
       appliedVoucher = voucher.code;
     }
-    // Installment-enabled courses: "purchase" always means "pay installment 1"
-    // — the full schedule is generated at fulfillment time, not here. The
-    // instructor-defined plan's first row is the amount due on enrollment.
-    if (course.installmentPlanEnabled && Array.isArray(course.installmentPlan)
-        && course.installmentPlan.length >= 2 && !voucherCode) {
-      amount = Number(course.installmentPlan[0].amount) || 0;
+
+    const plan = Array.isArray(course.installmentPlan) ? course.installmentPlan : [];
+    // Installments are open to this student either because the course offers
+    // them to everyone, or because they were handed an installment voucher.
+    const installmentsAllowed = plan.length >= 2 &&
+      (course.installmentPlanEnabled === true || voucherKind === 'installment');
+
+    if (payMode === 'installment') {
+      if (!installmentsAllowed) throw new Error('Installments are not available for this course');
+      // Paying installment 1 now; the rest of the schedule is generated at
+      // fulfillment, once this payment has actually cleared.
+      amount = Number(plan[0].amount) || 0;
     }
+    // Paying in full is always allowed. It used to be overridden silently:
+    // any course carrying a plan forced the student onto installment 1 with
+    // no way to settle the whole fee at once.
+
     return {
       amount: Math.max(0, Number(amount) || 0),
       originalAmount: Math.max(0, Number(original) || 0),
       payeeId: course.instructor_id || null,
       description: `Course: ${course.title || refId}`,
       voucherCode: appliedVoucher,
+      payMode: payMode === 'installment' ? 'installment' : 'full',
     };
   }
 
@@ -404,10 +424,14 @@ async function fulfillPayment(payment) {
     // installment 1 (this payment) has actually cleared. Guarded by
     // installments.length so a duplicate webhook fulfillment never
     // regenerates it (idempotent).
-    if (enrollment && (!enrollment.installments || enrollment.installments.length === 0)) {
+    if (enrollment && payment.payMode === 'installment'
+        && (!enrollment.installments || enrollment.installments.length === 0)) {
       const course = await Course.findById(payment.refId).lean();
-      if (course?.installmentPlanEnabled && Array.isArray(course.installmentPlan)
-          && course.installmentPlan.length >= 2 && !payment.voucherCode) {
+      // The course flag is no longer what decides this -- an installment
+      // voucher grants the same right to a single student -- so the choice
+      // recorded on the payment is what counts. All that is checked here is
+      // that a usable plan still exists.
+      if (Array.isArray(course?.installmentPlan) && course.installmentPlan.length >= 2) {
         enrollment.installmentPlanEnabled = true;
         enrollment.installments = buildInstallmentSchedule({
           plan: course.installmentPlan,
@@ -583,6 +607,7 @@ router.post('/create', authMiddleware, async (req, res) => {
   try {
     await connectMongoDB();
     const { type, refId, voucherCode, redirectUrl, cancelUrl, installmentIndex } = req.body;
+    const payMode = req.body.payMode === 'installment' ? 'installment' : 'full';
     const method = ['cash', 'card'].includes(req.body.method) ? req.body.method : 'safepay';
     const userId = toId(req.user.id);
 
@@ -606,8 +631,8 @@ router.post('/create', authMiddleware, async (req, res) => {
     await plog({ userId, step: 'PAYMENT_CREATE_REQUESTED', payload: { type, refId, method, voucherCode: voucherCode || null } });
 
     // 1. Server-side amount
-    const { amount, originalAmount, payeeId, description, voucherCode: appliedVoucher } =
-      await calculateAmount({ type, refId: rId, voucherCode, userId, installmentIndex: Number(installmentIndex) || undefined, method });
+    const { amount, originalAmount, payeeId, description, voucherCode: appliedVoucher, payMode: appliedPayMode } =
+      await calculateAmount({ type, refId: rId, voucherCode, userId, installmentIndex: Number(installmentIndex) || undefined, method, payMode });
     await plog({ userId, step: 'AMOUNT_CALCULATED', message: `${description} = PKR ${amount} (original ${originalAmount})` });
 
     // Free (or 100% voucher) — no gateway needed; client should call the normal endpoint.
@@ -626,6 +651,7 @@ router.post('/create', authMiddleware, async (req, res) => {
         currency: 'PKR', amount, amountLowest,
         originalAmount: originalAmount ?? amount, discountAmount,
         voucherCode: appliedVoucher || null,
+        payMode: appliedPayMode || 'full',
         safepayTracker: `${method}_${new mongoose.Types.ObjectId().toString()}`,
         safepayEnvironment: null,
         status: 'pending',
@@ -665,6 +691,7 @@ router.post('/create', authMiddleware, async (req, res) => {
       currency: 'PKR', amount, amountLowest,
       originalAmount: originalAmount ?? amount, discountAmount,
       voucherCode: appliedVoucher || null,
+      payMode: appliedPayMode || 'full',
       installmentIndex: type === 'course_installment' ? Number(installmentIndex) : null,
       safepayEnvironment: SAFEPAY_ENV(),
       status: 'created',

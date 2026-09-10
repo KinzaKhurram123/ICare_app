@@ -41,6 +41,13 @@ const paymentSchema = new mongoose.Schema({
   // Voucher applied at creation time (discount already reflected in amount)
   voucherCode: { type: String, default: null },
 
+  // How the student chose to pay a course fee: the whole thing now, or the
+  // first of an installment schedule. Fulfillment reads this to decide whether
+  // to build the schedule -- it used to infer it from the course's own flag,
+  // which meant every buyer on an installment course got a schedule whether
+  // they had paid in full or not.
+  payMode: { type: String, enum: ['full', 'installment'], default: 'full' },
+
   // Safepay references
   safepayTracker: { type: String, default: null, index: true }, // track_...
   safepayEnvironment: { type: String, default: null },          // sandbox | production

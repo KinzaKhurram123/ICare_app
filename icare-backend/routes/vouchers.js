@@ -7,9 +7,18 @@ const { authMiddleware: auth } = require('../middleware/auth');
 const voucherSchema = new mongoose.Schema({
   code:           { type: String, required: true, unique: true, uppercase: true, trim: true },
   instructorId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // What the code buys the student:
+  //   'discount'    — money off, per discountType/discount below.
+  //   'installment' — unlocks the course's installment plan for this student
+  //                   alone. Installments used to be a course-wide switch, so
+  //                   an instructor could only offer them to everybody or to
+  //                   nobody; the client asked to be able to grant them the
+  //                   same way a discount is granted.
+  kind:           { type: String, enum: ['discount', 'installment'], default: 'discount' },
   // percent: discount is 1-100 (%). flat: discount is a fixed currency amount off.
   discountType:   { type: String, enum: ['percent', 'flat'], default: 'percent' },
-  discount:       { type: Number, required: true, min: 1 }, // percent (1-100) or flat amount, per discountType
+  // Required for kind 'discount'; meaningless (and ignored) for 'installment'.
+  discount:       { type: Number, default: 0, min: 0 },
   serviceType:    { type: String, enum: ['course'], default: 'course' }, // future: consultation/lab/pharmacy
   courseId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Course', default: null }, // null = any course
   usedBy:         { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -46,16 +55,26 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { code, discount, discountType, courseId, expiresAt } = req.body;
-    if (!code || !discount) return res.status(400).json({ success: false, message: 'code and discount are required' });
-    if (discountType === 'percent' && Number(discount) > 100) {
-      return res.status(400).json({ success: false, message: 'Percent discount cannot exceed 100' });
+    const kind = req.body.kind === 'installment' ? 'installment' : 'discount';
+    if (!code) return res.status(400).json({ success: false, message: 'code is required' });
+    if (kind === 'discount') {
+      if (!discount) return res.status(400).json({ success: false, message: 'discount is required' });
+      if (discountType === 'percent' && Number(discount) > 100) {
+        return res.status(400).json({ success: false, message: 'Percent discount cannot exceed 100' });
+      }
+    } else if (!courseId) {
+      // An installment code has to name its course: the plan (how many
+      // payments, and when) lives on the course, so "any course" is not a
+      // thing it can mean.
+      return res.status(400).json({ success: false, message: 'An installment voucher must be tied to a course' });
     }
 
     const voucher = await Voucher.create({
       code: code.trim().toUpperCase(),
       instructorId: req.user.id,
+      kind,
       discountType: discountType === 'flat' ? 'flat' : 'percent',
-      discount: Number(discount),
+      discount: kind === 'discount' ? Number(discount) : 0,
       serviceType: 'course',
       courseId: courseId || null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -96,6 +115,7 @@ router.post('/validate', auth, async (req, res) => {
 
     res.json({
       success: true,
+      kind: voucher.kind || 'discount',
       discount: voucher.discount,
       discountType: voucher.discountType,
       voucherId: voucher._id,
@@ -123,7 +143,7 @@ router.post('/redeem', auth, async (req, res) => {
     voucher.usedAt = new Date();
     await voucher.save();
 
-    res.json({ success: true, discount: voucher.discount, discountType: voucher.discountType });
+    res.json({ success: true, kind: voucher.kind || 'discount', discount: voucher.discount, discountType: voucher.discountType });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

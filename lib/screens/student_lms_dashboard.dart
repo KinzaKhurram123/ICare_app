@@ -53,10 +53,10 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
   @override
   void initState() {
     super.initState();
-    // Three tabs: the client asked for Classes, To-do and Browse Courses
-    // to live inside "My Courses" ("is hi mein sab aa jayega - classes bhi,
-    // to-do bhi aur browse courses bhi").
-    _tabController = TabController(length: 3, vsync: this);
+    // Classes and To-do. Browse Courses was a third tab here until the client
+    // asked for it to go -- the catalogue is still reachable from the sidebar
+    // and from the + button on this screen.
+    _tabController = TabController(length: 2, vsync: this);
     _loadUserName();
     _loadEnrollments();
     _startGlobalLivePolling();
@@ -409,16 +409,6 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
                 ],
               ),
             ),
-            const Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.travel_explore_rounded, size: 16),
-                  SizedBox(width: 6),
-                  Text('Browse Courses'),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -436,7 +426,6 @@ class _StudentLmsDashboardState extends State<StudentLmsDashboard>
         children: [
           _buildClassesTab(isWide),
           _buildTodoTab(),
-          const LmsPublicCatalog(embedded: true),
         ],
       ),
     );

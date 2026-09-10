@@ -38,6 +38,10 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
     final discountCtrl = TextEditingController();
     DateTime? expiresAt;
     String discountType = 'percent'; // 'percent' | 'flat'
+    // 'discount' = money off. 'installment' = unlocks this course's installment
+    // plan for whoever redeems the code, so installments can be offered to a
+    // few students instead of to every buyer.
+    String kind = 'discount';
     String? selectedCourseId; // null = valid on any course
 
     List<dynamic> courses = [];
@@ -52,7 +56,10 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Create Discount Voucher', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+          title: Text(
+            kind == 'installment' ? 'Create Installment Voucher' : 'Create Discount Voucher',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+          ),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -118,31 +125,57 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
                     onChanged: (v) => setS(() => selectedCourseId = v),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'percent', label: Text('% Off')),
-                            ButtonSegment(value: 'flat', label: Text('Flat Amount')),
-                          ],
-                          selected: {discountType},
-                          onSelectionChanged: (s) => setS(() => discountType = s.first),
-                        ),
-                      ),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'discount', label: Text('Discount')),
+                      ButtonSegment(value: 'installment', label: Text('Installments')),
                     ],
+                    selected: {kind},
+                    onSelectionChanged: (v) => setS(() => kind = v.first),
                   ),
                   const SizedBox(height: 14),
-                  TextField(
-                    controller: discountCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: InputDecoration(
-                      labelText: discountType == 'percent' ? 'Discount % (1–100) *' : 'Discount Amount (PKR) *',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: Icon(discountType == 'percent' ? Icons.percent_rounded : Icons.payments_outlined),
+                  if (kind == 'discount') ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(value: 'percent', label: Text('% Off')),
+                              ButtonSegment(value: 'flat', label: Text('Flat Amount')),
+                            ],
+                            selected: {discountType},
+                            onSelectionChanged: (s) => setS(() => discountType = s.first),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: discountCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        labelText: discountType == 'percent' ? 'Discount % (1–100) *' : 'Discount Amount (PKR) *',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: Icon(discountType == 'percent' ? Icons.percent_rounded : Icons.payments_outlined),
+                      ),
+                    ),
+                  ] else
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.25)),
+                      ),
+                      child: const Text(
+                        'Whoever redeems this code can pay this course in the '
+                        'installments set up on it, instead of all at once. Pick '
+                        'the course above: the schedule lives on the course, so '
+                        'an installment code cannot be valid for any course.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                      ),
+                    ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -183,17 +216,26 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
               onPressed: () async {
                 final code = codeCtrl.text.trim().toUpperCase();
                 final discount = int.tryParse(discountCtrl.text.trim()) ?? 0;
-                final isValid = discountType == 'percent'
-                    ? (discount >= 1 && discount <= 100)
-                    : (discount >= 1);
-                if (code.isEmpty || !isValid) {
+                String? problem;
+                if (code.isEmpty) {
+                  problem = 'Enter a voucher code';
+                } else if (kind == 'installment') {
+                  if (selectedCourseId == null) {
+                    problem = 'Pick the course this installment code is for';
+                  }
+                } else {
+                  final ok = discountType == 'percent'
+                      ? (discount >= 1 && discount <= 100)
+                      : (discount >= 1);
+                  if (!ok) {
+                    problem = discountType == 'percent'
+                        ? 'Enter a discount between 1 and 100%'
+                        : 'Enter a discount amount';
+                  }
+                }
+                if (problem != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(discountType == 'percent'
-                          ? 'Enter a valid code and discount (1–100%)'
-                          : 'Enter a valid code and a discount amount'),
-                      backgroundColor: Colors.red,
-                    ),
+                    SnackBar(content: Text(problem), backgroundColor: Colors.red),
                   );
                   return;
                 }
@@ -201,8 +243,9 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
                 try {
                   await _api.post('/vouchers', {
                     'code': code,
-                    'discount': discount,
-                    'discountType': discountType,
+                    'kind': kind,
+                    if (kind == 'discount') 'discount': discount,
+                    if (kind == 'discount') 'discountType': discountType,
                     if (selectedCourseId != null) 'courseId': selectedCourseId,
                     if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
                   });
@@ -322,7 +365,14 @@ class _InstructorVoucherScreenState extends State<InstructorVoucherScreen> {
                       final code = v['code']?.toString() ?? '';
                       final discount = v['discount']?.toString() ?? '';
                       final discountType = v['discountType']?.toString() ?? 'percent';
-                      final discountLabel = discountType == 'flat' ? 'PKR $discount off' : '$discount% off';
+                      final kind = v['kind']?.toString() ?? 'discount';
+      // An installment code carries no discount, so the money-off label
+      // would otherwise read "0% off" against it.
+      final discountLabel = kind == 'installment'
+          ? 'Installments'
+          : discountType == 'flat'
+              ? 'PKR $discount off'
+              : '$discount% off';
                       final usedBy = v['usedBy'];
                       final isUsed = usedBy != null;
                       final expiresAt = v['expiresAt'];

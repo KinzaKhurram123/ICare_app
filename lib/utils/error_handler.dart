@@ -131,21 +131,33 @@ class ErrorHandler {
             Expanded(
               child: Text(message, style: const TextStyle(fontSize: 13, color: Colors.white)),
             ),
+            // Closing is always available as a cross. "Dismiss" used to be a
+            // text action, which read like a second choice next to Retry.
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: 'Dismiss',
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
           ],
         ),
         backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 6),
-        // Always show Dismiss; show Retry only when applicable
-        action: SnackBarAction(
-          label: canRetry ? 'Retry' : 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            if (canRetry && onRetry != null) onRetry();
-          },
-        ),
+        // Retry stays only where a caller actually wired one up.
+        action: (canRetry && onRetry != null)
+            ? SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  onRetry();
+                },
+              )
+            : null,
       ),
     );
   }

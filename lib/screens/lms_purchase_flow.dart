@@ -209,13 +209,10 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
         ? rawEffective.toDouble()
         : (discounted ?? base);
 
-    // Installment-enabled → the purchase pays only the FIRST installment.
-    if (widget.course['installmentPlanEnabled'] == true) {
-      final plan = widget.course['installmentPlan'];
-      if (plan is List && plan.isNotEmpty) {
-        return toNum((plan.first as Map?)?['amount']);
-      }
-    }
+    // The full fee. An installment-enabled course used to jump straight to
+    // the first installment here, which quietly removed the option of paying
+    // the whole thing at once; the checkout screen now offers both and shows
+    // the installment figure against its own choice.
     return effective;
   }
 
@@ -227,6 +224,11 @@ class _LmsPurchaseFlowState extends ConsumerState<LmsPurchaseFlow> {
           amount: _displayAmount(),
           onPaymentSuccess: _handlePaymentSuccess,
           courseId: widget.course['_id'],
+          installmentPlan: widget.course['installmentPlan'] is List
+              ? widget.course['installmentPlan'] as List
+              : null,
+          installmentsOpenToAll:
+              widget.course['installmentPlanEnabled'] == true,
         ),
       ),
     );
